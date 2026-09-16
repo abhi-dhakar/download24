@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ArrowDownToLine } from 'lucide-react'
 
 import { Downloader } from '@/components/Downloader'
 import { FaqAccordion } from '@/components/FaqAccordion'
@@ -548,9 +549,10 @@ export default function HomePage() {
               </p>
               <a
                 href="#downloader"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-6 py-3 text-sm font-semibold text-ink-950 shadow-glow transition-transform hover:-translate-y-px"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-6 py-3 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
               >
-                ⬇ Download a video now
+                <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
+                <span>Download a video now</span>
               </a>
               <p className="mt-4 text-[11px] text-white/40">
                 Free • No ads on the download page • Made in India 🇮🇳

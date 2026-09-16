@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 
+import { PLATFORM_PAGES } from '@/lib/platformPages'
 import { canonicalOrigin, isProductionSite } from '@/lib/site'
 
 /**
@@ -18,7 +19,7 @@ interface SitemapRoute {
   priority: number
 }
 
-const ROUTES: SitemapRoute[] = [
+const STATIC_ROUTES: SitemapRoute[] = [
   { path: '/', changeFrequency: 'hourly', priority: 1 },
   { path: '/terms', changeFrequency: 'yearly', priority: 0.2 },
   { path: '/privacy', changeFrequency: 'yearly', priority: 0.2 }
@@ -30,7 +31,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Never advertise a preview/staging host to crawlers.
   if (!isProductionSite) return []
 
-  return ROUTES.map((route) => ({
+  const platformRoutes: SitemapRoute[] = Object.keys(PLATFORM_PAGES).map((slug) => ({
+    path: `/${slug}`,
+    changeFrequency: 'daily',
+    priority: 0.8
+  }))
+
+  const allRoutes = [...STATIC_ROUTES, ...platformRoutes]
+
+  return allRoutes.map((route) => ({
     url: `${canonicalOrigin}${route.path === '/' ? '/' : route.path}`,
     lastModified,
     changeFrequency: route.changeFrequency,

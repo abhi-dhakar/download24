@@ -32,7 +32,7 @@ interface Props {
 
 export function PlatformMark({ id, className = 'h-6 w-6', branded = true, title }: Props) {
   const platform = getPlatform(id)
-  const accent = branded ? (platform?.accent ?? '#ff6a3d') : 'currentColor'
+  const accent = branded ? (platform?.accent ?? '#0284c7') : 'currentColor'
 
   const common = {
     viewBox: '0 0 24 24',

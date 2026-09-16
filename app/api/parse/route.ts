@@ -349,7 +349,11 @@ async function handleParse(request: Request): Promise<NextResponse> {
       }
       // Only cache *stable* failures. Caching a timeout or a "server busy"
       // response would keep answering 5xx for a link that may work seconds later.
-      const transient = code === 'TIMEOUT' || code === 'SERVER_UNAVAILABLE' || code === 'RATE_LIMITED'
+      const transient =
+        code === 'TIMEOUT' ||
+        code === 'SERVER_UNAVAILABLE' ||
+        (code as string) === 'RATE_LIMITED' ||
+        code === 'TOO_MANY_REQUESTS'
       if (!transient) negativeCache.set(cacheKey, negative)
 
       // Keep the raw upstream text in the server log, never in the response.

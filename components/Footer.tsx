@@ -63,16 +63,49 @@ export function Footer() {
               id="footer-platforms"
               className="text-[11px] font-semibold text-white/45 uppercase tracking-wider"
             >
-              Downloaders
+              Dedicated Downloaders
             </h2>
             <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-white/60">
-              {PLATFORMS.slice(0, 8).map((platform) => (
-                <li key={platform.id}>
-                  <a href="/#supported-platforms" className="transition-colors hover:text-white">
-                    {platform.name} downloader
-                  </a>
-                </li>
-              ))}
+              <li>
+                <Link href="/youtube-video-download" className="transition-colors hover:text-white">
+                  YouTube Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/instagram-video-download" className="transition-colors hover:text-white">
+                  Instagram Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/tiktok-video-download" className="transition-colors hover:text-white">
+                  TikTok Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/facebook-video-download" className="transition-colors hover:text-white">
+                  Facebook Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/twitter-video-download" className="transition-colors hover:text-white">
+                  Twitter / X Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/youtube-shorts-download" className="transition-colors hover:text-white">
+                  Shorts Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/reddit-video-download" className="transition-colors hover:text-white">
+                  Reddit Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/twitch-clip-download" className="transition-colors hover:text-white">
+                  Twitch Clip Downloader
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>

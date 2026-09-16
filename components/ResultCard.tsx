@@ -10,6 +10,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import {
+  ArrowDownToLine,
   Check,
   Copy,
   Gauge,
@@ -208,12 +209,12 @@ function PresetRow({
         }}
         aria-busy={downloading}
         aria-disabled={downloading}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-3.5 py-2 text-sm font-semibold text-ink-950 shadow-glow transition-transform duration-150 hover:-translate-y-px active:translate-y-0 ${
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-3.5 py-2 text-sm font-semibold text-white shadow-glow transition-transform duration-150 hover:-translate-y-px active:translate-y-0 ${
           downloading ? 'cursor-wait opacity-80' : ''
         }`}
         aria-label={`Download ${option.label}${option.ext ? ` as ${option.ext.toUpperCase()}` : ''}: ${title}`}
       >
-        {downloading ? <Spinner className="h-4 w-4" label="Downloading" /> : <Link2 className="h-4 w-4" aria-hidden="true" />}
+        {downloading ? <Spinner className="h-4 w-4" label="Downloading" /> : <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />}
         {downloadPercent !== null ? `${downloadPercent}%` : downloading ? 'Downloading' : 'Download'}
       </a>
     </li>

@@ -6,7 +6,7 @@
  * result markup can never drift away from what a human actually reads.
  */
 
-import { canonicalOrigin, SITE } from './site'
+import { canonicalOrigin, LIMITS, SITE } from './site'
 import { PLATFORMS } from './platforms'
 
 export interface FaqItem {
@@ -38,7 +38,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: 'Do I need to register, install an app, or pay for premium speeds?',
     answer:
-      'No. There is no signup, no login, no desktop app and no queue with artificial speed caps. Repeated requests for the same link are served from a 15 minute in-memory LRU cache, so a popular video resolves almost instantly for everyone after the first lookup. Fair-use limits exist per IP address to keep the service available — a generous allowance of 40 extractions per minute — and nothing else is throttled.'
+      `No. There is no signup, no login, no desktop app and no queue with artificial speed caps. Repeated requests for the same link are served from a 15 minute in-memory LRU cache, so a popular video resolves almost instantly for everyone after the first lookup. Fair-use limits exist per IP address to keep the service available — a generous allowance of ${LIMITS.extractRequestsPerMinute} extractions per minute — and nothing else is throttled.`
   }
 ]
 
@@ -219,7 +219,7 @@ export function howToSchema(steps: HowToStep[] = HOW_TO_STEPS) {
   return {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
-    name: 'How to download online video in up to 4K with SaveFrom Clone',
+    name: `How to download online video in up to 4K with ${SITE.name}`,
     description:
       'Four steps to save a video from YouTube, TikTok, Instagram, Facebook, X, Vimeo or Reddit as MP4 or MP3.',
     totalTime: 'PT1M',

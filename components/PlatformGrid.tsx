@@ -1,5 +1,7 @@
+import Link from 'next/link'
 import { ArrowUpRight, Check, Sparkles, Zap } from 'lucide-react'
 
+import { getSlugForPlatformId } from '@/lib/platformPages'
 import { MAX_RES_LABEL, PLATFORMS } from '@/lib/platforms'
 import { PlatformMark } from './PlatformMark'
 
@@ -11,92 +13,106 @@ import { PlatformMark } from './PlatformMark'
 export function PlatformGrid() {
   return (
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {PLATFORMS.map((platform) => (
-        <li key={platform.id}>
-          <article
-            aria-labelledby={`platform-${platform.id}-title`}
-            className="group relative flex h-full flex-col justify-between overflow-hidden rounded-(--radius-card) border border-line bg-gradient-to-b from-white/[0.03] to-transparent p-5 transition-all duration-300 hover:-translate-y-1 hover:border-line-strong hover:bg-white/[0.05] hover:shadow-2xl"
-          >
-            {/* Ambient Platform Brand Glow */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-40"
-              style={{ background: `radial-gradient(circle, ${platform.accent || '#FF6A3D'}, transparent 70%)` }}
-            />
+      {PLATFORMS.map((platform) => {
+        const slug = getSlugForPlatformId(platform.id)
+        const targetHref = slug ? `/${slug}` : '#downloader'
 
-            <div>
-              {/* Header: Icon, Name & Top Badge */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink-900/90 ring-1 ring-inset ring-line transition-transform duration-300 group-hover:scale-105 group-hover:ring-line-strong">
-                    <PlatformMark id={platform.id} className="h-7 w-7" title={platform.displayName} />
-                  </span>
-                  <div className="min-w-0">
-                    <h3
-                      id={`platform-${platform.id}-title`}
-                      className="truncate text-base font-bold text-white transition-colors group-hover:text-accent"
-                    >
-                      {platform.name}
-                    </h3>
-                    <p className="text-[11px] font-medium text-white/45">
-                      Fast Extractor · {MAX_RES_LABEL[platform.maxResolution]}
-                    </p>
+        return (
+          <li key={platform.id}>
+            <article
+              aria-labelledby={`platform-${platform.id}-title`}
+              className="group relative flex h-full flex-col justify-between overflow-hidden rounded-(--radius-card) border border-line bg-gradient-to-b from-white/[0.03] to-transparent p-5 transition-all duration-300 hover:-translate-y-1 hover:border-line-strong hover:bg-white/[0.05] hover:shadow-2xl"
+            >
+              {/* Ambient Platform Brand Glow */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-40"
+                style={{ background: `radial-gradient(circle, ${platform.accent || '#0284c7'}, transparent 70%)` }}
+              />
+
+              <div>
+                {/* Header: Icon, Name & Top Badge */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink-900/90 ring-1 ring-inset ring-line transition-transform duration-300 group-hover:scale-105 group-hover:ring-line-strong">
+                      <PlatformMark id={platform.id} className="h-7 w-7" title={platform.displayName} />
+                    </span>
+                    <div className="min-w-0">
+                      <h3
+                        id={`platform-${platform.id}-title`}
+                        className="truncate text-base font-bold text-white transition-colors group-hover:text-accent"
+                      >
+                        <Link href={targetHref} className="hover:underline">
+                          {platform.name}
+                        </Link>
+                      </h3>
+                      <p className="text-[11px] font-medium text-white/45">
+                        Fast Extractor · {MAX_RES_LABEL[platform.maxResolution]}
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Quick Link Indicator */}
+                  <Link
+                    href={targetHref}
+                    className="rounded-lg p-1.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white"
+                    title={`Dedicated ${platform.name} Downloader`}
+                    aria-label={`Dedicated downloader for ${platform.name}`}
+                  >
+                    <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
                 </div>
 
-                {/* Quick Link Indicator */}
-                <a
-                  href="#downloader"
-                  className="rounded-lg p-1.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white"
-                  title={`Download from ${platform.name}`}
-                  aria-label={`Jump to downloader for ${platform.name}`}
-                >
-                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                </a>
+                {/* Badges strip (Watermark / Audio status) */}
+                <div className="mt-3.5 flex flex-wrap gap-1.5">
+                  {platform.noWatermark && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-ok/20 bg-ok/10 px-2 py-0.5 text-[10px] font-semibold text-ok">
+                      <Zap className="h-2.5 w-2.5 fill-current" aria-hidden="true" />
+                      No Watermark
+                    </span>
+                  )}
+                  {platform.supportsMp3 && (
+                    <span className="inline-flex items-center rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                      MP3 Audio
+                    </span>
+                  )}
+                  <span className="inline-flex items-center rounded-full border border-line bg-white/[0.03] px-2 py-0.5 text-[10px] font-medium text-white/60">
+                    {MAX_RES_LABEL[platform.maxResolution]}
+                  </span>
+                </div>
+
+                {/* Description */}
+                <p className="mt-3 text-xs leading-relaxed text-white/60">
+                  {platform.blurb}
+                </p>
               </div>
 
-              {/* Badges strip (Watermark / Audio status) */}
-              <div className="mt-3.5 flex flex-wrap gap-1.5">
-                {platform.noWatermark && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-ok/20 bg-ok/10 px-2 py-0.5 text-[10px] font-semibold text-ok">
-                    <Zap className="h-2.5 w-2.5 fill-current" aria-hidden="true" />
-                    No Watermark
-                  </span>
-                )}
-                {platform.supportsMp3 && (
-                  <span className="inline-flex items-center rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                    MP3 Audio
-                  </span>
-                )}
-                <span className="inline-flex items-center rounded-full border border-line bg-white/[0.03] px-2 py-0.5 text-[10px] font-medium text-white/60">
-                  {MAX_RES_LABEL[platform.maxResolution]}
-                </span>
-              </div>
-
-              {/* Description */}
-              <p className="mt-3 text-xs leading-relaxed text-white/60">
-                {platform.blurb}
-              </p>
-            </div>
-
-            {/* Quality Support Badges */}
-            <div className="mt-4 pt-3 border-t border-line/60">
-              <span className="sr-only">Available formats:</span>
-              <ul className="flex flex-wrap gap-1.5" aria-label={`${platform.name} quality tiers`}>
-                {platform.qualities.map((quality) => (
-                  <li
-                    key={quality}
-                    className="inline-flex items-center gap-1 rounded-md bg-ink-900/80 px-2 py-1 text-[10px] font-medium text-white/70 ring-1 ring-inset ring-line transition-colors group-hover:border-line-strong"
+              {/* Quality Support Badges & Dedicated Page Link */}
+              <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between gap-2">
+                <ul className="flex flex-wrap gap-1.5" aria-label={`${platform.name} quality tiers`}>
+                  {platform.qualities.slice(0, 3).map((quality) => (
+                    <li
+                      key={quality}
+                      className="inline-flex items-center gap-1 rounded-md bg-ink-900/80 px-2 py-1 text-[10px] font-medium text-white/70 ring-1 ring-inset ring-line"
+                    >
+                      <Check className="h-2.5 w-2.5 text-ok" aria-hidden="true" strokeWidth={3} />
+                      {quality}
+                    </li>
+                  ))}
+                </ul>
+                {slug && (
+                  <Link
+                    href={`/${slug}`}
+                    className="text-[11px] font-semibold text-accent hover:underline shrink-0"
                   >
-                    <Check className="h-2.5 w-2.5 text-ok" aria-hidden="true" strokeWidth={3} />
-                    {quality}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </article>
-        </li>
-      ))}
+                    Open Page →
+                  </Link>
+                )}
+              </div>
+            </article>
+          </li>
+        )
+      })}
 
       {/* Generic / All-Platform Extractor Card */}
       <li>

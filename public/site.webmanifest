@@ -1,0 +1,28 @@
+{
+  "name": "SaveFrom Clone — Free Online Video Downloader",
+  "short_name": "SaveFromClone",
+  "description": "Download online video in up to 4K Ultra HD or MP3 audio from YouTube, TikTok, Instagram, Facebook, X, Vimeo, Dailymotion, Reddit and Twitch. No registration required.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#05070f",
+  "theme_color": "#05070f",
+  "categories": ["utilities", "productivity", "entertainment"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/apple-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Download a video",
+      "url": "/#downloader",
+      "description": "Jump straight to the link field"
+    },
+    {
+      "name": "Supported platforms",
+      "url": "/#supported-platforms",
+      "description": "See every network and quality"
+    }
+  ]
+}

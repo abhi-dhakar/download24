@@ -1,0 +1,36 @@
+{
+  "name": "savefrom-clone",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready multi-platform online video downloader built with the Next.js App Router, Tailwind CSS and yt-dlp.",
+  "scripts": {
+    "dev": "next dev -p 3000 -H 0.0.0.0",
+    "build": "next build",
+    "start": "next start -p 3000 -H 0.0.0.0",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/install-ytdlp.mjs"
+  },
+  "dependencies": {
+    "lru-cache": "11.5.2",
+    "lucide-react": "1.46.0",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "youtube-dl-exec": "3.1.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.4",
+    "eslint": "10.10.0",
+    "eslint-config-next": "16.3.5",
+    "postcss": "8.5.28",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}

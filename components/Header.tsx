@@ -1,8 +1,9 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowDownToLine, Menu, Sparkles, X } from 'lucide-react'
+import { Menu, Sparkles, X } from 'lucide-react'
 
 import { PLATFORM_PAGES } from '@/lib/platformPages'
 import { PlatformMark } from './PlatformMark'
@@ -42,12 +43,17 @@ export function Header() {
           className="group flex items-center gap-3 transition-opacity hover:opacity-95"
           aria-label="Download24.in home"
         >
-          {/* Logo Icon */}
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-soft via-accent to-accent-deep text-white shadow-glow transition-transform duration-200 group-hover:scale-105">
-            <ArrowDownToLine className="h-5 w-5 stroke-[2.5]" aria-hidden="true" />
+          <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden transition-transform duration-200 group-hover:scale-105">
+            <Image
+              src="/logo.png"
+              alt="Download24 logo"
+              width={40}
+              height={40}
+              className="h-full w-full object-cover"
+              priority
+            />
           </div>
 
-          {/* Logo Typography */}
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="font-display text-lg font-bold tracking-tight text-white">

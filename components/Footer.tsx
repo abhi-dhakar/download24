@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 import { PLATFORMS } from '@/lib/platforms'
@@ -11,7 +12,18 @@ export function Footer() {
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <p className="font-display text-base font-semibold text-white">{SITE.name}</p>
+            <div className="flex items-center gap-3">
+              <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white/0">
+                <Image
+                  src="/logo.png"
+                  alt="Download24 logo"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <p className="font-display text-base font-semibold text-white">{SITE.name}</p>
+            </div>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-white/55">
               A free, browser-based video downloader for up to 4K MP4 and MP3 audio across{' '}
               {PLATFORMS.length} networks. No installers, no extensions, no account — and nothing is kept on

@@ -20,7 +20,7 @@ export default function NotFound() {
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/#downloader"
-            className="rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-4 py-2.5 text-sm font-semibold text-ink-950 shadow-glow"
+            className="rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-4 py-2.5 text-sm font-semibold text-white shadow-glow"
           >
             Go to the downloader
           </Link>

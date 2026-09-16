@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowDownToLine, Check, CheckCircle2, Music, Sparkles, Zap } from 'lucide-react'
+import type { CSSProperties } from 'react'
 
 import { Downloader } from '@/components/Downloader'
 import { Footer } from '@/components/Footer'
@@ -145,7 +146,7 @@ export default async function PlatformPage({ params }: PageProps) {
           {/* Custom Platform Ambient Glow */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -top-24 h-[38rem] opacity-35 blur-3xl transition-all"
+            className="platform-hero-glow pointer-events-none absolute inset-0 -top-24 h-[38rem] opacity-35 blur-3xl transition-all"
             style={{
               background: config.theme.heroGradient
             }}
@@ -155,11 +156,10 @@ export default async function PlatformPage({ params }: PageProps) {
           <div className="relative mx-auto w-full max-w-4xl px-4 text-center sm:px-6">
             {/* Platform Brand Pill */}
             <div
-              className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold backdrop-blur-md shadow-sm transition-all"
+              className="platform-pill inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold backdrop-blur-md shadow-sm transition-all"
               style={{
                 borderColor: `rgba(${config.theme.glowRgb}, 0.35)`,
-                backgroundColor: `rgba(${config.theme.glowRgb}, 0.08)`,
-                color: '#fff'
+                backgroundColor: `rgba(${config.theme.glowRgb}, 0.08)`
               }}
             >
               <span className="grid h-4 w-4 place-items-center">
@@ -177,10 +177,14 @@ export default async function PlatformPage({ params }: PageProps) {
             >
               {config.h1}{' '}
               <span
-                style={{
-                  color: config.theme.primary,
-                  textShadow: `0 0 35px rgba(${config.theme.glowRgb}, 0.45)`
-                }}
+                className="platform-highlight"
+                style={
+                  {
+                    '--platform-primary': config.theme.primary,
+                    '--platform-on-light': config.theme.primaryOnLight,
+                    '--platform-glow': config.theme.glowRgb
+                  } as CSSProperties
+                }
               >
                 {config.h1Highlight}
               </span>
@@ -226,7 +230,15 @@ export default async function PlatformPage({ params }: PageProps) {
         {/* ================================================================ */}
         <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
           <div className="text-center">
-            <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: config.theme.primary }}>
+            <p
+              className="platform-tint-text text-xs font-semibold tracking-widest uppercase"
+              style={
+                {
+                  '--platform-primary': config.theme.primary,
+                  '--platform-on-light': config.theme.primaryOnLight
+                } as CSSProperties
+              }
+            >
               Why use download24
             </p>
             <h2 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">
@@ -241,12 +253,15 @@ export default async function PlatformPage({ params }: PageProps) {
                 className="group relative overflow-hidden rounded-(--radius-card) border border-line bg-white/[0.02] p-6 transition-all duration-300 hover:border-line-strong hover:bg-white/[0.04]"
               >
                 <div
-                  className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1"
-                  style={{
-                    backgroundColor: `rgba(${config.theme.glowRgb}, 0.15)`,
-                    color: config.theme.primary,
-                    borderColor: `rgba(${config.theme.glowRgb}, 0.3)`
-                  }}
+                  className="platform-tint-text mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1"
+                  style={
+                    {
+                      backgroundColor: `rgba(${config.theme.glowRgb}, 0.15)`,
+                      borderColor: `rgba(${config.theme.glowRgb}, 0.3)`,
+                      '--platform-primary': config.theme.primary,
+                      '--platform-on-light': config.theme.primaryOnLight
+                    } as CSSProperties
+                  }
                 >
                   <Sparkles className="h-5 w-5" />
                 </div>
@@ -281,11 +296,14 @@ export default async function PlatformPage({ params }: PageProps) {
                 className="relative rounded-2xl border border-line bg-white/[0.02] p-5"
               >
                 <div
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
-                  style={{
-                    backgroundColor: `rgba(${config.theme.glowRgb}, 0.2)`,
-                    color: config.theme.primary
-                  }}
+                  className="platform-tint-text inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
+                  style={
+                    {
+                      backgroundColor: `rgba(${config.theme.glowRgb}, 0.2)`,
+                      '--platform-primary': config.theme.primary,
+                      '--platform-on-light': config.theme.primaryOnLight
+                    } as CSSProperties
+                  }
                 >
                   0{idx + 1}
                 </div>

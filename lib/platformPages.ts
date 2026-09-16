@@ -31,6 +31,8 @@ export interface PlatformPageConfig {
   sampleUrl: string
   theme: {
     primary: string
+    /** Same brand hue, darkened so text stays legible on white in light mode. */
+    primaryOnLight: string
     secondary?: string
     glowRgb: string
     heroGradient: string
@@ -56,6 +58,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
     theme: {
       primary: '#ff0033',
+      primaryOnLight: '#d90429',
       secondary: '#cc0029',
       glowRgb: '255, 0, 51',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(255, 0, 51, 0.28), transparent 70%)'
@@ -115,6 +118,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://www.youtube.com/shorts/eV3y4GvB0Ss',
     theme: {
       primary: '#ff0033',
+      primaryOnLight: '#d90429',
       secondary: '#ff4d6a',
       glowRgb: '255, 0, 51',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(255, 0, 51, 0.25), transparent 70%)'
@@ -166,6 +170,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://www.instagram.com/reel/C7YqTg3JM2s/',
     theme: {
       primary: '#e1306c',
+      primaryOnLight: '#be185d',
       secondary: '#f7b42c',
       glowRgb: '225, 48, 108',
       heroGradient: 'radial-gradient(45% 45% at 50% 20%, rgba(225, 48, 108, 0.30), rgba(247, 180, 44, 0.15), transparent 70%)'
@@ -217,6 +222,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://www.tiktok.com/@tiktok/video/7106594312292453675',
     theme: {
       primary: '#fe2c55',
+      primaryOnLight: '#e11d48',
       secondary: '#25f4ee',
       glowRgb: '254, 44, 85',
       heroGradient: 'radial-gradient(45% 45% at 45% 20%, rgba(254, 44, 85, 0.28), rgba(37, 244, 238, 0.16), transparent 70%)'
@@ -268,6 +274,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://www.facebook.com/facebook/videos/10155707263041729/',
     theme: {
       primary: '#1877f2',
+      primaryOnLight: '#1d4ed8',
       secondary: '#0b56b3',
       glowRgb: '24, 119, 242',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(24, 119, 242, 0.28), transparent 70%)'
@@ -319,6 +326,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://x.com/SpaceX/status/1410624005669765122',
     theme: {
       primary: '#e7e9ea',
+      primaryOnLight: '#0f172a',
       secondary: '#71767b',
       glowRgb: '231, 233, 234',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(255, 255, 255, 0.18), transparent 70%)'
@@ -370,6 +378,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://vimeo.com/76979871',
     theme: {
       primary: '#1ab7ea',
+      primaryOnLight: '#0284c7',
       secondary: '#0088cc',
       glowRgb: '26, 183, 234',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(26, 183, 234, 0.28), transparent 70%)'
@@ -416,6 +425,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://www.dailymotion.com/video/x2t9xzx',
     theme: {
       primary: '#0b6dc1',
+      primaryOnLight: '#0b6dc1',
       secondary: '#005299',
       glowRgb: '11, 109, 193',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(11, 109, 193, 0.28), transparent 70%)'
@@ -462,6 +472,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://www.reddit.com/r/videos/comments/1ehq0zj/',
     theme: {
       primary: '#ff4500',
+      primaryOnLight: '#c2410c',
       secondary: '#cc3700',
       glowRgb: '255, 69, 0',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(255, 69, 0, 0.28), transparent 70%)'
@@ -508,6 +519,7 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
     sampleUrl: 'https://clips.twitch.tv/SpicyGracefulRamenPeteZahHuh',
     theme: {
       primary: '#9146ff',
+      primaryOnLight: '#7c3aed',
       secondary: '#772ce8',
       glowRgb: '145, 70, 255',
       heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(145, 70, 255, 0.28), transparent 70%)'

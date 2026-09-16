@@ -2,11 +2,13 @@ import Link from 'next/link'
 
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { PlatformBar } from '@/components/PlatformBar'
 
 export default function NotFound() {
   return (
     <>
       <Header />
+      <PlatformBar />
       <main id="main" className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-4 py-24 sm:px-6">
         <p className="font-display text-sm font-semibold text-accent-soft">404 — page not found</p>
         <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">

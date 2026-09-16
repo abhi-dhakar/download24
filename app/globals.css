@@ -471,6 +471,60 @@ html.light {
   .platform-pill {
     color: #fff;
   }
+
+  /*
+   * Chips inside the "Works with" strip under the navbar
+   * (components/PlatformBar.tsx). Every chip sets `--chip-brand` inline to the
+   * network's accent, so the hover/focus tint, ring and glow always match the
+   * real brand colour instead of a hard-coded palette entry.
+   *
+   * The surface is painted here rather than with `bg-white/[0.03]` utilities on
+   * purpose: those utilities are force-overridden in `html.light`, which would
+   * otherwise beat these hover states (important declarations reverse layer
+   * order, and the light palette lives in `@layer base`).
+   */
+  .platform-chip {
+    --chip-brand: var(--color-accent);
+    border: 1px solid var(--color-line);
+    background-color: rgb(255 255 255 / 0.03);
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+  html.light .platform-chip {
+    background-color: #ffffff;
+    border-color: rgb(15 23 42 / 0.1);
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+  }
+  .platform-chip:hover,
+  .platform-chip:focus-visible {
+    border-color: color-mix(in srgb, var(--chip-brand) 55%, transparent);
+    background-color: color-mix(in srgb, var(--chip-brand) 14%, transparent);
+    box-shadow: 0 8px 22px -14px color-mix(in srgb, var(--chip-brand) 95%, transparent);
+  }
+  /*
+   * On white the *fill* has to stay pale, so the brand hue is expressed
+   * through the border/glow — mixed towards slate, which also rescues very
+   * light accents (X's `#e7e9ea`) from becoming invisible.
+   */
+  html.light .platform-chip:hover,
+  html.light .platform-chip:focus-visible {
+    background-color: color-mix(in srgb, var(--chip-brand) 12%, #ffffff);
+    border-color: color-mix(in srgb, var(--chip-brand) 60%, #0f172a);
+    box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--chip-brand) 70%, #0f172a);
+  }
+  .platform-chip[data-active='true'] {
+    border-color: color-mix(in srgb, var(--chip-brand) 60%, transparent);
+    background-color: color-mix(in srgb, var(--chip-brand) 18%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-brand) 20%, transparent);
+  }
+  html.light .platform-chip[data-active='true'] {
+    background-color: color-mix(in srgb, var(--chip-brand) 14%, #ffffff);
+    border-color: color-mix(in srgb, var(--chip-brand) 60%, #0f172a);
+    box-shadow: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

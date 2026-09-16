@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react'
 import { Downloader } from '@/components/Downloader'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { PlatformBar } from '@/components/PlatformBar'
 import { PlatformMark } from '@/components/PlatformMark'
 import {
   PLATFORM_PAGES,
@@ -133,6 +134,9 @@ export default async function PlatformPage({ params }: PageProps) {
       />
 
       <Header />
+
+      {/* Platform strip under the navbar; the current network's chip is active. */}
+      <PlatformBar activePlatformId={platform.id} />
 
       <main id="main" className="flex-1">
         {/* ================================================================ */}

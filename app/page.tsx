@@ -8,6 +8,7 @@ import { FeatureHighlights } from '@/components/FeatureHighlights'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { HowToDownload } from '@/components/HowToDownload'
+import { PlatformBar } from '@/components/PlatformBar'
 import { PlatformGrid } from '@/components/PlatformGrid'
 import { PlatformMark } from '@/components/PlatformMark'
 import { PLATFORMS } from '@/lib/platforms'
@@ -187,6 +188,9 @@ export default function HomePage() {
       />
 
       <Header />
+
+      {/* "Works with" strip under the navbar — every supported network, with icons. */}
+      <PlatformBar allPlatformsHref="#supported-platforms" />
 
       <main id="main" className="flex-1">
         {/* ================================================================ */}

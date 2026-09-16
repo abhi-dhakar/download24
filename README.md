@@ -1,4 +1,4 @@
-# SaveFrom Clone — multi-platform video downloader
+# Download24 — multi-platform video downloader
 
 A production-ready, single-repository **Next.js (App Router + TypeScript) + Tailwind CSS v4** web app
 inspired by SaveFrom.net. There is **no Express server**: link extraction happens inside a Next.js
@@ -10,6 +10,70 @@ Visitor ── paste link ──▶ POST /api/parse ──▶ LRU cache (15 min)
         ── click 4K ────▶ GET /api/download ─▶ yt-dlp -f f137+ba -o - ─▶ piped to the browser
 ```
 
+## The three-page download flow
+
+Downloading is a guided, three-page journey instead of an inline result panel:
+
+| Step | Route | What happens |
+| --- | --- | --- |
+| 1 — Paste link | `/` (also every `/platform` page) | The hero input validates the URL client-side, then hands over to step 2. Clipboard paste, recent-link history and the `/` keyboard shortcut live here. |
+| 2 — Choose quality | `/download?url=…` | The page runs `POST /api/parse`, animates while extracting, then shows the video details (thumbnail, title, channel, duration, platform) and every quality preset from 4K down to MP3. |
+| 3 — Download | `/download/progress?src=…&f=…` | The chosen preset streams from `/api/download` while a live gauge animates the transfer — percentage, bytes, speed and ETA — and finishes with a success scene plus "download another" actions. |
+
+Hand-off details worth knowing:
+
+* step 2 encodes the selection in the query string (`src`, `f`, `label`, `ext`, `kind`, `size`,
+  `title`, `a=mp3`) so a step-3 link is bookmarkable and shareable;
+* step 2 also stashes a thumbnail/platform snapshot in `sessionStorage`
+  (`lib/pending.ts`) so step 3 can render a rich header without re-parsing — the query string stays
+  the source of truth, so step 3 still works without the snapshot;
+* step 3 falls back to a plain browser navigation if the streamed fetch cannot be read
+  (e.g. `DOWNLOAD_MODE=redirect` bouncing to a CDN without CORS headers);
+* both flow pages are `noindex` — they carry per-user state and mean nothing out of context.
+
+## Site map
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Landing page: hero downloader (step 1), illustrations, feature/how-to/platform/FAQ previews, quality guide. |
+| `/downloader` | Nav target that **redirects to the homepage** — the homepage *is* the downloader. |
+| `/features` | Dedicated features page: illustrated feature cards, promises, "under the hood" engineering notes. |
+| `/how-it-works` | Dedicated guide: the 4 steps with illustrations, the three-page flow explained, per-device tips. Carries the `HowTo` JSON-LD. |
+| `/platforms` | All supported networks: capability table (max quality / watermark-free / MP3) plus the platform grid. |
+| `/faq` | The FAQ accordion. Carries the `FAQPage` JSON-LD (the same array renders the visible answers). |
+| `/download`, `/download/progress` | Steps 2 and 3 of the flow (see above). |
+| `/[slug]` | Per-platform landing pages (`/youtube-video-download`, `/instagram-video-download`, …) — ten SEO-tuned pages that reuse the same hero input. |
+| `/terms`, `/privacy` | Legal pages. |
+
+Navigation (header, footer, mobile drawer) links the five top-level destinations; `sitemap.xml`
+advertises `/`, `/features`, `/how-it-works`, `/platforms`, `/faq`, the legal pages and every
+platform page (never the per-user download flow).
+
+## Illustrations
+
+All artwork is **hand-built inline SVG** in `components/illustrations/` — no binary assets, no icon
+fonts, no network requests:
+
+| File | What it draws |
+| --- | --- |
+| `HeroIllustration.tsx` | The homepage showpiece: a browser window resolving a link into quality options, an animated progress bar, a file dropping into a folder with a success check, floating "4K / MP3 / no watermark" chips and a rotating orbit ring. |
+| `StepArt.tsx` | Four spot illustrations for the how-to steps (copy the link, paste it, pick a quality, save the file). |
+| `FeatureArt.tsx` | Four feature-card illustrations (4K monitor, no-signup shield, speed bolt, multi-platform layers). |
+| `ProgressArt.tsx` | The step-3 `ProgressGauge` (determinate + indeterminate), the `SuccessScene` check and the step-2 `LinkMissingArt` empty state. |
+
+Drawing conventions:
+
+* every colour comes from the `@theme` tokens (`var(--color-accent)`, `var(--color-ink-850)`, …) or
+  `currentColor` + `text-white/xx` utilities, so **the artwork re-skins itself in light mode**
+  exactly like the rest of the UI;
+* motion uses translate/opacity CSS keyframes (`--animate-bob`, `--animate-flow-dash`,
+  `--animate-draw-check`, … in `app/globals.css`) plus SMIL `<animate>`/`<animateTransform>` for
+  rotations and progress fills — the same approach as `components/Spinner.tsx`;
+* the gauge's arc geometry is bound to React state with a short CSS transition, so it eases between
+  chunk updates instead of jumping;
+* `prefers-reduced-motion` strips the CSS animations globally (SMIL keeps running, matching the
+  existing spinner behaviour).
+
 ## Features
 
 | Area | What ships here |
@@ -18,9 +82,9 @@ Visitor ── paste link ──▶ POST /api/parse ──▶ LRU cache (15 min)
 | Qualities | 4K/2160p, 1440p, 1080p, 720p, 480p, 360p, 240p **and** MP3 audio, each with container (MP4/WebM/MKV), codec family, fps, bitrate and estimated size. |
 | Merging | Modern YouTube publishes *no* muxed streams. Options above 720p are therefore flagged `needsMerge` and muxed server-side with `-c copy` (never re-encoded) via ffmpeg. |
 | Caching | `lru-cache` with a 15-minute TTL and a 2,000-entry cap in `lib/cache.ts`. Keys ignore tracking junk (`?si=`, `?utm_*`, `?t=`) so the same video is one entry regardless of how the link was shared. Errors get a 45-second negative cache so one dead link cannot be hammered. |
-| SEO | `generateMetadata` with the 4K/YouTube/TikTok/Instagram title template, canonical URLs, OG + Twitter cards, `app/sitemap.ts`, `app/robots.ts`, and a JSON-LD graph (`WebApplication`, `FAQPage`, `HowTo`, `BreadcrumbList`, `WebSite`) generated from the same arrays that render the visible FAQ and guide. |
-| Core Web Vitals | `next/font` with metric-adjusted fallbacks, no third-party requests in the critical path, dimension-locked thumbnail (`CLS = 0`), `scrollbar-gutter: stable`, a min-height result slot, and `prefers-reduced-motion` handling. |
-| A11y | Skip link, `aria-live` status region, `aria-invalid`/`role="alert"` on validation, labelled icon buttons, native `<details>`/`<summary>` accordion, visible focus ring. |
+| SEO | `generateMetadata` per page with canonical URLs, OG + Twitter cards, `app/sitemap.ts`, `app/robots.ts`, and a JSON-LD graph (`WebApplication`, `FAQPage` on `/faq`, `HowTo` on `/how-it-works`, `BreadcrumbList` everywhere) generated from the same arrays that render the visible content. |
+| Core Web Vitals | `next/font` with metric-adjusted fallbacks, no third-party requests in the critical path, dimension-locked thumbnails (`CLS = 0`), `scrollbar-gutter: stable`, min-height loading slots, and `prefers-reduced-motion` handling. |
+| A11y | Skip link, `aria-live` status regions, `aria-invalid`/`role="alert"` on validation, labelled icon buttons, native `<details>`/`<summary>` accordion, visible focus ring, decorative illustrations `aria-hidden`. |
 | Safety | URL allow-listing, SSRF guards (loopback/RFC1918/CGNAT/link-local/metadata/IPv6-ULA/non-http protocols), body size caps, per-IP rate limiting, per-IP download concurrency, upstream error text sanitised (signed URLs replaced with `<link>`) before it reaches a response or a log. |
 
 ## Getting started
@@ -47,6 +111,11 @@ instead of handing back dead buttons (`meta.warning` explains why).
 | `npm run build` / `npm start` | production build + server |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint 10 flat config (`eslint-config-next/core-web-vitals`) |
+
+> **Lint note:** with the repo's current `typescript@7` devDependency, `eslint-config-next`'s
+> `typescript-eslint` fails to load (`typescript-eslint does not support TS 7.0`). This is a
+> toolchain incompatibility, not a code issue — `npm run typecheck` is the reliable gate until the
+> plugin gains TS 7 support.
 
 ## Configuration
 
@@ -109,6 +178,8 @@ changes its player) and runs `next start`.
 
 ## Architecture notes
 
+**Extraction engine**
+
 * `lib/ytdlp.ts` is the **only** file that touches the binary. Metadata extraction uses
   `youtube-dl-exec` (its `dargs` layer maps camelCase flags such as `dumpSingleJson` → `--dump-single-json`).
   Downloads use a raw `spawn`, because `youtube-dl-exec` buffers stdout in memory — unacceptable for a
@@ -119,6 +190,20 @@ changes its player) and runs `next start`.
   replaying a stored media URL, because signed CDN URLs expire in minutes.
 * The download route holds its per-IP concurrency slot until the stream closes or is cancelled, not until
   the handler returns, and kills the `yt-dlp` child on client disconnect (`ReadableStream.cancel`).
+
+**Frontend flow**
+
+* `components/Downloader.tsx` is step 1 everywhere (homepage + platform pages): it validates, records
+  history and navigates — it never parses. The old inline result card was replaced by the step-2 page.
+* `components/download/DownloadDetails.tsx` (step 2) and `components/download/DownloadFlow.tsx`
+  (step 3) are the only client components that talk to the API; both read the URL through
+  `useSearchParams` inside a `<Suspense>` boundary so the page chrome stays prerendered.
+* `components/download/DownloadStepper.tsx` renders the shared "Paste link → Choose quality →
+  Download file" progress indicator on both flow pages.
+* `lib/pending.ts` owns the sessionStorage hand-off and the filename sanitiser used when the browser
+  saves the blob.
+* Streaming progress is throttled to ~150 ms per state emission with an exponential-moving-average
+  speed readout, so chunk events never thrash React renders.
 
 ## Legal
 

@@ -21,6 +21,10 @@ interface SitemapRoute {
 
 const STATIC_ROUTES: SitemapRoute[] = [
   { path: '/', changeFrequency: 'hourly', priority: 1 },
+  { path: '/features', changeFrequency: 'weekly', priority: 0.7 },
+  { path: '/how-it-works', changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/platforms', changeFrequency: 'weekly', priority: 0.7 },
+  { path: '/faq', changeFrequency: 'monthly', priority: 0.6 },
   { path: '/terms', changeFrequency: 'yearly', priority: 0.2 },
   { path: '/privacy', changeFrequency: 'yearly', priority: 0.2 }
 ]

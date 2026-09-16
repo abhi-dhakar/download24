@@ -1,20 +1,24 @@
-import { Layers, Sparkles, UserX, Zap } from 'lucide-react'
-
+import { FeatureArt, type FeatureArtVariant } from '@/components/illustrations/FeatureArt'
 import { FEATURE_HIGHLIGHTS } from '@/lib/seo'
 
-const ICONS = {
-  sparkles: Sparkles,
-  'user-x': UserX,
-  zap: Zap,
-  layers: Layers
-} as const
+/** Art assigned to each highlight (1:1 with `FEATURE_HIGHLIGHTS[].icon`). */
+const ART: Record<FeatureArtVariant, FeatureArtVariant> = {
+  sparkles: 'sparkles',
+  'user-x': 'user-x',
+  zap: 'zap',
+  layers: 'layers'
+}
 
-/** Feature highlights: 4K, no registration, fast & free, multi-platform. */
+/**
+ * Feature highlights: 4K, no registration, fast & free, multi-platform.
+ * Each card pairs the marketing copy from `lib/seo.ts` with a `FeatureArt`
+ * illustration; the dedicated `/features` page expands the same list.
+ */
 export function FeatureHighlights() {
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {FEATURE_HIGHLIGHTS.map((feature) => {
-        const Icon = ICONS[feature.icon] ?? Sparkles
+        const variant = ART[feature.icon] ?? 'sparkles'
         return (
           <li
             key={feature.title}
@@ -24,8 +28,10 @@ export function FeatureHighlights() {
               aria-hidden="true"
               className="absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent"
             />
-            <Icon className="h-5 w-5 text-accent-soft" aria-hidden="true" strokeWidth={2} />
-            <h3 className="mt-3 text-sm font-semibold text-white">{feature.title}</h3>
+            <div className="mx-auto w-full max-w-[190px]">
+              <FeatureArt variant={variant} />
+            </div>
+            <h3 className="mt-2 text-sm font-semibold text-white">{feature.title}</h3>
             <p className="mt-1.5 text-xs leading-relaxed text-white/55">{feature.description}</p>
             <p className="mt-3 text-[10px] font-medium tracking-wide text-white/30 uppercase">
               {feature.keyword}

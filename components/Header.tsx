@@ -9,11 +9,11 @@ import { PlatformMark } from './PlatformMark'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV = [
-  { href: '/#downloader', label: 'Downloader' },
-  { href: '/#features', label: 'Features' },
-  { href: '/#how-to-download', label: 'How it works' },
-  { href: '/#supported-platforms', label: 'Platforms' },
-  { href: '/#faq', label: 'FAQ' }
+  { href: '/downloader', label: 'Downloader' },
+  { href: '/features', label: 'Features' },
+  { href: '/how-it-works', label: 'How it works' },
+  { href: '/platforms', label: 'Platforms' },
+  { href: '/faq', label: 'FAQ' }
 ]
 
 export function Header() {
@@ -66,12 +66,12 @@ export function Header() {
           <ul className="flex items-center gap-1 text-[13px] font-medium text-white/65">
             {NAV.map((item) => (
               <li key={item.href}>
-                <a
+                <Link
                   href={item.href}
                   className="rounded-lg px-3 py-1.5 transition-all duration-150 hover:bg-white/[0.06] hover:text-white"
                 >
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -135,14 +135,14 @@ export function Header() {
               <ul className="mt-2 flex flex-col gap-1">
                 {NAV.map((item) => (
                   <li key={item.href}>
-                    <a
+                    <Link
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-white/80 hover:bg-white/[0.06] hover:text-white"
                     >
                       <span>{item.label}</span>
                       <span className="text-xs text-white/30">→</span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

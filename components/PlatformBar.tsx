@@ -29,7 +29,7 @@ interface Props {
  */
 export function PlatformBar({
   activePlatformId,
-  allPlatformsHref = '/#supported-platforms'
+  allPlatformsHref = '/platforms'
 }: Props) {
   return (
     <nav

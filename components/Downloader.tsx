@@ -1,30 +1,23 @@
 'use client'
 
 /**
- * Download24.in - Hero Extractor component.
- * Features validated URL processing, automated loading states, clipboard integration,
- * local download history, and an ultra-modern responsive UI.
+ * Download24.in — hero extractor input (step 1 of the three-page flow).
+ *
+ * The homepage and every dedicated platform page render this box. It handles
+ * client-side validation, clipboard integration and local history — then hands
+ * over to `/download?url=…` (step 2) which runs the actual extraction and
+ * lists the quality options.
  */
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import { AlertTriangle, ArrowDownToLine, Clipboard, History, Info, Search, Trash2, X, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { AlertTriangle, ArrowDownToLine, Clipboard, History, Info, Search, Trash2, X } from 'lucide-react'
 
 import { PLATFORMS } from '@/lib/platforms'
-import type { ParsePayload } from '@/lib/types'
 
-import { LoadingPanel } from './Spinner'
-import { ResultCard } from './ResultCard'
-
-// Updated storage key to prevent collisions with legacy clones
+// Storage key kept from the legacy inline flow so existing visitors keep history.
 const RECENT_KEY = 'download24in:recent'
 const MAX_RECENT = 5
-
-interface Failure {
-  message: string
-  hint?: string
-  retryAfter?: number
-  status?: number
-}
 
 interface Inspected {
   ok: boolean
@@ -77,41 +70,41 @@ function writeRecent(entries: string[]): void {
   }
 }
 
+/** Shared step-2 destination builder (also used by the download pages). */
+export function downloadDetailsPath(raw: string): string {
+  return `/download?url=${encodeURIComponent(raw.trim())}`
+}
+
 export function Downloader() {
+  const router = useRouter()
   const formId = useId()
   const inputId = `${formId}-url`
   const helpId = `${formId}-help`
-  const statusId = `${formId}-status`
 
   const [url, setUrl] = useState('')
-  const [data, setData] = useState<ParsePayload | null>(null)
-  const [failure, setFailure] = useState<Failure | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [stats, setStats] = useState<{ cached: boolean; tookMs: number } | null>(null)
   const [invalidHint, setInvalidHint] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [recent, setRecent] = useState<string[]>([])
-  const [stage, setStage] = useState(0)
+  const [navigating, setNavigating] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
-  const abortRef = useRef<AbortController | null>(null)
-  const mountedRef = useRef(false)
 
   /* Hydrate history only after mount to prevent hydration mismatch */
   useEffect(() => {
     setRecent(readRecent())
-    mountedRef.current = true
   }, [])
 
-  /* Change loading hints progressively during active fetch */
+  /* Continue a shared `/?url=…` link straight into step 2 */
   useEffect(() => {
-    if (!loading) {
-      setStage(0)
-      return
+    const param = new URLSearchParams(window.location.search).get('url')
+    if (!param) return
+    if (inspectLink(param).ok) {
+      router.replace(downloadDetailsPath(param))
+    } else {
+      setUrl(param)
+      setInvalidHint(inspectLink(param).reason ?? null)
     }
-    const timer = setInterval(() => setStage((val) => Math.min(2, val + 1)), 1400)
-    return () => clearInterval(timer)
-  }, [loading])
+  }, [router])
 
   /* Press "/" to focus search input instantly */
   useEffect(() => {
@@ -128,87 +121,27 @@ export function Downloader() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const extract = useCallback(async (raw: string, options: { refresh?: boolean } = {}) => {
-    const candidate = raw.trim()
-    const inspected = inspectLink(candidate)
-    if (!inspected.ok) {
-      setInvalidHint(inspected.reason ?? 'Invalid link format.')
-      inputRef.current?.focus()
-      return
-    }
-
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    setLoading(true)
-    setFailure(null)
-    setInvalidHint(null)
-    setNotice(null)
-
-    try {
-      const response = await fetch(`/api/parse${options.refresh ? '?refresh=1' : ''}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ url: candidate }),
-        signal: controller.signal
-      })
-
-      const payload = (await response.json().catch(() => null)) as
-        | { ok: true; data: ParsePayload; cached: boolean; tookMs: number }
-        | { ok: false; message?: string; hint?: string; retryAfter?: number }
-        | null
-
-      if (!response.ok || !payload || payload.ok !== true) {
-        const failureBody = payload && payload.ok === false ? payload : null
-        setFailure({
-          message:
-            failureBody?.message ??
-            (response.status === 429
-              ? 'Too many requests. Please try again in 1 minute.'
-              : `Engine error (HTTP ${response.status}). Our team is notified.`),
-          hint: failureBody?.hint,
-          retryAfter: failureBody?.retryAfter,
-          status: response.status
-        })
-        setData(null)
+  const goToStepTwo = useCallback(
+    (raw: string) => {
+      const candidate = raw.trim()
+      const inspected = inspectLink(candidate)
+      if (!inspected.ok) {
+        setInvalidHint(inspected.reason ?? 'Invalid link format.')
+        inputRef.current?.focus()
         return
       }
 
-      setData(payload.data)
-      setStats({ cached: payload.cached, tookMs: payload.tookMs })
       setRecent((current) => {
         const next = [candidate, ...current.filter((entry) => entry !== candidate)].slice(0, MAX_RECENT)
         writeRecent(next)
         return next
       })
 
-      // Updates browser URL without polluting user's session history
-      window.history.replaceState(null, '', `?url=${encodeURIComponent(candidate)}`)
-    } catch (error) {
-      if ((error as Error)?.name === 'AbortError') return
-      setFailure({
-        message: 'No response from Download24 servers.',
-        hint: 'Please check your internet connection and try again.'
-      })
-      setData(null)
-    } finally {
-      if (abortRef.current === controller) {
-        abortRef.current = null
-        setLoading(false)
-      }
-    }
-  }, [])
-
-  /* Parse arriving query parameter immediately (e.g. sharing from external source) */
-  useEffect(() => {
-    const param = new URLSearchParams(window.location.search).get('url')
-    if (param) {
-      setUrl(param)
-      void extract(param)
-    }
-    return () => abortRef.current?.abort()
-  }, [extract])
+      setNavigating(true)
+      router.push(downloadDetailsPath(candidate))
+    },
+    [router]
+  )
 
   const onPaste = useCallback(
     (event: React.ClipboardEvent<HTMLInputElement>) => {
@@ -217,10 +150,10 @@ export function Downloader() {
       if (inspectLink(text).ok) {
         event.preventDefault()
         setUrl(text)
-        void extract(text)
+        goToStepTwo(text)
       }
     },
-    [extract]
+    [goToStepTwo]
   )
 
   const pasteFromClipboard = useCallback(async () => {
@@ -232,7 +165,7 @@ export function Downloader() {
       }
       setUrl(text)
       if (inspectLink(text).ok) {
-        void extract(text)
+        goToStepTwo(text)
       } else {
         setInvalidHint(inspectLink(text).reason ?? null)
       }
@@ -240,14 +173,12 @@ export function Downloader() {
       setNotice('Browser blocked clipboard reading. Press Ctrl+V or Cmd+V directly in the input.')
       inputRef.current?.focus()
     }
-  }, [extract])
+  }, [goToStepTwo])
 
   const clearInput = useCallback(() => {
     setUrl('')
     setInvalidHint(null)
-    setFailure(null)
-    setData(null)
-    setStats(null)
+    setNotice(null)
     window.history.replaceState(null, '', window.location.pathname)
     inputRef.current?.focus()
   }, [])
@@ -255,18 +186,10 @@ export function Downloader() {
   const submit = useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
-      void extract(url)
+      goToStepTwo(url)
     },
-    [extract, url]
+    [goToStepTwo, url]
   )
-
-  const liveStatus = loading
-    ? 'Scanning URL and preparing download options.'
-    : data
-      ? `Success: ${data.options.length} qualities available.`
-      : failure
-        ? failure.message
-        : 'Awaiting video URL input.'
 
   return (
     <div className="w-full">
@@ -295,9 +218,8 @@ export function Downloader() {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              aria-describedby={invalidHint ? `${helpId} ${statusId}` : helpId}
+              aria-describedby={helpId}
               aria-invalid={invalidHint ? true : undefined}
-              aria-busy={loading || undefined}
               placeholder="Paste YouTube Shorts, Instagram Reels, FB, or X link..."
               value={url}
               onChange={(event) => {
@@ -311,7 +233,7 @@ export function Downloader() {
               onInvalid={(event) => event.preventDefault()}
               className="w-full min-w-0 rounded-xl bg-transparent py-3 pr-24 pl-11 text-[15px] text-white placeholder-white/35 outline-none transition-all sm:py-4 sm:text-base md:pr-28"
             />
-            
+
             {/* Action buttons embedded in the input bar */}
             <div className="absolute right-2 flex items-center gap-1">
               {url.length > 0 && (
@@ -325,7 +247,7 @@ export function Downloader() {
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               )}
-              
+
               <button
                 type="button"
                 onClick={pasteFromClipboard}
@@ -339,20 +261,20 @@ export function Downloader() {
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit Button — kicks off the three-page flow */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={navigating}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-3 text-sm font-bold text-white transition-all hover:brightness-[1.08] active:scale-[0.98] disabled:cursor-progress disabled:opacity-85 sm:w-auto sm:shrink-0 shadow-md"
             aria-keyshortcuts="/"
           >
-            {loading ? (
+            {navigating ? (
               <>
                 <svg viewBox="0 0 24 24" className="h-4 w-4 animate-spin" aria-hidden="true" fill="none">
                   <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
                   <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                 </svg>
-                <span>Processing…</span>
+                <span>Opening…</span>
               </>
             ) : (
               <>
@@ -366,9 +288,9 @@ export function Downloader() {
 
       {/* Auxiliary Metadata Row */}
       <div className="mt-2.5 flex flex-col gap-1.5 px-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <p id={helpId} className="text-white/45">
+        <p id={helpId} className="text-white/45" role={invalidHint ? 'alert' : undefined}>
           {invalidHint ? (
-            <span className="inline-flex items-center gap-1.5 text-danger font-medium" role="alert">
+            <span className="inline-flex items-center gap-1.5 text-danger font-medium">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {invalidHint}
             </span>
@@ -386,12 +308,8 @@ export function Downloader() {
         )}
       </div>
 
-      <p id={statusId} className="sr-only" role="status" aria-live="polite">
-        {liveStatus}
-      </p>
-
       {/* History panel */}
-      {recent.length > 0 && !data && (
+      {recent.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white/[0.01] p-2.5 text-xs">
           <span className="inline-flex items-center gap-1 text-white/40">
             <History className="h-3.5 w-3.5 text-white/30" aria-hidden="true" />
@@ -404,7 +322,7 @@ export function Downloader() {
                   type="button"
                   onClick={() => {
                     setUrl(entry)
-                    void extract(entry)
+                    goToStepTwo(entry)
                   }}
                   className="max-w-[12rem] truncate text-white/70 hover:text-white"
                   title={entry}
@@ -432,87 +350,13 @@ export function Downloader() {
               setRecent([])
               writeRecent([])
             }}
-            className="ml-auto text-white/35 hover:text-white/70 underline decoration-white/20 underline-offset-2"
+            className="ml-auto inline-flex items-center gap-1 text-white/35 hover:text-white/70"
           >
+            <Trash2 className="h-3 w-3" aria-hidden="true" />
             Clear History
           </button>
         </div>
       )}
-
-      {/* Dynamic Results Area */}
-      <div className="mt-6 result-slot">
-        {loading && !data && <LoadingPanel stage={stage} />}
-
-        {failure && !loading && (
-          <div
-            role="alert"
-            aria-live="assertive"
-            className="rounded-(--radius-card) border border-danger/25 bg-danger/[0.05] p-4 sm:p-5"
-          >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden="true" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white">{failure.message}</p>
-                {failure.hint && (
-                  <p className="mt-1 text-xs leading-relaxed text-white/60">{failure.hint}</p>
-                )}
-                {failure.retryAfter && (
-                  <p className="mt-1 text-xs text-warn">Please wait {failure.retryAfter}s before retrying.</p>
-                )}
-              </div>
-              <div className="flex shrink-0 flex-col gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => void extract(url, { refresh: true })}
-                  className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/15"
-                >
-                  Retry link
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFailure(null)
-                    setData(null)
-                  }}
-                  className="rounded-lg px-3 py-1.5 text-xs text-white/55 transition-colors hover:bg-white/5 hover:text-white"
-                >
-                  Clear error
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {data && !loading && (
-          <ResultCard
-            data={data}
-            cached={stats?.cached}
-            tookMs={stats?.tookMs}
-            busy={loading}
-            onRefresh={() => void extract(url, { refresh: true })}
-            onClose={() => {
-              setData(null)
-              setStats(null)
-              window.history.replaceState(null, '', window.location.pathname)
-            }}
-          />
-        )}
-
-        {/* Empty State placeholder */}
-        {!loading && !data && !failure && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 rounded-(--radius-card) border border-dashed border-line bg-white/[0.01] p-8 text-center sm:p-12">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white/40 ring-1 ring-inset ring-line">
-              <Zap className="h-5 w-5 text-white/55" aria-hidden="true" />
-            </span>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-white/80">Ready to fetch media options</p>
-              <p className="mx-auto max-w-md text-xs leading-relaxed text-white/45">
-                Insert a supported URL in the container above. We'll automatically identify the format, resolve file options up to 4K resolution, and prepare water-mark-free video, audio stream, and custom MP3 downloads.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }

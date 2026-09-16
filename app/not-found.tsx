@@ -21,13 +21,13 @@ export default function NotFound() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="/#downloader"
+            href="/"
             className="rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-4 py-2.5 text-sm font-semibold text-white shadow-glow"
           >
             Go to the downloader
           </Link>
           <Link
-            href="/#faq"
+            href="/faq"
             className="rounded-xl bg-white/8 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
           >
             Read the FAQ

@@ -93,7 +93,7 @@ export default function PrivacyPage() {
             </h2>
             <p className="mt-2">
               The “Recent links” strip is stored in your browser’s <em>localStorage</em> under the key{' '}
-              <code className="rounded bg-ink-800 px-1 py-0.5">savefromclone:recent</code> (up to five entries).
+              <code className="rounded bg-ink-800 px-1 py-0.5">download24in:recent</code> (up to five entries).
               It never leaves your device, and the “Clear” button next to the list deletes it immediately.
             </p>
           </section>

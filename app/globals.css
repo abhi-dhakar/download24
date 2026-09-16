@@ -81,6 +81,38 @@
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Light theme palette.                                                       */
+/* -------------------------------------------------------------------------- */
+/*
+ * Tailwind v4 builds every color utility from the `--color-*` variables below
+ * (opacity modifiers use `color-mix()` against the same var), so remapping the
+ * palette here automatically fixes EVERY variant — `bg-ink-950/80`,
+ * `border-line/60`, `ring-line-strong`, `divide-line`, `bg-ok/10`, … — without
+ * enumerating each one. This rule is intentionally unlayered so it always wins
+ * over the `@theme` defaults.
+ */
+html.light {
+  --color-ink-950: #ffffff;
+  --color-ink-900: #f1f5f9;
+  --color-ink-850: #e9eef4;
+  --color-ink-800: #e2e8f0;
+  --color-ink-700: #cbd5e1;
+  --color-line: rgb(15 23 42 / 0.09);
+  --color-line-strong: rgb(15 23 42 / 0.18);
+
+  /* Bright-on-dark accents become deeper so text stays legible on white. */
+  --color-accent-soft: #0284c7;
+  --color-cyan-glow: #0e7490;
+  --color-ok: #047857;
+  --color-warn: #92400e;
+  --color-danger: #dc2626;
+
+  --shadow-lift: 0 24px 50px -30px rgb(15 23 42 / 0.25);
+  --shadow-glow:
+    0 0 0 1px rgb(2 132 199 / 0.25), 0 14px 40px -18px rgb(37 99 235 / 0.35);
+}
+
 @layer base {
   html {
     color-scheme: dark;
@@ -105,10 +137,10 @@
   }
 
   /* ------------------------------------------------------------------------ */
-  /* Global Light Theme Palettes & Overrides                                  */
+  /* Global Light Theme Overrides (`!important` beats the utilities layer)    */
   /* ------------------------------------------------------------------------ */
   html.light body {
-    background-color: #f8fafc;
+    background-color: #f8fafc !important;
     color: #1e293b;
   }
 
@@ -120,26 +152,6 @@
   html.light footer {
     background-color: #ffffff !important;
     border-color: rgba(0, 0, 0, 0.08) !important;
-  }
-
-  /* In light mode, turn dark ink containers into clean card backgrounds */
-  html.light .bg-ink-950 {
-    background-color: #ffffff !important;
-  }
-  html.light .bg-ink-900 {
-    background-color: #f1f5f9 !important;
-  }
-  html.light .bg-ink-900\/90,
-  html.light .bg-ink-900\/80,
-  html.light .bg-ink-900\/40 {
-    background-color: #f1f5f9 !important;
-  }
-  html.light .bg-ink-800 {
-    background-color: #e2e8f0 !important;
-  }
-  html.light .bg-ink-850,
-  html.light .bg-ink-700 {
-    background-color: #e2e8f0 !important;
   }
 
   /* Text color mappings */
@@ -169,6 +181,33 @@
     color: #64748b !important;
   }
 
+  /*
+   * Exceptions: white text on surfaces that stay dark in light mode.
+   * - `[class~="from-accent-soft"]` matches the solid accent-gradient buttons
+   *   (exact token, so the faint `from-accent-soft/75` form wrapper is excluded
+   *   and the input text inside it still turns dark).
+   * - `.bg-black/75` is the video-duration badge over thumbnails.
+   */
+  html.light [class~='from-accent-soft'].text-white,
+  html.light [class~='from-accent-soft'] .text-white,
+  html.light .bg-black\/75.text-white {
+    color: #fff !important;
+  }
+
+  /* Hover / group-hover text states in light mode */
+  html.light .hover\:text-white:hover {
+    color: #0f172a !important;
+  }
+  html.light .hover\:text-white\/70:hover {
+    color: #334155 !important;
+  }
+  html.light .hover\:text-white\/80:hover {
+    color: #1e293b !important;
+  }
+  html.light .group:hover .group-hover\:text-white {
+    color: #0f172a !important;
+  }
+
   /* Form inputs in light mode */
   html.light input {
     color: #0f172a !important;
@@ -177,22 +216,16 @@
     color: #94a3b8 !important;
   }
 
-  /* Border and line colors in light mode */
-  html.light .border-line,
-  html.light .border-line\/60 {
-    border-color: rgba(0, 0, 0, 0.08) !important;
+  /* White-on-dark borders / rings / underlines become slate in light mode */
+  html.light .border-white\/10 {
+    border-color: rgb(15 23 42 / 0.1) !important;
   }
-  html.light .border-line-strong {
-    border-color: rgba(0, 0, 0, 0.16) !important;
+  html.light .ring-white\/15 {
+    --tw-ring-color: rgb(15 23 42 / 0.15) !important;
   }
-  html.light .ring-line {
-    --tw-ring-color: rgba(0, 0, 0, 0.08) !important;
-  }
-  html.light .ring-line-strong {
-    --tw-ring-color: rgba(0, 0, 0, 0.16) !important;
-  }
-  html.light .divide-line > * + * {
-    border-color: rgba(0, 0, 0, 0.08) !important;
+  html.light .decoration-white\/20,
+  html.light .decoration-white\/25 {
+    text-decoration-color: rgb(15 23 42 / 0.25) !important;
   }
 
   /* Glass/translucent card backgrounds in light mode */
@@ -201,13 +234,18 @@
   html.light .bg-white\/\[0\.03\],
   html.light .bg-white\/\[0\.04\],
   html.light .bg-white\/\[0\.05\],
+  html.light .bg-white\/\[0\.06\],
+  html.light .bg-white\/\[0\.08\],
   html.light .bg-white\/5,
   html.light .bg-white\/8,
-  html.light .bg-white\/10 {
+  html.light .bg-white\/10,
+  html.light .bg-white\/12,
+  html.light .bg-white\/15 {
     background-color: #ffffff !important;
     border-color: rgba(0, 0, 0, 0.08) !important;
   }
 
+  html.light .hover\:bg-white\/5:hover,
   html.light .hover\:bg-white\/\[0\.04\]:hover,
   html.light .hover\:bg-white\/\[0\.05\]:hover,
   html.light .hover\:bg-white\/\[0\.06\]:hover,
@@ -216,6 +254,46 @@
   html.light .hover\:bg-white\/12:hover,
   html.light .hover\:bg-white\/15:hover {
     background-color: #f1f5f9 !important;
+  }
+
+  /* Open FAQ/details panels stay clean white cards in light mode */
+  html.light details[open] {
+    background-color: #ffffff !important;
+  }
+
+  /* Glass result / loading panels are near-invisible white on light gray */
+  html.light .glass-card {
+    background-color: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Gradient headline text needs deeper blues for contrast on white */
+  html.light .text-gradient {
+    background-image: linear-gradient(
+      100deg,
+      #0284c7 0%,
+      #0369a1 45%,
+      #1d4ed8 78%
+    ) !important;
+  }
+
+  /*
+   * Platform landing theming. Pages expose `--platform-primary` (dark mode),
+   * `--platform-on-light` (light mode) and `--platform-glow` (rgb triplet),
+   * so brand hues survive in both themes without any client JavaScript.
+   */
+  html.light .platform-highlight {
+    color: var(--platform-on-light, var(--platform-primary)) !important;
+    text-shadow: none !important;
+  }
+  html.light .platform-tint-text {
+    color: var(--platform-on-light, var(--platform-primary)) !important;
+  }
+  html.light .platform-pill {
+    color: #0f172a !important;
+  }
+  html.light .platform-hero-glow {
+    opacity: 0.16 !important;
   }
 
   /* Table styles in light mode */
@@ -374,6 +452,24 @@
     background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16), transparent);
     transform: translateX(-120%);
     animation: var(--animate-sheen);
+  }
+
+  /*
+   * Platform landing theming (dark-mode defaults; `html.light` overrides live
+   * in the light-theme block above). The page sets `--platform-primary`,
+   * `--platform-on-light` and `--platform-glow` inline per platform.
+   */
+  .platform-highlight {
+    color: var(--platform-primary);
+    text-shadow: 0 0 35px rgba(var(--platform-glow), 0.45);
+  }
+
+  .platform-tint-text {
+    color: var(--platform-primary);
+  }
+
+  .platform-pill {
+    color: #fff;
   }
 }
 

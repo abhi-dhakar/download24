@@ -3,6 +3,7 @@ import { Inter, Sora } from 'next/font/google'
 
 import './globals.css'
 
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { serializeJsonLd, websiteSchema } from '@/lib/seo'
 import { SITE, canonicalOrigin, isProductionSite } from '@/lib/site'
 
@@ -118,7 +119,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: SITE.themeColor,
-  colorScheme: 'dark'
+  colorScheme: 'dark light'
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -138,9 +139,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body className="min-h-dvh bg-ink-950 font-sans text-white/92 antialiased">
+        <ScrollToTop />
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-950"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
         >
           Skip to main content
         </a>

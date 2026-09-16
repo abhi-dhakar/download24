@@ -80,10 +80,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Free Online Video Downloader — 4K MP4 & MP3, no registration',
+    title: `${SITE.name} — Free Online Video Downloader (4K MP4 & MP3)`,
     description:
       'Paste a link from YouTube, TikTok, Instagram, Facebook or X and download 4K/1080p/720p MP4 or MP3 audio instantly.',
-    images: [{ url: SITE.ogImage, alt: 'SaveFrom Clone downloader interface' }]
+    images: [{ url: SITE.ogImage, alt: `${SITE.name} downloader interface` }]
   },
   robots: {
     index: true,
@@ -125,6 +125,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang={SITE.language} className={`${inter.variable} ${sora.variable}`} suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('download24_theme');if(t==='light'||(!t&&window.matchMedia('(prefers-color-scheme: light)').matches)){document.documentElement.classList.add('light');}else{document.documentElement.classList.add('dark');}}catch(e){}})();`
+          }}
+        />
         {/* Site-wide identity; the landing page adds WebApplication + FAQPage. */}
         <script
           type="application/ld+json"

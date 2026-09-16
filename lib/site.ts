@@ -28,15 +28,17 @@ export const canonicalOrigin: string = trim(process.env.NEXT_PUBLIC_CANONICAL_UR
 export const isProductionSite: boolean = !siteUrl.includes('localhost')
 
 export const SITE = {
-  name: 'SaveFrom Clone',
-  shortName: 'SaveFromClone',
+  name: 'download24',
+  shortName: 'download24',
   domainHost: siteUrl.replace(/^https?:\/\//, ''),
   title:
-    'Free Online Video Downloader - Download 4K Videos from YouTube, TikTok, Instagram | SaveFrom Clone',
+    'download24 — Free Online Video Downloader (4K MP4 & MP3)',
   tagline: 'Paste a link. Pick 4K, 1080p or MP3. Download it free.',
   description:
-    'Free online video downloader inspired by SaveFrom.net. Paste any link to download videos in up to 4K Ultra HD, 1080p Full HD, 720p HD, 480p or MP3 audio from YouTube, TikTok without watermark, Instagram Reels, Facebook, X/Twitter, Vimeo, Dailymotion, Reddit and Twitch clips. No registration, no app, no limits.',
+    'Free online video downloader by download24. Paste any link to download videos in up to 4K Ultra HD, 1080p Full HD, 720p HD, 480p or MP3 audio from YouTube, TikTok without watermark, Instagram Reels, Facebook, X/Twitter, Vimeo, Dailymotion, Reddit and Twitch clips. No registration, no app, no limits.',
   keywords: [
+    'download24',
+    'download24.in',
     'video downloader',
     'online video downloader',
     '4k video downloader',
@@ -56,8 +58,6 @@ export const SITE = {
     'mp3 converter',
     'youtube to mp3',
     '1080p downloader',
-    'savefrom clone',
-    'savefrom alternative',
     'free video downloader no software',
     'download video in mp4',
     'youtubedl web',
@@ -68,7 +68,7 @@ export const SITE = {
   ogImage: '/opengraph-image',
   themeColor: '#05070f',
   organization: {
-    name: 'SaveFrom Clone',
+    name: 'download24',
     url: canonicalOrigin,
     logo: `${canonicalOrigin}/icon.svg`
   }
@@ -85,9 +85,9 @@ export const LIMITS = {
   /** Hard timeout for a proxied download (serverless `maxDuration` should match). */
   downloadTimeoutMs: Number(process.env.YTDL_DOWNLOAD_TIMEOUT_MS ?? 30 * 60_000),
   /** Extractions per minute per client. */
-  extractRequestsPerMinute: Number(process.env.RATE_LIMIT_EXTRACT_PER_MIN ?? 40),
+  extractRequestsPerMinute: Number(process.env.RATE_LIMIT_EXTRACT_PER_MIN ?? 60),
   /** Downloads per minute per client. */
-  downloadRequestsPerMinute: Number(process.env.RATE_LIMIT_DOWNLOAD_PER_MIN ?? 12),
+  downloadRequestsPerMinute: Number(process.env.RATE_LIMIT_DOWNLOAD_PER_MIN ?? 20),
   /** Concurrent downloads per client. */
   downloadMaxConcurrentPerClient: Number(process.env.RATE_LIMIT_DOWNLOAD_CONCURRENCY ?? 2),
   /** Longest `title` we are willing to render/echo back. */

@@ -27,8 +27,8 @@ export default function AppleIcon() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: 10,
-            backgroundImage: 'linear-gradient(140deg, #ffb03a, #ff6a3d 45%, #ff2f6d)',
-            color: '#05070f'
+            backgroundImage: 'linear-gradient(140deg, #38bdf8, #0284c7 45%, #2563eb)',
+            color: '#ffffff'
           }}
         >
           <div style={{ fontSize: 62, fontWeight: 800, lineHeight: 1 }}>↓</div>

@@ -9,7 +9,7 @@ import { SITE } from '@/lib/site'
  * and never depends on a remote image that could break the preview.
  */
 export const alt =
-  'SaveFrom Clone — free online video downloader interface showing 4K, 1080p, 720p and MP3 download options'
+  'download24 — free online video downloader interface showing 4K, 1080p, 720p and MP3 download options'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -29,7 +29,7 @@ export default function OpenGraphImage() {
           padding: 64,
           backgroundColor: '#05070f',
           backgroundImage:
-            'radial-gradient(900px 480px at 12% -10%, rgba(255,106,61,0.34), transparent 62%), radial-gradient(760px 420px at 92% 6%, rgba(34,211,238,0.22), transparent 60%), linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0))',
+            'radial-gradient(900px 480px at 12% -10%, rgba(2,132,199,0.34), transparent 62%), radial-gradient(760px 420px at 92% 6%, rgba(6,182,212,0.22), transparent 60%), linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0))',
           color: '#fff',
           fontFamily: 'sans-serif'
         }}
@@ -43,8 +43,8 @@ export default function OpenGraphImage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundImage: 'linear-gradient(135deg, #ffb03a, #ff6a3d 45%, #ff2f6d)',
-              color: '#05070f',
+              backgroundImage: 'linear-gradient(135deg, #38bdf8, #0284c7 45%, #2563eb)',
+              color: '#ffffff',
               fontSize: 30,
               fontWeight: 800
             }}
@@ -88,8 +88,8 @@ export default function OpenGraphImage() {
                 display: 'flex',
                 padding: '12px 22px',
                 borderRadius: 12,
-                backgroundImage: 'linear-gradient(90deg, #ffb03a, #ff6a3d 50%, #ff2f6d)',
-                color: '#05070f',
+                backgroundImage: 'linear-gradient(90deg, #38bdf8, #0284c7 50%, #2563eb)',
+                color: '#ffffff',
                 fontSize: 20,
                 fontWeight: 700
               }}
@@ -107,9 +107,9 @@ export default function OpenGraphImage() {
                   fontWeight: 600,
                   padding: '8px 16px',
                   borderRadius: 999,
-                  backgroundColor: 'rgba(255,176,58,0.16)',
-                  border: '1px solid rgba(255,176,58,0.35)',
-                  color: '#ffd79a'
+                  backgroundColor: 'rgba(56,189,248,0.16)',
+                  border: '1px solid rgba(56,189,248,0.35)',
+                  color: '#bae6fd'
                 }}
               >
                 {chip}

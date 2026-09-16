@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="SaveFrom Clone">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="download24">
   <defs>
     <linearGradient id="sf-grad" x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffb03a"/>
-      <stop offset="0.45" stop-color="#ff6a3d"/>
-      <stop offset="1" stop-color="#ff2f6d"/>
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="0.45" stop-color="#0284c7"/>
+      <stop offset="1" stop-color="#2563eb"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="15" fill="#080c18"/>

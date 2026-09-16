@@ -19,7 +19,7 @@ export function HowToDownload() {
           >
             <span
               aria-hidden="true"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent-soft via-accent to-accent-deep font-display text-sm font-bold text-ink-950"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent-soft via-accent to-accent-deep font-display text-sm font-bold text-white"
             >
               {number}
             </span>

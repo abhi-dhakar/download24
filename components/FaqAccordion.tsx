@@ -15,7 +15,7 @@ export function FaqAccordion() {
       {FAQ_ITEMS.map((item, index) => (
         <details
           key={item.question}
-          name="savefrom-clone-faq"
+          name="download24-faq"
           className="group rounded-(--radius-card) border border-line bg-white/[0.02] px-4 transition-colors open:border-line-strong open:bg-white/[0.04] hover:border-line-strong"
           {...(index === 0 ? { open: true } : {})}
         >

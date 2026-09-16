@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import { AlertTriangle, Clipboard, History, Info, Search, Trash2, X, Zap } from 'lucide-react'
+import { AlertTriangle, ArrowDownToLine, Clipboard, History, Info, Search, Trash2, X, Zap } from 'lucide-react'
 
 import { PLATFORMS } from '@/lib/platforms'
 import type { ParsePayload } from '@/lib/types'
@@ -273,7 +273,7 @@ export function Downloader() {
       {/* Outer Glow Card Wrapper */}
       <form
         onSubmit={submit}
-        className="group relative rounded-[1.4rem] bg-gradient-to-r from-accent-soft/75 via-accent/50 to-accent-deep/75 p-[1px] shadow-glow transition-shadow focus-within:shadow-[0_0_0_1px_rgba(255,176,58,0.45),0_15px_60px_-15px_rgba(255,106,61,0.4)]"
+        className="group relative rounded-[1.4rem] bg-gradient-to-r from-accent-soft/75 via-accent/50 to-accent-deep/75 p-[1px] shadow-glow transition-shadow focus-within:shadow-[0_0_0_1px_rgba(56,189,248,0.45),0_15px_60px_-15px_rgba(2,132,199,0.4)]"
         aria-labelledby="downloader-heading"
       >
         <div className="flex flex-col gap-1 rounded-[calc(1.4rem-1px)] bg-ink-950/95 p-1.5 sm:flex-row sm:items-center sm:gap-2">
@@ -343,7 +343,7 @@ export function Downloader() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-3 text-sm font-bold text-ink-950 transition-all hover:brightness-[1.08] active:scale-[0.98] disabled:cursor-progress disabled:opacity-85 sm:w-auto sm:shrink-0"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-3 text-sm font-bold text-white transition-all hover:brightness-[1.08] active:scale-[0.98] disabled:cursor-progress disabled:opacity-85 sm:w-auto sm:shrink-0 shadow-md"
             aria-keyshortcuts="/"
           >
             {loading ? (
@@ -356,7 +356,7 @@ export function Downloader() {
               </>
             ) : (
               <>
-                <Zap className="h-4 w-4 fill-current" aria-hidden="true" />
+                <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
                 <span>Download</span>
               </>
             )}

@@ -3,12 +3,12 @@ import type { Metadata } from 'next'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { breadcrumbSchema, serializeJsonLd } from '@/lib/seo'
-import { SITE, canonicalOrigin } from '@/lib/site'
+import { LIMITS, SITE, canonicalOrigin } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description:
-    'The rules for using SaveFrom Clone: acceptable use, copyright responsibility, rate limits, warranty disclaimers and the platform affiliation notice.',
+    'The rules for using download24: acceptable use, copyright responsibility, rate limits, warranty disclaimers and the platform affiliation notice.',
   alternates: { canonical: '/terms' },
   robots: { index: true, follow: true }
 }
@@ -74,8 +74,8 @@ export default function TermsPage() {
               <li>probe, fuzz or attack the API endpoints beyond ordinary use of the page.</li>
             </ul>
             <p className="mt-2">
-              Fair-use limits apply per IP address (currently 40 link extractions and 12 downloads per minute,
-              with at most 2 concurrent downloads). Exceeding them returns HTTP 429 with a{' '}
+              Fair-use limits apply per IP address (currently {LIMITS.extractRequestsPerMinute} link extractions and {LIMITS.downloadRequestsPerMinute} downloads per minute,
+              with at most {LIMITS.downloadMaxConcurrentPerClient} concurrent downloads). Exceeding them returns HTTP 429 with a{' '}
               <code className="rounded bg-ink-800 px-1 py-0.5 text-white/80">Retry-After</code> header.
             </p>
           </section>

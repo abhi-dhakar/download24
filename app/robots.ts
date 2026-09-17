@@ -26,7 +26,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/api/parse', '/api/download', '/?url=', '/?refresh=1'],
+          disallow: ['/api/', '/api/parse', '/api/download', '/admin', '/?url=', '/?refresh=1'],
         crawlDelay: 1
       },
       // Download endpoints are heavy by nature; keep the aggressive fetchers away.

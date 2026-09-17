@@ -1776,14 +1776,23 @@ export async function openTeraboxFile(
 
 /**
  * Wraps an upstream body so the per-client download slot is released exactly
- * once — on completion, on error and on client cancel.
+ * once — on completion, on error and on client cancel — and so byte-level
+ * progress can be reported to the live job registry while the transfer runs.
  */
 export function proxyBody(
   body: ReadableStream<Uint8Array>,
-  onSettled?: () => void
+  callbacks: {
+    onSettled?: () => void
+    /** Fired with the cumulative byte count after each chunk is forwarded. */
+    onProgress?: (bytesForwarded: number) => void
+    /** Fired exactly once when the upstream body ends successfully. */
+    onDone?: () => void
+  } = {}
 ): ReadableStream<Uint8Array> {
+  const { onSettled, onProgress, onDone } = callbacks
   const reader = body.getReader()
   let settled = false
+  let bytesForwarded = 0
   const settle = () => {
     if (settled) return
     settled = true
@@ -1795,11 +1804,16 @@ export function proxyBody(
       try {
         const { done, value } = await reader.read()
         if (done) {
+          onDone?.()
           settle()
           controller.close()
           return
         }
-        if (value) controller.enqueue(value)
+        if (value) {
+          bytesForwarded += value.byteLength
+          controller.enqueue(value)
+          onProgress?.(bytesForwarded)
+        }
       } catch (error) {
         settle()
         controller.error(error)
@@ -1815,4 +1829,79 @@ export function proxyBody(
 /** True when the share file is a media container the MIME table knows. */
 export function isMediaExtension(ext: string): boolean {
   return KNOWN_EXTS.has(ext)
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Transfer plumbing                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Pairs honest client progress with the three stream layers the download route
+ * returns, so the UI can animate a real 0→100% even for merge/transcode jobs:
+ *
+ *   1. `pendingPercent` — the slow phase before any body bytes exist (yt-dlp
+ *      downloading + ffmpeg merging/transcoding into a temp file). The route
+ *      reports it from an external sampler/heartbeat *until* this stream
+ *      starts emitting, at which point the sampler is snapped to its hold.
+ *   2. `streamPercent` — the chunks of the finished file the browser is
+ *      actually receiving (`bytesForwarded / expectedBytes`).
+ *   3. On completion `onDone` fires and the route flips the job to `finished`.
+ *
+ * `expectedBytes` should be the exact `Content-Length` (post-merge size) when
+ * known, and `undefined` otherwise — in that case a size-less stream is
+ * reported as 0% while bytes flow (the route then completes the job).
+ *
+ * `bytesStartedAt` decouples the *stream* phase from the wall clock: the
+ * fractions below measure only this final hop, not the prepare time before it.
+ */
+export function mergeProgress(
+  body: ReadableStream<Uint8Array> | null | undefined,
+  callbacks: {
+    onProgress?: (report: { phase: 'streaming'; percent: number | null; receivedBytes: number }) => void
+    onDone?: () => void
+  } = {},
+  expectedBytes: number | undefined = undefined
+): ReadableStream<Uint8Array> {
+  const { onProgress, onDone } = callbacks
+  if (!body) {
+    return new ReadableStream<Uint8Array>({
+      start(controller) {
+        onDone?.()
+        controller.close()
+      }
+    })
+  }
+
+  const reader = body.getReader()
+  let receivedBytes = 0
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read()
+        if (done) {
+          onDone?.()
+          controller.close()
+          return
+        }
+        if (value) {
+          receivedBytes += value.byteLength
+          controller.enqueue(value)
+          onProgress?.({
+            phase: 'streaming',
+            percent:
+              expectedBytes && expectedBytes > 0
+                ? Math.min(100, Math.round((receivedBytes / expectedBytes) * 1000) / 10)
+                : 0,
+            receivedBytes
+          })
+        }
+      } catch (error) {
+        controller.error(error)
+      }
+    },
+    cancel(reason) {
+      void reader.cancel(reason).catch(() => {})
+    }
+  })
 }

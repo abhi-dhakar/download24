@@ -1,11 +1,15 @@
 /**
  * GET /api/download/progress?id=<jobId>
  *
- * Live readout for an in-flight download. The download handler stamps the same
- * `id` onto its job registry entry (`lib/liveJobs.ts`) and updates it as
- * yt-dlp reports progress on stderr, so the step-3 page can animate a real
- * 0→100% while the bytes flow. Returns the latest snapshot without blocking;
- * the client polls it on an interval.
+ * Phase readout for an in-flight download. The download handler stamps the same
+ * `id` onto its job registry entry (`lib/liveJobs.ts`) and updates the phase as
+ * the transfer moves along, so the step-3 page knows when the file has finished
+ * (or failed) — the browser gives a hidden iframe no completion event.
+ *
+ * Deliberately telemetry-free: no percentage, no byte counters, no speed, no
+ * ETA. Step 3 renders the selected file, an indeterminate animation and plain
+ * instructions, so this endpoint answers one question — "what phase is it in?".
+ * Returns the latest snapshot without blocking; the client polls on an interval.
  */
 
 import { NextResponse } from 'next/server'
@@ -41,11 +45,7 @@ export function GET(request: Request): Response {
       ok: true,
       jobId: state.jobId,
       phase: state.phase,
-      percent: state.percent,
-      totalBytes: state.totalBytes,
-      speedBytesPerSec: state.speedBytesPerSec,
-      receivedBytes: state.receivedBytes,
-      fileName: state.fileName,
+      ...(state.fileName ? { fileName: state.fileName } : {}),
       ...(state.errorMessage
         ? { errorMessage: state.errorMessage, errorHint: state.errorHint }
         : {})

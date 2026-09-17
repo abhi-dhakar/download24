@@ -8,14 +8,21 @@
  * with the thumbnail/platform. It then starts the download the way the browser
  * does it natively — a hidden same-origin iframe pointing at
  * `/api/download?…&mode=stream&job=<id>` — so Chrome runs the file through its
- * own download manager: the file shows up in the Downloads shelf, with a real
- * percentage and the final filename, while the bytes are still transferring.
+ * own download manager: the file shows up in the Downloads shelf with the
+ * final filename while the bytes are still transferring.
  *
- * The live percentage comes from `/api/download/progress?id=<id>`. The server
- * parses yt-dlp's `--newline` progress lines (see `lib/progress.ts`) for every
- * delivery path — direct pipe, TeraBox and the prepare/merge phase — so the
- * gauge animates the actual 0→100% instead of jumping to "done" only once the
- * file has fully landed.
+ * The page deliberately shows **no transfer telemetry**: no progress bar, no
+ * percentage, no "12 MB of 180 MB", no speed and no countdown. Nobody can act
+ * on those numbers, and they make a slow-but-healthy transfer look broken.
+ * What a visitor actually needs is (a) the file they picked, (b) proof that
+ * the download is alive, and (c) permission to wait — so the card pairs the
+ * step-2 thumbnail/metadata with the indeterminate `DownloadingScene`
+ * animation and a short list of instructions (large files take a few minutes,
+ * keep this tab open).
+ *
+ * The only thing still read from `/api/download/progress?id=<id>` is the job's
+ * *phase*, because that is the sole signal that the transfer finished (or
+ * failed) — the browser gives a hidden iframe no completion event.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -30,11 +37,13 @@ import {
   Download,
   ExternalLink,
   Gauge,
+  Hourglass,
+  Info,
   RotateCcw
 } from 'lucide-react'
 
 import { DownloadStepper } from '@/components/download/DownloadStepper'
-import { ProgressGauge, SuccessScene } from '@/components/illustrations/ProgressArt'
+import { DownloadingScene, SuccessScene } from '@/components/illustrations/ProgressArt'
 import { PlatformMark } from '@/components/PlatformMark'
 import { buildFilename, readPending } from '@/lib/pending'
 
@@ -49,14 +58,11 @@ type LivePhase =
   | 'finished'
   | 'failed'
 
+/** Only the fields this page cares about — the job's state, never its bytes. */
 interface LiveProgress {
   ok: boolean
   gone?: boolean
   phase: LivePhase
-  percent: number | null
-  totalBytes: number | null
-  speedBytesPerSec: number | null
-  receivedBytes: number
   fileName?: string | null
   errorMessage?: string
   errorHint?: string
@@ -65,27 +71,6 @@ interface LiveProgress {
 interface Failure {
   message: string
   hint?: string
-}
-
-function formatBytes(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes < 0) return '—'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let value = bytes
-  let unit = 0
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024
-    unit++
-  }
-  const digits = unit === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2
-  return `${value.toFixed(digits)} ${units[unit]}`
-}
-
-function formatDuration(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) return '—'
-  if (seconds < 10) return `${seconds.toFixed(1)}s`
-  const rounded = Math.round(seconds)
-  if (rounded < 60) return `${rounded}s`
-  return `${Math.floor(rounded / 60)}m ${String(rounded % 60).padStart(2, '0')}s`
 }
 
 /** Parses a `sizeLabel` like `182.4 MB` back into bytes (best-effort). */
@@ -100,12 +85,39 @@ function parseSizeLabel(label: string | null): number | null {
   return Number.isFinite(value) ? value * scale : null
 }
 
-/** Random token used to key the server-side live progress entry. */
+/**
+ * Above this the "big files take a while, please wait" note replaces the
+ * short one — roughly a long 1080p clip or any 4K/MP3 transcode.
+ */
+const BIG_FILE_BYTES = 100 * 1024 * 1024
+
+/**
+ * How long to keep polling a job the registry does not know about before
+ * calling the transfer complete. Early polls lose the race with the iframe
+ * request that registers the job, and `/api/download` answers 400/429 *before*
+ * registering anything — so a `gone` in the first seconds says nothing. After
+ * the grace window it means the entry was pruned once the transfer finished
+ * (`finishLiveJob` keeps it for 20s) or the poll hit another instance.
+ */
+const GONE_GRACE_MS = 8_000
+
+/** Random token used to key the server-side job entry. */
 function newJobId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID()
   }
   return `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+}
+
+/** Plain-language phase caption — what is happening, never how far along. */
+const PHASE_CAPTION: Record<LivePhase, string> = {
+  starting: 'Connecting to the source',
+  downloading: 'Downloading your file',
+  processing: 'Merging and converting your file',
+  streaming: 'Saving the file to your device',
+  redirect: 'Handing the file to your browser',
+  finished: 'Download complete',
+  failed: 'Download stopped'
 }
 
 export function DownloadFlow() {
@@ -123,22 +135,14 @@ export function DownloadFlow() {
   const audioMp3 = searchParams.get('a') === 'mp3'
 
   const [phase, setPhase] = useState<Phase>('downloading')
-  const [received, setReceived] = useState(0)
-  const [total, setTotal] = useState<number | null>(null)
-  const [speed, setSpeed] = useState(0)
-  const [elapsed, setElapsed] = useState(0)
-  const [failure, setFailure] = useState<Failure | null>(null)
-  const [snapshot] = useState(readPendingSafe(src))
   const [livePhase, setLivePhase] = useState<LivePhase>('starting')
-  const [serverPercent, setServerPercent] = useState<number | null>(null)
+  const [failure, setFailure] = useState<Failure | null>(null)
   const [savedName, setSavedName] = useState<string | null>(null)
+  const [thumbFailed, setThumbFailed] = useState(false)
+  const [snapshot] = useState(() => readPendingSafe(src))
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
-  const startedRef = useRef(0)
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const lastBytesRef = useRef(0)
-  const lastPollRef = useRef(0)
 
   const apiHref = useMemo(() => {
     const params = new URLSearchParams({ src })
@@ -152,8 +156,6 @@ export function DownloadFlow() {
   const stopPolling = useCallback(() => {
     if (pollTimerRef.current) clearInterval(pollTimerRef.current)
     pollTimerRef.current = null
-    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current)
-    elapsedTimerRef.current = null
   }, [])
 
   /* ---------------------------------------------------------------------- */
@@ -179,24 +181,12 @@ export function DownloadFlow() {
 
     stopPolling()
     const jobId = newJobId()
+    const startedAt = Date.now()
 
     setPhase('downloading')
     setLivePhase('starting')
-    setServerPercent(null)
     setFailure(null)
     setSavedName(null)
-    setReceived(0)
-    setSpeed(0)
-    setElapsed(0)
-    setTotal(parseSizeLabel(sizeLabel))
-    startedRef.current = performance.now()
-    lastBytesRef.current = 0
-    lastPollRef.current = performance.now()
-
-    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current)
-    elapsedTimerRef.current = setInterval(() => {
-      setElapsed((performance.now() - startedRef.current) / 1000)
-    }, 250)
 
     // Native download via a hidden same-origin iframe. Chrome runs it through
     // its download manager: visible in the Downloads shelf with the real name
@@ -204,6 +194,8 @@ export function DownloadFlow() {
     const iframe = iframeRef.current
     if (iframe) iframe.src = `${apiHref}&mode=stream&job=${encodeURIComponent(jobId)}`
 
+    // Polled for the *phase* only: finished / failed. No counters are read, so
+    // a slow transfer renders exactly like a fast one.
     if (pollTimerRef.current) clearInterval(pollTimerRef.current)
     pollTimerRef.current = setInterval(async () => {
       try {
@@ -216,40 +208,22 @@ export function DownloadFlow() {
         if (!data || data.ok !== true) return
 
         if (data.gone) {
-          // The registry already dropped the job: trust the iframe's download.
-          finishDone(null)
+          // The registry has no such job. Only trust that as "finished" once
+          // the download request has had time to register it — otherwise a
+          // fast poller would announce completion before a byte moved.
+          if (Date.now() - startedAt >= GONE_GRACE_MS) finishDone(null)
           return
         }
 
-        const state = data
+        setLivePhase(data.phase)
 
-        if (state.totalBytes && state.totalBytes > 0) setTotal(state.totalBytes)
-        if (typeof state.receivedBytes === 'number') setReceived(state.receivedBytes)
-        setLivePhase(state.phase)
-        if (typeof state.percent === 'number') setServerPercent(state.percent)
-
-        // Prefer the server's measured speed; fall back to a client-side
-        // estimate from the received-byte counter.
-        const now = performance.now()
-        const dt = (now - lastPollRef.current) / 1000
-        if (state.speedBytesPerSec && state.speedBytesPerSec > 0) {
-          setSpeed(state.speedBytesPerSec)
-        } else if (dt >= 0.5) {
-          const instantaneous = (state.receivedBytes - lastBytesRef.current) / dt
-          if (instantaneous > 0) {
-            setSpeed((current) => (current === 0 ? instantaneous : current * 0.7 + instantaneous * 0.3))
-          }
-          lastBytesRef.current = state.receivedBytes
-          lastPollRef.current = now
-        }
-
-        if (state.phase === 'finished') {
-          finishDone(state.fileName ?? null)
-        } else if (state.phase === 'failed') {
+        if (data.phase === 'finished') {
+          finishDone(data.fileName ?? null)
+        } else if (data.phase === 'failed') {
           stopPolling()
           setFailure({
-            message: state.errorMessage ?? 'The download could not be completed.',
-            hint: state.errorHint
+            message: data.errorMessage ?? 'The download could not be completed.',
+            hint: data.errorHint
           })
           setLivePhase('failed')
           setPhase('error')
@@ -257,8 +231,8 @@ export function DownloadFlow() {
       } catch {
         /* network blip — next poll retries */
       }
-    }, 700)
-  }, [apiHref, finishDone, formatId, sizeLabel, src, stopPolling])
+    }, 1000)
+  }, [apiHref, finishDone, formatId, src, stopPolling])
 
   useEffect(() => {
     // Runs on every *real* mount. React StrictMode's simulated mount→unmount→
@@ -278,46 +252,9 @@ export function DownloadFlow() {
     router.push(`/download?url=${encodeURIComponent(src)}`)
   }, [router, src, stopPolling])
 
-  const eta = total && total > 0 && speed > 0 ? Math.max(0, (total - received) / speed) : null
   const isAudio = kind === 'audio'
-
-  /**
-   * The gauge's number. Order of precedence:
-   *   1. the server's own percentage (yt-dlp's real 0→100%);
-   *   2. bytes received ÷ known total (server→client hop);
-   *   3. `null` → indeterminate spinning arc while the source is still starting.
-   */
-  const displayPercent = (() => {
-    if (phase === 'done' || livePhase === 'finished') return 100
-    if (serverPercent !== null && serverPercent >= 0) {
-      return Math.min(99.5, serverPercent)
-    }
-    if (total && total > 0 && received > 0) {
-      return Math.min(99.5, (received / total) * 100)
-    }
-    return null
-  })()
-
-  const statusLabel = (() => {
-    switch (livePhase) {
-      case 'starting':
-        return 'Contacting the source…'
-      case 'downloading':
-        return 'Receiving from source…'
-      case 'processing':
-        return 'Merging / converting…'
-      case 'streaming':
-        return 'Saving to your device…'
-      case 'redirect':
-        return 'Sending to your browser…'
-      case 'finished':
-        return 'Complete'
-      case 'failed':
-        return 'Stopped'
-      default:
-        return 'Preparing…'
-    }
-  })()
+  const isBigFile = (parseSizeLabel(sizeLabel) ?? 0) >= BIG_FILE_BYTES
+  const caption = PHASE_CAPTION[livePhase] ?? 'Working on your download'
 
   /* -------------------------------------------------------------- no src */
   if (!src) {
@@ -367,87 +304,120 @@ export function DownloadFlow() {
           <h1 id="progress-heading" className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">
             {phase === 'done' ? 'Download complete!' : phase === 'error' ? 'Download failed' : 'Downloading your file'}
           </h1>
+        </header>
 
-          {/* What is being downloaded */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-            <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-line bg-white/[0.02] px-3 py-1.5">
-              {snapshot?.platformId ? (
-                <PlatformMark id={snapshot.platformId} className="h-4 w-4 shrink-0" title={snapshot.platformName} />
-              ) : null}
-              <span className="truncate font-medium text-white/80">{title}</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1.5 font-semibold text-accent ring-1 ring-inset ring-accent/25">
-              {isAudio ? '♫' : '▶'} {label}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-white/5 px-3 py-1.5 font-medium text-white/60 uppercase ring-1 ring-inset ring-line">
-              {ext}
-            </span>
+        {/* ------------------------------------- what is being downloaded */}
+        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-line bg-white/[0.02] p-3 sm:flex-row sm:items-center sm:p-4">
+          <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-ink-800 ring-1 ring-inset ring-line sm:w-52">
+            {snapshot?.thumbnail && !thumbFailed ? (
+              // Width/height come from step 2 so the image cannot shift layout.
+              <img
+                src={snapshot.thumbnail}
+                alt={`Thumbnail for ${title}`}
+                width={snapshot.thumbnailWidth ?? 480}
+                height={snapshot.thumbnailHeight ?? 270}
+                decoding="async"
+                referrerPolicy="no-referrer"
+                onError={() => setThumbFailed(true)}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="absolute inset-0 grid place-items-center text-white/25">
+                <PlatformMark id={snapshot?.platformId ?? 'generic'} className="h-10 w-10" />
+              </span>
+            )}
+            {/* Light sweep across the thumbnail while the transfer is live. */}
+            {phase === 'downloading' ? (
+              <span aria-hidden="true" className="sheen absolute inset-0" />
+            ) : null}
             {snapshot?.durationLabel ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-white/60 ring-1 ring-inset ring-line">
-                <Clock className="h-3 w-3" aria-hidden="true" />
+              <span className="absolute right-2 bottom-2 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-white">
                 {snapshot.durationLabel}
               </span>
             ) : null}
           </div>
-        </header>
+
+          <div className="min-w-0 flex-1 text-left">
+            <p className="text-sm leading-snug font-semibold text-white sm:text-base">{title}</p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+              {snapshot?.platformId ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 font-medium text-white/70 ring-1 ring-inset ring-line">
+                  <PlatformMark id={snapshot.platformId} className="h-3.5 w-3.5 shrink-0" title={snapshot.platformName} />
+                  {snapshot.platformName ?? 'Source'}
+                </span>
+              ) : null}
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 font-semibold text-accent ring-1 ring-inset ring-accent/25">
+                {isAudio ? '♫' : '▶'} {label}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-1 font-medium text-white/60 uppercase ring-1 ring-inset ring-line">
+                {ext}
+              </span>
+              {sizeLabel ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-white/60 ring-1 ring-inset ring-line">
+                  <Clock className="h-3 w-3" aria-hidden="true" />
+                  {estimated ? '~' : ''}
+                  {sizeLabel}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
 
         {/* ------------------------------------------------- downloading */}
         {phase === 'downloading' && (
-          <div className="mt-8 animate-rise" aria-live="polite" aria-busy="true">
-            <div className="mx-auto w-52 sm:w-60">
-              <ProgressGauge
-                percent={displayPercent}
-                caption={
-                  total && total > 0
-                    ? `${formatBytes(received)} / ${formatBytes(total)}`
-                    : `${formatBytes(received)} transferred`
-                }
-              />
+          <div className="mt-7 animate-rise" aria-live="polite" aria-busy="true">
+            <div className="mx-auto w-52 sm:w-64">
+              <DownloadingScene />
             </div>
 
-            {/* striped transfer bar under the gauge */}
-            <div className="mx-auto mt-6 h-2.5 w-full max-w-md overflow-hidden rounded-full bg-ink-800">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r from-accent-soft via-accent to-accent-deep transition-[width] duration-300 ${
-                  displayPercent === null ? 'w-1/3 animate-pulse-soft' : ''
-                }`}
-                style={displayPercent === null ? undefined : { width: `${Math.max(2, displayPercent)}%` }}
-              />
-            </div>
-
-            <dl className="mx-auto mt-5 grid max-w-md grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">Speed</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
-                  {formatBytes(speed)}/s
-                </dd>
-              </div>
-              <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">Downloaded</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
-                  {formatBytes(received)}
-                  {total && total > 0 ? (
-                    <span className="font-normal text-white/45"> / {formatBytes(total)}</span>
-                  ) : null}
-                </dd>
-              </div>
-              <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">
-                  {eta !== null ? 'Remaining' : 'Elapsed'}
-                </dt>
-                <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
-                  {eta !== null ? formatDuration(eta) : formatDuration(elapsed)}
-                </dd>
-              </div>
-            </dl>
-
-            <p className="mt-3 text-center text-xs font-medium text-accent/90">{statusLabel}</p>
-
-            <p className="mt-2 text-center text-xs text-white/45">
-              {total && total > 0 && estimated && displayPercent !== null
-                ? 'Size is the platform’s estimate — the real file may differ slightly.'
-                : 'Your browser is saving the file — watch its download bar for the live percentage.'}
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-sm font-semibold text-accent">
+              {caption}
+              <span className="flex items-end gap-0.5" aria-hidden="true">
+                <span className="h-1 w-1 rounded-full bg-accent animate-pulse-soft" />
+                <span className="h-1 w-1 rounded-full bg-accent animate-pulse-soft [animation-delay:220ms]" />
+                <span className="h-1 w-1 rounded-full bg-accent animate-pulse-soft [animation-delay:440ms]" />
+              </span>
             </p>
+
+            {/* Instructions: how long to expect, and what not to do. */}
+            <div className="mx-auto mt-5 max-w-lg rounded-2xl border border-line bg-white/[0.02] p-4">
+              <p
+                className={`flex items-start gap-2.5 rounded-xl p-3 text-xs leading-relaxed ring-1 ring-inset ${
+                  isBigFile ? 'bg-warn/[0.08] text-warn ring-warn/25' : 'bg-accent/[0.08] text-accent ring-accent/20'
+                }`}
+              >
+                <Hourglass className="mt-px h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>
+                  {isBigFile
+                    ? `This is a large file${sizeLabel ? ` (${estimated ? 'about ' : ''}${sizeLabel})` : ''}, so it can take a few minutes. That is normal — please wait and keep this tab open until it finishes.`
+                    : 'The download is running. Depending on the video length and your connection this usually takes under a minute — please wait, the file lands in your Downloads folder on its own.'}
+                </span>
+              </p>
+
+              <ul className="mt-3 flex flex-col gap-2 text-xs leading-relaxed text-white/55">
+                <li className="flex gap-2.5">
+                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-accent/80" aria-hidden="true" />
+                  <span>
+                    Watch your browser&apos;s own download shelf for the live status — the file
+                    appears there as soon as the transfer starts.
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-accent/80" aria-hidden="true" />
+                  <span>
+                    Don&apos;t refresh or close this tab while it runs — that stops the transfer and
+                    you&apos;ll have to start again.
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-accent/80" aria-hidden="true" />
+                  <span>
+                    Higher quality and MP3 output take longer because the file is prepared on our
+                    server before it reaches you.
+                  </span>
+                </li>
+              </ul>
+            </div>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
               <button
@@ -464,36 +434,19 @@ export function DownloadFlow() {
 
         {/* ------------------------------------------------------- done */}
         {phase === 'done' && (
-          <div className="mt-8 flex flex-col items-center animate-rise" role="status">
-            <div className="w-60 sm:w-72">
+          <div className="mt-7 flex flex-col items-center animate-rise" role="status">
+            <div className="w-56 sm:w-72">
               <SuccessScene />
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm">
+            <p className="mt-1 text-base font-semibold text-ok">Your file has been saved</p>
+
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-3 py-1.5 font-semibold text-ok ring-1 ring-inset ring-ok/25">
                 <Check className="h-3.5 w-3.5 stroke-[3]" aria-hidden="true" />
                 Saved as {savedName ?? filename}
               </span>
             </div>
-
-            <dl className="mt-4 grid w-full max-w-md grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">Size</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
-                  {formatBytes(total && total > 0 ? total : received)}
-                </dd>
-              </div>
-              <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">Quality</dt>
-                <dd className="mt-0.5 truncate text-sm font-semibold text-white">{label}</dd>
-              </div>
-              <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
-                <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">Took</dt>
-                <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
-                  {formatDuration(elapsed)}
-                </dd>
-              </div>
-            </dl>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
               <Link

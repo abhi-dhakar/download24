@@ -1,106 +1,148 @@
 /**
  * ProgressArt — illustrations for the three-page download flow.
  *
- * • `ProgressGauge` — the live progress ring on step 3. `percent === null`
- *   switches it to an indeterminate spinning arc (used when the server streams
- *   without a Content-Length). The arc geometry is driven inline by React state
- *   and eased with a short CSS transition, so it animates smoothly between
- *   chunk updates instead of jumping.
+ * • `DownloadingScene` — the ambient "it is running" artwork on step 3. It is
+ *   deliberately *indeterminate*: no percentage, no byte counter, nothing that
+ *   pretends to know how far along the transfer is. A source disc keeps a
+ *   rotating arc, a dashed channel flows downwards, a file chip falls into the
+ *   browser's download shelf and the landing point ripples — so a visitor can
+ *   tell at a glance that the download is alive and simply has to wait.
  * • `SuccessScene` — the finished-download artwork: a self-drawing check with
  *   radiating rings and confetti.
  * • `LinkMissingArt` — friendly empty state for step 2 when no link was given.
  */
 
-const RING_RADIUS = 66
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
-
-export function ProgressGauge({
-  percent,
-  caption,
-  className = ''
-}: {
-  /** 0–100, or `null` for indeterminate (no Content-Length) mode. */
-  percent: number | null
-  caption: string
-  className?: string
-}) {
-  const clamped = typeof percent === 'number' ? Math.max(0, Math.min(100, percent)) : null
-
+export function DownloadingScene({ className = '' }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 160 160"
+      viewBox="0 0 240 152"
       className={`h-auto w-full ${className}`}
       fill="none"
       role="img"
-      aria-label={
-        clamped === null ? `Downloading — ${caption}` : `${Math.round(clamped)}% downloaded — ${caption}`
-      }
+      aria-label="Download in progress — the file is on its way to this device"
     >
       <defs>
-        <linearGradient id="gauge-art-accent" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="downloading-art-accent" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="var(--color-accent-soft)" />
-          <stop offset="55%" stopColor="var(--color-accent)" />
           <stop offset="100%" stopColor="var(--color-accent-deep)" />
         </linearGradient>
       </defs>
 
-      {/* track */}
-      <circle cx="80" cy="80" r={RING_RADIUS} stroke="var(--color-ink-800)" strokeWidth="11" />
-
-      {/* value arc */}
-      <g transform="rotate(-90 80 80)">
-        {clamped === null ? (
-          <circle
-            cx="80"
-            cy="80"
-            r={RING_RADIUS}
-            stroke="url(#gauge-art-accent)"
-            strokeWidth="11"
-            strokeLinecap="round"
-            strokeDasharray={`${RING_CIRCUMFERENCE * 0.26} ${RING_CIRCUMFERENCE * 0.74}`}
-          >
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              from="0 80 80"
-              to="360 80 80"
-              dur="1.15s"
-              repeatCount="indefinite"
-            />
-          </circle>
-        ) : (
-          <circle
-            cx="80"
-            cy="80"
-            r={RING_RADIUS}
-            stroke="url(#gauge-art-accent)"
-            strokeWidth="11"
-            strokeLinecap="round"
-            strokeDasharray={RING_CIRCUMFERENCE}
-            style={{
-              strokeDashoffset: RING_CIRCUMFERENCE * (1 - clamped / 100),
-              transition: 'stroke-dashoffset 0.3s ease'
-            }}
+      {/* ------------------------------------------------------------ source */}
+      <g transform="translate(120 30)">
+        {/* indeterminate arc — "still working", never a percentage */}
+        <circle
+          r="29"
+          stroke="url(#downloading-art-accent)"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeDasharray="30 152"
+        >
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0"
+            to="360"
+            dur="1.7s"
+            repeatCount="indefinite"
           />
-        )}
+        </circle>
+        <circle
+          r="22"
+          fill="var(--color-ink-850)"
+          stroke="var(--color-line-strong)"
+          strokeWidth="1.5"
+        />
+        {/* cloud glyph: where the bytes come from */}
+        <path
+          d="M-9 5.5h18a5.5 5.5 0 0 0 .5-11 8 8 0 0 0-15.3 1.4A5 5 0 0 0-9 5.5Z"
+          fill="url(#downloading-art-accent)"
+          opacity="0.95"
+        />
+        {/* down arrow inside the cloud */}
+        <path
+          d="M0 -3.5v9m0 0-3.4-3.4M0 5.5l3.4-3.4"
+          stroke="var(--color-ink-950)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </g>
 
-      {/* centre readout */}
-      <text
-        x="80"
-        y="82"
-        textAnchor="middle"
-        fontSize="34"
-        fontWeight="800"
-        fill="currentColor"
-        className="text-white tabular-nums"
-        fontFamily="var(--font-display)"
-      >
-        {clamped === null ? '···' : `${Math.round(clamped)}%`}
-      </text>
-      <text x="80" y="103" textAnchor="middle" fontSize="10.5" fill="currentColor" className="text-white/50">
-        {caption}
-      </text>
+      {/* --------------------------------------------- channel + falling file */}
+      <path
+        d="M120 62v34"
+        stroke="var(--color-accent)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeDasharray="6 8"
+        className="animate-flow-dash"
+      />
+      <g transform="translate(120 64)" className="animate-file-drop">
+        <rect x="-9" y="0" width="18" height="22" rx="3.5" fill="url(#downloading-art-accent)" />
+        <path
+          d="M-4.5 7h9M-4.5 12h9M-4.5 17h5"
+          stroke="#fff"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          opacity="0.9"
+        />
+      </g>
+
+      {/* landing ripples where the file arrives */}
+      <g transform="translate(120 110)">
+        <circle r="9" stroke="var(--color-accent-soft)" strokeWidth="1.6" fill="none" opacity="0.5">
+          <animate attributeName="r" values="6;20;6" dur="2.4s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="2.4s" repeatCount="indefinite" />
+        </circle>
+        <circle r="9" stroke="var(--color-accent-soft)" strokeWidth="1.6" fill="none" opacity="0.3">
+          <animate attributeName="r" values="6;20;6" dur="2.4s" begin="1.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.3;0;0.3" dur="2.4s" begin="1.2s" repeatCount="indefinite" />
+        </circle>
+      </g>
+
+      {/* ------------------------------------------ the browser's download shelf */}
+      <g transform="translate(120 118)">
+        <rect
+          x="-58"
+          y="0"
+          width="116"
+          height="28"
+          rx="9"
+          fill="var(--color-ink-850)"
+          stroke="var(--color-line-strong)"
+          strokeWidth="1.5"
+        />
+        <rect x="-46" y="8" width="54" height="4.5" rx="2.25" fill="var(--color-ink-700)" />
+        <rect x="-46" y="17" width="34" height="4.5" rx="2.25" fill="var(--color-ink-700)" />
+        <circle cx="42" cy="14" r="9" fill="var(--color-accent)" opacity="0.16" />
+        <path
+          d="M42 9.5v7m0 0-3-3m3 3 3-3"
+          stroke="var(--color-accent)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+
+      {/* ambient sparkles so the scene never looks frozen */}
+      <circle cx="46" cy="46" r="3" fill="var(--color-accent-soft)" className="animate-pulse-soft" />
+      <circle
+        cx="196"
+        cy="62"
+        r="2.6"
+        fill="var(--color-cyan-glow)"
+        className="animate-pulse-soft"
+        style={{ animationDelay: '0.9s' }}
+      />
+      <circle
+        cx="60"
+        cy="96"
+        r="2.4"
+        fill="var(--color-accent)"
+        className="animate-pulse-soft"
+        style={{ animationDelay: '1.5s' }}
+      />
     </svg>
   )
 }

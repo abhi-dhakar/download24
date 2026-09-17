@@ -135,6 +135,9 @@ Everything is optional; see `.env.example` for the full annotated list.
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | `metadataBase`, canonical URLs, sitemap/robots host |
 | `NEXT_PUBLIC_CANONICAL_URL` | falls back to the above | Pin canonicals to production from preview deploys |
+| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` | unset | Turns on PostHog analytics (see [Analytics](#analytics-posthog)). Unset = nothing loaded, nothing sent |
+| `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` | PostHog ingestion origin — `https://eu.i.posthog.com` for EU Cloud, or your self-hosted URL |
+| `NEXT_PUBLIC_APP_VERSION` | `dev` | Release label stamped on every analytics event |
 | `DOWNLOAD_MODE` | `stream` | `redirect` 302s already-muxed sources to their CDN URL instead of proxying bytes |
 | `YTDL_PATH` | bundled binary | Point at a self-managed/`yt-dlp -U` updated binary |
 | `YTDL_COOKIES` | unset | Netscape `cookies.txt` for age/login/region-gated media |
@@ -149,6 +152,37 @@ Everything is optional; see `.env.example` for the full annotated list.
 
 On non-`localhost` hosts `robots.txt`/`sitemap.xml` are emitted; on `localhost` robots disallows
 everything and the sitemap is empty, so a dev box can never leak into the index.
+
+## Analytics (PostHog)
+
+Set `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` (Project settings → *Project API key*, starts with `phc_`) and,
+for EU Cloud, `NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com`. Everything then lands in that one
+PostHog project — no in-app dashboard to maintain:
+
+| Where | What you get in PostHog |
+| --- | --- |
+| Browser (`instrumentation-client.ts`) | `$pageview`/`$pageleave` for every navigation, autocapture of clicks & form submits, rage/dead clicks, heatmaps, scroll depth, web vitals, session replay (all inputs and the pasted link masked), uncaught JS errors |
+| Browser (custom) | `link_submitted`, `link_rejected`, `extraction_viewed`, `extraction_error_viewed`, `extraction_retried`, `quality_selected`, `download_link_copied`, `download_finished_viewed`, `download_error_viewed`, `download_cancelled`, `download_retried`, `recent_link_reused`, `theme_toggled`, `faq_opened`, `not_found_viewed` |
+| Server (`/api/parse`) | `extraction_completed` / `extraction_failed` with platform, extractor, cache hit, latency, option count, error code |
+| Server (`/api/download`) | `download_started` (delivery mode, setup time, size), `download_completed` (bytes, duration), `download_failed` (error code, HTTP status), `rate_limited` |
+| Server (`instrumentation.ts`) | uncaught route/render errors via `onRequestError` → Error tracking |
+
+Server events carry the browser's distinct id and session id (`tracing_headers` on fetches, `phd`/`phs`
+query params on the download iframe), so a failed download shows up on the same person and inside the
+same session replay as the click that caused it. The link itself and the video title are never sent —
+only the source host (`youtube.com`), the platform id, the chosen quality and the outcome.
+
+All SDK traffic goes through the first-party path `/_d24/*`, which `proxy.ts` forwards to the PostHog
+host (assets to `*-assets.i.posthog.com`), so domain-based tracker blockers do not drop events.
+`skipTrailingSlashRedirect` is enabled for the same reason (PostHog endpoints end in `/`); `proxy.ts`
+restores the slash-less canonical URL for every page with a 308.
+
+Suggested first dashboard: a funnel `link_submitted → extraction_completed → quality_selected →
+download_started → download_completed`, broken down by `platform`, plus a trend of
+`extraction_failed` / `download_failed` by `error_code`.
+
+The event catalogue lives in `lib/analytics.ts` (`EVENTS`); the privacy page describes the collection
+whenever the token is set and says analytics are off when it is not.
 
 ## API
 

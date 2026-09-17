@@ -24,6 +24,8 @@ import {
   type MappedError,
   type YtDlpVideo
 } from '@/lib/formats'
+import { EVENTS, hostOf } from '@/lib/analytics'
+import { identityFromRequest, trackRateLimited, trackServer } from '@/lib/posthogServer'
 import { clientKeyFromRequest, consumeRateLimit, validateMediaUrl } from '@/lib/security'
 import { LIMITS } from '@/lib/site'
 import { getPlatform } from '@/lib/platforms'
@@ -134,6 +136,25 @@ function successResponse(
     headers['X-Qualities'] = data.availableQualities.join('|')
   }
   return NextResponse.json(body, { status: 200, headers: baseHeaders(headers) })
+}
+
+/** Analytics view of a successful payload — never the title or the URL itself. */
+function extractionProps(payload: ParsePayload) {
+  return {
+    platform: payload.meta.platformId,
+    source_host: hostOf(payload.meta.sourceUrl),
+    extractor: payload.extractor,
+    option_count: payload.options.length,
+    max_quality: payload.maxQuality,
+    available_qualities: payload.availableQualities,
+    supports_mp3: payload.supportsMp3,
+    muxed_max_height: payload.muxedMaxHeight,
+    is_playlist: payload.meta.isPlaylist,
+    playlist_count: payload.meta.playlistCount ?? null,
+    is_live: payload.meta.isLive,
+    age_restricted: payload.meta.isAgeRestricted,
+    duration_seconds: payload.meta.durationSeconds ?? null
+  }
 }
 
 type ReadParams =
@@ -269,20 +290,52 @@ async function handleParse(request: Request): Promise<NextResponse> {
     return errorResponse('INVALID_URL', params.message, 400, startedAt, 'Send a POST body like {"url":"https://..."}.')
   }
 
+  const clientKey = clientKeyFromRequest(request)
+  const identity = identityFromRequest(request, clientKey)
+
   const validation = validateMediaUrl(params.url)
   if (!validation.ok) {
+    const status = validation.error.code === 'UNSUPPORTED_URL' ? 415 : 400
+    trackServer(request, identity, EVENTS.extractionFailed, {
+      platform: 'unknown',
+      source_host: hostOf(params.url),
+      error_code: validation.error.code,
+      error_message: validation.error.message,
+      http_status: status,
+      cached: false,
+      took_ms: Math.round(performance.now() - startedAt)
+    })
     return errorResponse(
       validation.error.code,
       validation.error.message,
-      validation.error.code === 'UNSUPPORTED_URL' ? 415 : 400,
+      status,
       startedAt,
       validation.error.hint
     )
   }
 
-  const clientKey = clientKeyFromRequest(request)
+  /** Tracked extraction failure; the outward-facing error is built separately. */
+  const failed = (
+    code: ParseErrorResponse['code'],
+    message: string,
+    status: number,
+    extra: Record<string, string | number | boolean | null | undefined> = {}
+  ) =>
+    trackServer(request, identity, EVENTS.extractionFailed, {
+      platform: validation.platformId ?? 'unknown',
+      source_host: hostOf(validation.href),
+      error_code: code,
+      error_message: message,
+      http_status: status,
+      cached: false,
+      took_ms: Math.round(performance.now() - startedAt),
+      ...extra
+    })
+
   const rate = consumeRateLimit('parse', clientKey, LIMITS.extractRequestsPerMinute)
   if (!rate.allowed) {
+    trackRateLimited(request, identity, 'parse', rate.limit, rate.retryAfterSeconds)
+    failed('RATE_LIMITED', 'rate limited', 429, { retry_after_seconds: rate.retryAfterSeconds })
     return errorResponse(
       'RATE_LIMITED',
       `You reached the limit of ${rate.limit} extractions per minute.`,
@@ -302,10 +355,24 @@ async function handleParse(request: Request): Promise<NextResponse> {
     const cachedPayload = parseCache.get(cacheKey)
     if (cachedPayload) {
       if (debugEnabled) console.debug('[parse] cache hit', cacheKey)
+      trackServer(request, identity, EVENTS.extractionCompleted, {
+        ...extractionProps(cachedPayload),
+        cached: true,
+        took_ms: Math.round(performance.now() - startedAt)
+      })
       return successResponse(cachedPayload, true, cacheKey, startedAt)
     }
     const cachedError = negativeCache.get(cacheKey)
     if (cachedError) {
+      trackServer(request, identity, EVENTS.extractionFailed, {
+        platform: validation.platformId ?? 'unknown',
+        source_host: hostOf(validation.href),
+        error_code: cachedError.code,
+        error_message: cachedError.message,
+        http_status: cachedError.status,
+        cached: true,
+        took_ms: Math.round(performance.now() - startedAt)
+      })
       return errorResponse(cachedError.code, cachedError.message, cachedError.status, startedAt, cachedError.hint)
     }
   }
@@ -345,6 +412,7 @@ async function handleParse(request: Request): Promise<NextResponse> {
         status: 422
       }
       negativeCache.set(cacheKey, negative)
+      failed(negative.code, negative.message, negative.status)
       return errorResponse(
         negative.code,
         negative.message,
@@ -356,6 +424,12 @@ async function handleParse(request: Request): Promise<NextResponse> {
 
     parseCache.set(cacheKey, payload, { ttl: LIMITS.cacheTtlMs })
     negativeCache.delete(cacheKey)
+
+    trackServer(request, identity, EVENTS.extractionCompleted, {
+      ...extractionProps(payload),
+      cached: false,
+      took_ms: Math.round(performance.now() - startedAt)
+    })
 
     if (debugEnabled) {
       const platform = getPlatform(payload.meta.platformId)
@@ -370,6 +444,7 @@ async function handleParse(request: Request): Promise<NextResponse> {
   } catch (error) {
     if (request.signal?.aborted) {
       // The visitor navigated away mid-extraction; nothing to report anywhere.
+      failed('TIMEOUT', 'cancelled by client', 408, { aborted: true })
       return errorResponse('TIMEOUT', 'The request was cancelled before extraction finished.', 408, startedAt)
     }
 
@@ -392,6 +467,7 @@ async function handleParse(request: Request): Promise<NextResponse> {
       console.warn(
         `[parse] terabox ${error.code} for ${sourceUrl}: ${cleanUpstreamError(error.message, 220)}`
       )
+      failed(mapped.code, error.message, mapped.status, { upstream_code: error.code })
       return errorResponse(
         mapped.code,
         error.message,
@@ -431,6 +507,10 @@ async function handleParse(request: Request): Promise<NextResponse> {
       console.warn(
         `[parse] ${code} for ${sourceUrl}: ${cleanUpstreamError(error.stderr ?? error.message, 220)}`
       )
+      failed(code, negative.message, status, {
+        upstream_code: error.code,
+        upstream_error: cleanUpstreamError(error.stderr ?? error.message, 220)
+      })
 
       return errorResponse(
         code,
@@ -443,6 +523,7 @@ async function handleParse(request: Request): Promise<NextResponse> {
     }
 
     console.error('[parse] unexpected failure', error)
+    failed('SERVER_UNAVAILABLE', (error as Error)?.message ?? 'unexpected failure', 500, { unexpected: true })
     return errorResponse(
       'SERVER_UNAVAILABLE',
       'The extraction worker hit an unexpected error.',

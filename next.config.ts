@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // PostHog's ingestion endpoints end in a slash (`/e/`, `/s/`, `/flags/`).
+  // Next would otherwise 308 them slash-less through the `/_d24` proxy
+  // (proxy.ts) and the browser SDK would silently drop every event. Pages keep
+  // canonical slash-less URLs via `alternates.canonical` + the sitemap.
+  skipTrailingSlashRedirect: true,
   // Minimal self-hostable server output (the Dockerfile runs `node server.js`).
   // Opt-in so that a plain `npm run build && npm start` keeps working locally,
   // since `next start` refuses to serve a standalone build.

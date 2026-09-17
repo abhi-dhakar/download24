@@ -2,13 +2,14 @@ import type { Metadata } from 'next'
 
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { analyticsEnabled } from '@/lib/analytics'
 import { breadcrumbSchema, serializeJsonLd } from '@/lib/seo'
 import { LIMITS, SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description:
-    'What this video downloader stores: nothing about you, no accounts, no tracking pixels, an in-memory 15-minute cache of extraction results, and hashed IP counters used only for rate limiting.',
+    'What this video downloader stores: no accounts, an in-memory 15-minute cache of extraction results, hashed IP counters used only for rate limiting, and privacy-conscious product analytics (PostHog) when enabled by the operator.',
   alternates: { canonical: '/privacy' },
   robots: { index: true, follow: true }
 }
@@ -38,7 +39,8 @@ export default function PrivacyPage() {
         </p>
         <h1 className="mt-2 font-display text-3xl font-bold text-white">Privacy Policy</h1>
         <p className="mt-2 text-sm text-white/50">
-          Short version: there is no user profile, no cookie-based tracking and no media log.
+          Short version: no account, no media log, and only first-party product analytics that never see the
+          link you paste.
         </p>
 
         <div className="mt-8 flex flex-col gap-8 text-sm leading-relaxed text-white/70">
@@ -48,8 +50,8 @@ export default function PrivacyPage() {
             </h2>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>no account, e-mail address, name or phone number — there is nothing to register;</li>
-              <li>no advertising identifiers, social pixels, heatmaps or third-party analytics scripts;</li>
-              <li>no persistent first-party cookie, and no localStorage owned by this site;</li>
+              <li>no advertising identifiers, ad networks or social media pixels;</li>
+              <li>no cookies or storage beyond the analytics identifier and preferences described below;</li>
               <li>no uploaded files, and no saved copies of any video or audio you request.</li>
             </ul>
           </section>
@@ -98,9 +100,39 @@ export default function PrivacyPage() {
             </p>
           </section>
 
+          <section id="analytics" aria-labelledby="analytics-h">
+            <h2 id="analytics-h" className="font-display text-lg font-semibold text-white">
+              5. Product analytics (PostHog)
+            </h2>
+            {analyticsEnabled ? (
+              <>
+                <p className="mt-2">
+                  This deployment uses <strong>PostHog</strong> to understand how the downloader is used and where it
+                  breaks. It records page views, clicks, the steps of the download flow (link submitted → formats
+                  found → quality chosen → file delivered), performance timings, JavaScript errors, and anonymised
+                  session replays in which every input field and the pasted link are masked. Events are sent
+                  through this site’s own domain to PostHog’s servers and are stored under a random device
+                  identifier kept in a first-party cookie/localStorage; we never ask for your name or e-mail.
+                </p>
+                <p className="mt-2">
+                  For each request the analytics see the <em>source site</em> (for example “youtube.com”), the
+                  chosen resolution and whether it succeeded — never the video URL or its title. Use a content
+                  blocker, or clear this site’s storage, to reset the identifier at any time.
+                </p>
+              </>
+            ) : (
+              <p className="mt-2">
+                This deployment has analytics switched off: no analytics script is loaded and no usage events are
+                sent anywhere. Operators can enable PostHog via the{' '}
+                <code className="rounded bg-ink-800 px-1 py-0.5">NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN</code> variable,
+                in which case this section describes what is collected.
+              </p>
+            )}
+          </section>
+
           <section id="server-logs" aria-labelledby="logs-h">
             <h2 id="logs-h" className="font-display text-lg font-semibold text-white">
-              5. Server logs
+              6. Server logs
             </h2>
             <p className="mt-2">
               Failures are logged with the resolved source URL, the mapped error code and a short, sanitised
@@ -113,7 +145,7 @@ export default function PrivacyPage() {
 
           <section id="children" aria-labelledby="children-h">
             <h2 id="children-h" className="font-display text-lg font-semibold text-white">
-              6. Children, transfers and your rights
+              7. Children, transfers and your rights
             </h2>
             <p className="mt-2">
               The service is not directed at children and collects no personal data, so there is nothing to
@@ -125,8 +157,8 @@ export default function PrivacyPage() {
           </section>
 
           <p className="rounded-xl border border-line bg-white/[0.02] p-4 text-xs text-white/55">
-            Template text for a demonstration project. Have a lawyer review it — plus a GDPR/CCPA notice and a
-            cookie banner if you add analytics — before running this publicly.
+            Template text for a demonstration project. Have a lawyer review it — and, depending on where your
+            visitors live, add a GDPR/CCPA consent banner for the analytics — before running this publicly.
           </p>
         </div>
       </main>

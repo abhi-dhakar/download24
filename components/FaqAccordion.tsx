@@ -1,4 +1,5 @@
 import { FAQ_ITEMS } from '@/lib/seo'
+import { FaqTracker } from './FaqTracker'
 
 /**
  * FAQ accordion built from native `<details>` / `<summary>` elements.
@@ -12,10 +13,12 @@ import { FAQ_ITEMS } from '@/lib/seo'
 export function FaqAccordion() {
   return (
     <div className="flex flex-col gap-2.5">
+      <FaqTracker />
       {FAQ_ITEMS.map((item, index) => (
         <details
           key={item.question}
           name="download24-faq"
+          data-faq-question={item.question}
           className="group rounded-(--radius-card) border border-line bg-white/[0.02] px-4 transition-colors open:border-line-strong open:bg-white/[0.04] hover:border-line-strong"
           {...(index === 0 ? { open: true } : {})}
         >

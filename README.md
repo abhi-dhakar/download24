@@ -13,7 +13,8 @@ and the download route proxies the CDN response.
 Visitor ── paste link ──▶ POST /api/parse ──▶ LRU cache (15 min) ──▶ yt-dlp -J ──▶ format triage
         ── click 4K ────▶ GET /api/download ─▶ yt-dlp -f f137+ba -o - ─▶ piped to the browser
 
-TeraBox share ──▶ lib/terabox.ts ──▶ share page + jsToken ──▶ /share/list ──▶ one option per file
+TeraBox share ──▶ lib/terabox.ts ──▶ /main jsToken ──▶ /api/shorturlinfo (sign/timestamp)
+              ──▶ /share/list (signed dlinks) ──▶ one option per file
               ──▶ GET /api/download ─▶ fresh dlink ──▶ CDN bytes piped (or 302 in redirect mode)
 ```
 
@@ -116,6 +117,7 @@ instead of handing back dead buttons (`meta.warning` explains why).
 | --- | --- |
 | `npm run dev` | dev server bound to `0.0.0.0:3000` |
 | `npm run build` / `npm start` | production build + server |
+| `npm run test:terabox` | Compiles `lib/` and runs `scripts/terabox-selftest.mjs`: the TeraBox engine against a mocked TeraBox (real captured payloads), covering the signed flow, verification walls, errno mapping and token refresh. No network needed. |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint 10 flat config (`eslint-config-next/core-web-vitals`) |
 
@@ -139,7 +141,7 @@ Everything is optional; see `.env.example` for the full annotated list.
 | `RATE_LIMIT_EXTRACT_PER_MIN` | `40` | Extractions per hashed client per minute |
 | `RATE_LIMIT_DOWNLOAD_PER_MIN` | `12` | Downloads per hashed client per minute |
 | `EXTRA_ALLOWED_HOSTS` | unset | Add hosts to the allow-list without touching code |
-| `TERABOX_COOKIE` | unset | `ndus` token, Cookie header or JSON — answers TeraBox's verification wall |
+| `TERABOX_COOKIE` | unset | `ndus` token, Cookie header or JSON — answers TeraBox's verification wall and unlocks signed `dlink`s for flagged shares |
 | `TERABOX_RESOLVE_PROXY` | unset | Optional `?mode=resolve&surl=…` resolver used when TeraBox blocks the host's region |
 | `TERABOX_MAX_FILES` / `TERABOX_MAX_DEPTH` | `60` / `2` | How many files a share may expand into and how deep folders are walked |
 | `TERABOX_API_BASE` / `TERABOX_TIMEOUT_MS` / `TERABOX_USER_AGENT` | unset | Pin the API origin, the per-call timeout or the browser UA the share page is fetched with |
@@ -205,24 +207,39 @@ changes its player) and runs `next start`.
 **TeraBox engine (`lib/terabox.ts`)**
 
 * TeraBox is a *file host*, not a streaming site, and `yt-dlp` has no extractor for it, so the
-  share flow is implemented directly: fetch `https://<host>/s/<surl>`, scrape the `jsToken`,
-  `dp-logid` and `bdstoken` tokens out of the HTML (plus the `og:image` preview), then call
-  `/share/list?shorturl=…&root=1` with the absorbed cookies.
-* Folders are walked recursively (`root=0&dir=/folder`) up to `TERABOX_MAX_DEPTH` levels and
+  share flow is implemented directly, following the same calls the official player makes:
+
+  | Step | Call | What it buys |
+  | --- | --- | --- |
+  | 1 | `GET <mirror>/main` | session cookies + `templateData.jsToken` |
+  | 2 | `GET <mirror>/sharing/link?surl=…` | title, thumbnail, and the tokens anonymous pages carry |
+  | 3 | `GET /api/shorturlinfo?shorturl=1<surl>&root=1&jsToken=…` | the share record: file list **and** the `sign`/`timestamp`/`shareid`/`uk` triple |
+  | 4 | `GET /share/list?…&sign=…&timestamp=…&shareid=…&uk=…` | one entry per file, with signed `dlink`s |
+  | 5 | `GET /share/download?…&fid_list=[fsId]` (or the `data.<mirror>` REST twin) | a fresh signed URL when step 4 had none |
+  | 6 | `GET <dlink>` | 302 → CDN bytes |
+
+* The engine is deliberately forgiving, because TeraBox rotates its API and rate-limits *signed*
+  calls hard:
+  * mirrors are swept in turn (page origin → the origin it redirects to → canonical mirrors) and an
+    errno the module does not recognise is reported as `UPSTREAM_ERROR` (503, retryable) — it never
+    stops the sweep and never claims the link is dead;
+  * `4000020` / `400141` / `460020` / `-6` mean "stale token": `jsToken` is re-scraped from `/main`
+    and the call is retried once;
+  * a plain anonymous `/share/list` (no token, no signature) is kept as the last resort — it still
+    returns the file list, so a share stays browsable and the UI can say *what* is missing instead
+    of pretending the link expired;
+  * `400210` (`need verify_v2`) means TeraBox is challenging this host's IP; the payload warning
+    then points at `TERABOX_COOKIE`, which is also what unlocks `dlink`s for flagged (adult) shares.
+* Folders are walked recursively (`dir=/folder`) up to `TERABOX_MAX_DEPTH` levels and
   `TERABOX_MAX_FILES` files, so one share link can list every video it contains. Each file becomes
   a normal `DownloadOption` — `lib/types.ts` only grows an optional `remoteFile` field so the
   download route knows which share path to open.
-* Failed `errno`s are mapped to the shared error codes (`4000020`/`400141` → verification required,
-  `9000` → region blocked, `-9`/`115` → expired share); a `TERABOX_COOKIE` that hits a verification
-  wall is retried once anonymously, matching what a browser does.
-* Share links that render their tokens client-side are caught by a second path: every mirror is
-  retried on the older `/api/shorturlinfo?shorturl=…&root=1` endpoint, which answers without a
-  `jsToken`. When TeraBox reports video dimensions they set the quality chip; otherwise the file
-  name (`…-1080p.mp4`) is the hint, and a file with neither shows as "Original file" rather than a
+* When TeraBox reports video dimensions they set the quality chip; otherwise the file name
+  (`…-1080p.mp4`) is the hint, and a file with neither shows as "Original file" rather than a
   made-up resolution.
 * Because signed `dlink`s expire in minutes, nothing is ever replayed from cache: `/api/download`
-  re-resolves the share and opens a fresh link, then pipes the CDN bytes (`X-Download-Mode:
-  terabox-cdn`) or 302s to the signed URL when `DOWNLOAD_MODE=redirect`.
+  re-resolves the share (fresh `sign`/`timestamp` included) and opens a new link, then pipes the CDN
+  bytes (`X-Download-Mode: terabox-cdn`) or 302s to the signed URL when `DOWNLOAD_MODE=redirect`.
 * `TERABOX_RESOLVE_PROXY` is an optional escape hatch for hosts whose region TeraBox refuses to
   serve at all (`?mode=resolve&surl=…&raw=1` contract); every URL returned upstream still passes
   the same SSRF/public-host guard as the rest of the app.

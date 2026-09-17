@@ -9,7 +9,8 @@
     "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "postinstall": "node scripts/install-ytdlp.mjs"
+    "postinstall": "node scripts/install-ytdlp.mjs",
+    "test:terabox": "node scripts/terabox-selftest.mjs"
   },
   "dependencies": {
     "lru-cache": "11.5.2",

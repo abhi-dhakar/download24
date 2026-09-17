@@ -472,7 +472,11 @@ export async function GET(request: Request): Promise<Response> {
       console.warn(`[download] terabox ${error.code} for ${sourceUrl}: ${cleanUpstreamError(error.message, 200)}`)
       return jsonError(
         error.message,
-        error.code === 'VERIFICATION_REQUIRED' ? 503 : error.code === 'TIMEOUT' ? 504 : 502,
+        error.code === 'VERIFICATION_REQUIRED' || error.code === 'UPSTREAM_ERROR'
+          ? 503
+          : error.code === 'TIMEOUT'
+            ? 504
+            : 502,
         error.hint
       )
     }

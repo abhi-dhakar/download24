@@ -41,3 +41,6 @@ coverage/
 /yt-dlp.exe
 cookies.txt
 cookies.*.txt
+
+# TeraBox self-test build output (scripts/terabox-selftest.mjs)
+.selftest-build

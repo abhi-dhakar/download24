@@ -52,6 +52,7 @@ Hand-off details worth knowing:
 | `/download`, `/download/progress` | Steps 2 and 3 of the flow (see above). |
 | `/[slug]` | Per-platform landing pages (`/youtube-video-download`, `/instagram-video-download`, `/terabox-video-download`, …) — eleven SEO-tuned pages that reuse the same hero input. |
 | `/terms`, `/privacy` | Legal pages. |
+| `/admin`, `/admin/events`, `/admin/hogql`, `/admin/login` | Token-gated operator dashboard over the PostHog project (see [Admin dashboard](#admin-dashboard-admin)). Never linked from the public site, always `noindex`, inert without `ADMIN_SECRET`. |
 
 Navigation (header, footer, mobile drawer) links the five top-level destinations; `sitemap.xml`
 advertises `/`, `/features`, `/how-it-works`, `/platforms`, `/faq`, the legal pages and every
@@ -138,6 +139,9 @@ Everything is optional; see `.env.example` for the full annotated list.
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` | unset | Turns on PostHog analytics (see [Analytics](#analytics-posthog)). Unset = nothing loaded, nothing sent |
 | `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` | PostHog ingestion origin — `https://eu.i.posthog.com` for EU Cloud, or your self-hosted URL |
 | `NEXT_PUBLIC_APP_VERSION` | `dev` | Release label stamped on every analytics event |
+| `ADMIN_SECRET` | unset | Enables the `/admin` dashboard (min. 12 chars). Signs the 12 h session cookie; rotate to kill sessions |
+| `POSTHOG_PERSONAL_API_KEY` | unset | Server-only personal key (Query Read) that powers `/admin`'s HogQL queries. Never sent to the browser |
+| `POSTHOG_PROJECT_ID` | auto | Optional numeric project id; when unset, resolved by matching `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` |
 | `DOWNLOAD_MODE` | `stream` | `redirect` 302s already-muxed sources to their CDN URL instead of proxying bytes |
 | `YTDL_PATH` | bundled binary | Point at a self-managed/`yt-dlp -U` updated binary |
 | `YTDL_COOKIES` | unset | Netscape `cookies.txt` for age/login/region-gated media |
@@ -183,6 +187,50 @@ download_started → download_completed`, broken down by `platform`, plus a tren
 
 The event catalogue lives in `lib/analytics.ts` (`EVENTS`); the privacy page describes the collection
 whenever the token is set and says analytics are off when it is not.
+
+## Admin dashboard (/admin)
+
+A secure operator dashboard that shows the *full* data of the PostHog project the app sends to —
+no iframe of posthog.com, everything queried server-side through the PostHog HTTP API (HogQL):
+
+| Page | What it shows |
+| --- | --- |
+| `/admin` | KPIs (events/people 24 h/7 d/30 d, failures, rate-limits), the `link_submitted → … → download_completed` funnel (unique people per step), 14-day activity, top events/pages/referrers, recent `extraction_failed`/`download_failed` with error code + message |
+| `/admin/events` | Raw event explorer: filter by event name, distinct id or one property (`key:value`), window 1 h → 30 d; every row carries the **full** `properties` payload, distinct id and resolved person id |
+| `/admin/hogql` | Read-only HogQL runner (SELECT/WITH only) over the project's tables — `events`, `persons`, `session_replays`, … — with results as a table (TSV copy) |
+| `/admin/login` | Token form; sets the signed session cookie |
+
+### Security model
+
+- **Shared secret, not accounts.** `ADMIN_SECRET` (long random string) is entered once at
+  `/admin/login`, compared in **constant time**, and never logged, rendered or sent back. Login
+  attempts are rate-limited to 5/minute per client.
+- **Signed session cookie.** The login response sets `d24_admin` — `HttpOnly`, `SameSite=Lax`,
+  `Secure` in production — whose value is `v1.<expiry>.<nonce>.<HMAC-SHA256(ADMIN_SECRET, …)>`
+  valid for 12 h. Rotating `ADMIN_SECRET` instantly invalidates every session.
+- **Server-only credentials.** `POSTHOG_PERSONAL_API_KEY` lives in `lib/posthogApi.ts`
+  (`import 'server-only'`); the browser only ever sees rendered rows.
+- **Fail closed.** Without `ADMIN_SECRET` the `/admin` pages show a setup notice and every
+  `/api/admin/*` route 404s — there is no endpoint to probe. Without the PostHog key, each page
+  shows exactly which variable is missing.
+- **Defense in depth on the SQL runner.** Session check → 30 queries/min per client →
+  16 KB body / 10 k-char query → SELECT-only enforcement → 500-row response cap.
+- The area is `noindex` + disallowed in `robots.txt`, carries no public links, and adds
+  `Cache-Control: no-store` behaviour via forced dynamic rendering.
+
+### Query budget
+
+PostHog caps the query API at 240 requests/hour and 10 s per query per project, so the dashboard
+is frugal on purpose: KPIs + funnel come from **one** 30-day scan, results are cached 60 s in
+memory (`lib/posthogApi.ts`), and the overview page issues 6 queries total per render.
+
+### Setup
+
+1. `openssl rand -hex 32` → `ADMIN_SECRET`.
+2. PostHog → *Settings → Your account → API keys* → new **personal** key with **Query Read** →
+   `POSTHOG_PERSONAL_API_KEY`. (Project `phc_…` tokens cannot run queries.)
+3. Restart. Open `/admin/login`, sign in. The header shows which project you're connected to,
+   with a deep link into the PostHog web UI.
 
 ## API
 

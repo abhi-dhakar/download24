@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // Dev-only: allow extra browser origins to reach the dev server (HMR/RSC)
+  // when it is proxied behind a different public hostname. Comma-separated,
+  // e.g. ALLOWED_DEV_ORIGINS=https://3000-<sandbox>.e2b.app.
+  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   // PostHog's ingestion endpoints end in a slash (`/e/`, `/s/`, `/flags/`).
   // Next would otherwise 308 them slash-less through the `/_d24` proxy
   // (proxy.ts) and the browser SDK would silently drop every event. Pages keep

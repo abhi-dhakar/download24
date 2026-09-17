@@ -19,8 +19,10 @@
 
 import { NextResponse } from 'next/server'
 
+import { EVENTS, hostOf, type EventProperties } from '@/lib/analytics'
 import { cacheKeyFor, parseCache } from '@/lib/cache'
 import { failLiveJob, finishLiveJob, registerLiveJob, updateLiveJob } from '@/lib/liveJobs'
+import { identityFromRequest, trackRateLimited, trackServer } from '@/lib/posthogServer'
 import { parseYtDlpProgressLine } from '@/lib/progress'
 import {
   buildParsePayload,
@@ -202,31 +204,70 @@ export async function GET(request: Request): Promise<Response> {
   // callers get a plain 302 to the CDN.
   const forceStream = url.searchParams.get('mode') === 'stream'
 
+  /* ------------------------------------------------------------ analytics */
+  const requestStartedAt = Date.now()
+  const clientKey = clientKeyFromRequest(request)
+  const identity = identityFromRequest(request, clientKey)
+  // Filled in as the request learns more (platform → option → delivery mode).
+  const ctx: EventProperties = {
+    source_host: hostOf(source),
+    requested_index: indexRaw,
+    mp3: audioOnly,
+    force_stream: forceStream,
+    from_progress_page: Boolean(preferredJobId)
+  }
+  let startedTracked = false
+  const started = (mode: 'redirect' | 'terabox-cdn' | 'pipe' | 'prepared', extra: EventProperties = {}) => {
+    startedTracked = true
+    trackServer(request, identity, EVENTS.downloadStarted, {
+      ...ctx,
+      mode,
+      setup_ms: Date.now() - requestStartedAt,
+      ...extra
+    })
+  }
+  /** Tracked failure + the JSON error body the browser renders. */
+  const deny = (message: string, status: number, hint?: string, code = 'DOWNLOAD_FAILED'): NextResponse => {
+    trackServer(request, identity, EVENTS.downloadFailed, {
+      ...ctx,
+      error_code: code,
+      error_message: message,
+      error_hint: hint,
+      http_status: status,
+      after_first_byte: startedTracked,
+      elapsed_ms: Date.now() - requestStartedAt
+    })
+    return jsonError(message, status, hint, code)
+  }
+
   const validation = validateMediaUrl(source)
-  if (!validation.ok) return jsonError(validation.error.message, 400, validation.error.hint)
+  if (!validation.ok) return deny(validation.error.message, 400, validation.error.hint, validation.error.code)
   const sourceUrl = validation.href
+  ctx.platform = validation.platformId ?? 'unknown'
 
   const requestedIndex = Number.parseInt(indexRaw, 10)
   if (!Number.isFinite(requestedIndex) || requestedIndex < 0 || requestedIndex > 500) {
-    return jsonError('The format index is not valid.', 400, 'Re-run the extraction and use a download button.')
+    return deny('The format index is not valid.', 400, 'Re-run the extraction and use a download button.', 'INVALID_FORMAT')
   }
 
-  const clientKey = clientKeyFromRequest(request)
   const rate = consumeRateLimit('download', clientKey, LIMITS.downloadRequestsPerMinute)
   if (!rate.allowed) {
-    return jsonError(
+    trackRateLimited(request, identity, 'download', rate.limit, rate.retryAfterSeconds)
+    return deny(
       `You reached the limit of ${rate.limit} downloads per minute.`,
       429,
-      `Try again in ${rate.retryAfterSeconds}s.`
+      `Try again in ${rate.retryAfterSeconds}s.`,
+      'RATE_LIMITED'
     )
   }
 
   const slot = acquireSlot('download', clientKey, LIMITS.downloadMaxConcurrentPerClient)
   if (!slot.acquired) {
-    return jsonError(
+    return deny(
       'You already have the maximum number of downloads in flight.',
       429,
-      'Wait for the current download to finish before starting another one.'
+      'Wait for the current download to finish before starting another one.',
+      'CONCURRENCY_LIMIT'
     )
   }
 
@@ -243,7 +284,27 @@ export async function GET(request: Request): Promise<Response> {
   // Live progress entry for the whole job. Created before any extraction work
   // so the poller has something to read during the (long) prepare phase.
   const jobId = registerLiveJob(preferredJobId)
-  const finishJob = (fileName?: string) => finishLiveJob(jobId, fileName)
+  let bytesDelivered: number | null = null
+  const finishJob = (fileName?: string, outcome: 'completed' | 'client_cancelled' = 'completed') => {
+    finishLiveJob(jobId, fileName)
+    trackServer(request, identity, outcome === 'completed' ? EVENTS.downloadCompleted : EVENTS.downloadFailed, {
+      ...ctx,
+      ...(outcome === 'completed' ? {} : { error_code: 'CLIENT_CANCELLED', error_message: 'Transfer cancelled by the browser.' }),
+      ext: fileName?.split('.').pop(),
+      bytes_delivered: bytesDelivered,
+      elapsed_ms: Date.now() - requestStartedAt
+    })
+  }
+  /** Analytics view of the chosen preset — no title, no URL. */
+  const describeOption = (option: DownloadOption) => {
+    ctx.quality = option.tier
+    ctx.quality_label = option.label
+    ctx.kind = option.kind
+    ctx.ext = option.ext
+    ctx.needs_merge = option.needsMerge
+    ctx.muxed = option.muxed
+    ctx.size_bytes = option.bytes ?? null
+  }
 
   try {
     const key = cacheKeyFor({ url: sourceUrl })
@@ -262,13 +323,14 @@ export async function GET(request: Request): Promise<Response> {
       }
 
       const shareOption = pickOption(sharePayload, requestedIndex, audioOnly)
+      if (shareOption) describeOption(shareOption)
       if (!shareOption?.remoteFile) {
         failLiveJob(
           jobId,
           'That file is no longer part of the share.',
           'Run the extraction again to refresh the share contents.'
         )
-        return jsonError(
+        return deny(
           'That file is no longer part of the share.',
           410,
           'Run the extraction again to refresh the share contents.'
@@ -294,6 +356,7 @@ export async function GET(request: Request): Promise<Response> {
       if (!forceStream && DOWNLOAD_MODE === 'redirect' && isSafePublicMediaUrl(opened.finalUrl)) {
         void opened.response.body?.cancel().catch(() => {})
         updateLiveJob(jobId, { phase: 'redirect' })
+        started('redirect', { size_bytes: opened.size ?? ctx.size_bytes })
         return NextResponse.redirect(opened.finalUrl, {
           status: 302,
           headers: {
@@ -310,13 +373,15 @@ export async function GET(request: Request): Promise<Response> {
       if (!upstreamBody) {
         void opened.response.body?.cancel().catch(() => {})
         failLiveJob(jobId, 'TeraBox returned an empty file.', 'Retry the download once.')
-        return jsonError('TeraBox returned an empty file.', 502, 'Retry the download once.')
+        return deny('TeraBox returned an empty file.', 502, 'Retry the download once.')
       }
 
       const knownSize = opened.size ?? undefined
       updateLiveJob(jobId, { phase: 'streaming' })
 
       transferStarted = true
+      if (knownSize) bytesDelivered = knownSize
+      started('terabox-cdn', { size_bytes: knownSize ?? null })
       return new Response(
         proxyBody(upstreamBody, {
           onSettled: releaseSlot,
@@ -350,13 +415,18 @@ export async function GET(request: Request): Promise<Response> {
     }
 
     const option = pickOption(payload, requestedIndex, audioOnly)
+    if (option) describeOption(option)
+    ctx.platform = payload.meta.platformId
+    ctx.is_playlist = payload.meta.isPlaylist
+    ctx.duration_seconds = payload.meta.durationSeconds ?? null
+    ctx.payload_cached = Boolean(cached) && payload === cached
     if (!option) {
       failLiveJob(
         jobId,
         'That quality is no longer offered for this link.',
         'Run the extraction again to refresh the available formats.'
       )
-      return jsonError(
+      return deny(
         'That quality is no longer offered for this link.',
         410,
         'Run the extraction again to refresh the available formats.'
@@ -370,6 +440,7 @@ export async function GET(request: Request): Promise<Response> {
       const direct = await upstreamUrlFor(sourceUrl, option)
       if (direct) {
         updateLiveJob(jobId, { phase: 'redirect' })
+        started('redirect')
         return NextResponse.redirect(direct, {
           status: 302,
           headers: {
@@ -447,6 +518,7 @@ export async function GET(request: Request): Promise<Response> {
             )
             job.onProgress(null)
             if (clean) {
+              bytesDelivered = bytesSent
               finishJob(`${baseName}.${option.ext}`)
               try {
                 controller.close()
@@ -466,7 +538,8 @@ export async function GET(request: Request): Promise<Response> {
           // The visitor hit "Cancel" or closed the tab: stop paying for bytes.
           job.onProgress(null)
           job.dispose()
-          finishJob(`${baseName}.${option.ext}`)
+          bytesDelivered = bytesSent
+          finishJob(`${baseName}.${option.ext}`, 'client_cancelled')
           releaseSlot()
         }
       })
@@ -483,14 +556,16 @@ export async function GET(request: Request): Promise<Response> {
         const message = startupError ?? 'The download could not be started.'
         console.warn(`[download] pipe failure for ${sourceUrl}: ${cleanUpstreamError(message, 200)}`)
         failLiveJob(jobId, message, 'Try a lower resolution, or re-run the extraction first.')
-        return jsonError(
+        return deny(
           message,
           /did not start|timed out/i.test(message) ? 504 : 502,
-          'Try a lower resolution, or re-run the extraction first.'
+          'Try a lower resolution, or re-run the extraction first.',
+          /did not start|timed out/i.test(message) ? 'PIPE_TIMEOUT' : 'PIPE_FAILED'
         )
       }
 
       transferStarted = true
+      started('pipe', { ytdlp_setup_ms: Date.now() - job.startedAt })
       return new Response(stream, {
         status: 200,
         headers: transferHeaders(`${baseName}.${option.ext}`, option.ext, {
@@ -537,10 +612,11 @@ export async function GET(request: Request): Promise<Response> {
         : 'Try a lower resolution, or re-run the extraction first.'
       console.warn(`[download] prepare failure for ${sourceUrl}: ${cleanUpstreamError(err?.message, 200)}`)
       failLiveJob(jobId, message, hint)
-      return jsonError(
+      return deny(
         message,
         err?.code === 'TIMEOUT' ? 504 : err?.code === 'SERVER_UNAVAILABLE' ? 503 : 502,
-        hint
+        hint,
+        err?.code === 'TIMEOUT' ? 'PREPARE_TIMEOUT' : 'PREPARE_FAILED'
       )
     }
 
@@ -549,27 +625,34 @@ export async function GET(request: Request): Promise<Response> {
     if (request.signal?.aborted) {
       await removePreparedFile(prepared.path)
       failLiveJob(jobId, 'The download was cancelled before it could start.')
-      return jsonError('The download was cancelled before it could start.', 408)
+      return deny('The download was cancelled before it could start.', 408, undefined, 'CLIENT_CANCELLED')
     }
 
     // yt-dlp may legitimately fall back to another container (mixed codecs), so
     // the name follows the file we actually produced.
     const filename = `${baseName}.${prepared.ext}`
     transferStarted = true
+    bytesDelivered = prepared.size
+    started('prepared', {
+      prepare_ms: prepared.elapsedMs,
+      size_bytes: prepared.size,
+      merged_streams: option.needsMerge ? option.formatIds.join('+') : 'single'
+    })
 
     return preparedResponse(prepared, filename, option, releaseSlot, jobId, finishJob)
   } catch (error) {
     if (error instanceof TeraboxError) {
       console.warn(`[download] terabox ${error.code} for ${sourceUrl}: ${cleanUpstreamError(error.message, 200)}`)
       failLiveJob(jobId, error.message, error.hint)
-      return jsonError(
+      return deny(
         error.message,
         error.code === 'VERIFICATION_REQUIRED' || error.code === 'UPSTREAM_ERROR'
           ? 503
           : error.code === 'TIMEOUT'
             ? 504
             : 502,
-        error.hint
+        error.hint,
+        `TERABOX_${error.code}`
       )
     }
 
@@ -578,7 +661,7 @@ export async function GET(request: Request): Promise<Response> {
     const hint = cleanUpstreamError(message, 200)
     console.error('[download] error', cleanUpstreamError(message, 240))
     failLiveJob(jobId, 'The download could not be completed.', hint)
-    return jsonError(
+    return deny(
       'The download could not be completed.',
       /ffmpeg/i.test(message) ? 503 : 502,
       hint

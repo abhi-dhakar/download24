@@ -35,6 +35,8 @@ import { LinkMissingArt } from '@/components/illustrations/ProgressArt'
 import { PlatformMark } from '@/components/PlatformMark'
 import { LoadingPanel } from '@/components/Spinner'
 import { inspectLink } from '@/components/Downloader'
+import { EVENTS, hostOf } from '@/lib/analytics'
+import { track } from '@/lib/analyticsClient'
 import { writePending } from '@/lib/pending'
 import type { DownloadOption, ParsePayload } from '@/lib/types'
 import { downloadUrlFor } from '@/lib/types'
@@ -122,10 +124,16 @@ function OptionRow({
       await navigator.clipboard.writeText(`${window.location.origin}${directApiHref}`)
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
+      track(EVENTS.downloadLinkCopied, {
+        platform: meta.platformId,
+        quality: option.tier,
+        kind: option.kind,
+        ext: option.ext
+      })
     } catch {
       setCopied(false)
     }
-  }, [directApiHref])
+  }, [directApiHref, meta.platformId, option.ext, option.kind, option.tier])
 
   const spec = [
     option.ext.toUpperCase(),
@@ -191,7 +199,7 @@ function OptionRow({
       {/* Step 3 navigation — hand the snapshot over, then push. */}
       <Link
         href={href}
-        onClick={() =>
+        onClick={() => {
           writePending({
             sourceUrl: meta.sourceUrl,
             title: meta.title,
@@ -202,7 +210,23 @@ function OptionRow({
             platformName: meta.platformName,
             durationLabel: meta.durationLabel
           })
-        }
+          // The conversion event: which preset the visitor actually picked.
+          track(EVENTS.qualitySelected, {
+            platform: meta.platformId,
+            source_host: hostOf(meta.sourceUrl),
+            quality: option.tier,
+            label: option.label,
+            kind: option.kind,
+            ext: option.ext,
+            needs_merge: option.needsMerge,
+            muxed: option.muxed,
+            size_bytes: option.bytes ?? null,
+            size_estimated: Boolean(option.estimated),
+            tags: option.tags,
+            duration_seconds: meta.durationSeconds ?? null,
+            is_playlist: meta.isPlaylist
+          })
+        }}
         className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-3.5 py-2 text-sm font-semibold text-white shadow-glow transition-transform duration-150 hover:-translate-y-px active:translate-y-0"
         aria-label={`Download ${option.label}${option.ext ? ` as ${option.ext.toUpperCase()}` : ''}: ${meta.title}`}
       >
@@ -258,6 +282,11 @@ export function DownloadDetails() {
     setFailure(null)
     setThumbFailed(false)
 
+    const startedAt = performance.now()
+    if (options.refresh) {
+      track(EVENTS.extractionRetried, { source_host: inspected.host })
+    }
+
     try {
       const response = await fetch(`/api/parse${options.refresh ? '?refresh=1' : ''}`, {
         method: 'POST',
@@ -273,24 +302,46 @@ export function DownloadDetails() {
 
       if (!response.ok || !payload || payload.ok !== true) {
         const failureBody = payload && payload.ok === false ? payload : null
+        const message =
+          failureBody?.message ??
+          (response.status === 429
+            ? 'Too many requests. Please try again in 1 minute.'
+            : `Engine error (HTTP ${response.status}). Our team is notified.`)
         setFailure({
-          message:
-            failureBody?.message ??
-            (response.status === 429
-              ? 'Too many requests. Please try again in 1 minute.'
-              : `Engine error (HTTP ${response.status}). Our team is notified.`),
+          message,
           hint: failureBody?.hint,
           retryAfter: failureBody?.retryAfter,
           status: response.status
         })
         setPhase('error')
         setData(null)
+        track(EVENTS.extractionErrorViewed, {
+          source_host: inspected.host,
+          http_status: response.status,
+          error_code: (failureBody as { code?: string } | null)?.code ?? 'HTTP_ERROR',
+          error_message: message,
+          refresh: Boolean(options.refresh),
+          client_ms: Math.round(performance.now() - startedAt)
+        })
         return
       }
 
       setData(payload.data)
       setStats({ cached: payload.cached, tookMs: payload.tookMs })
       setPhase('ready')
+      track(EVENTS.extractionViewed, {
+        platform: payload.data.meta.platformId,
+        source_host: inspected.host,
+        cached: payload.cached,
+        server_ms: payload.tookMs,
+        client_ms: Math.round(performance.now() - startedAt),
+        option_count: payload.data.options.length,
+        max_quality: payload.data.maxQuality,
+        supports_mp3: payload.data.supportsMp3,
+        is_playlist: payload.data.meta.isPlaylist,
+        duration_seconds: payload.data.meta.durationSeconds ?? null,
+        refresh: Boolean(options.refresh)
+      })
     } catch (error) {
       if ((error as Error)?.name === 'AbortError') return
       setFailure({
@@ -299,6 +350,13 @@ export function DownloadDetails() {
       })
       setPhase('error')
       setData(null)
+      track(EVENTS.extractionErrorViewed, {
+        source_host: inspected.host,
+        error_code: 'NETWORK',
+        error_message: (error as Error)?.message ?? 'network error',
+        refresh: Boolean(options.refresh),
+        client_ms: Math.round(performance.now() - startedAt)
+      })
     } finally {
       if (abortRef.current === controller) {
         abortRef.current = null
@@ -378,7 +436,7 @@ export function DownloadDetails() {
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
           <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-white/[0.02] px-3 py-1.5 text-white/60">
             <Link2 className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden="true" />
-            <span className="truncate">{url}</span>
+            <span className="truncate" data-ph-mask>{url}</span>
           </span>
           <button
             type="button"

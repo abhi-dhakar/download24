@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 
+import { EVENTS } from '@/lib/analytics'
+import { track } from '@/lib/analyticsClient'
+
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [mounted, setMounted] = useState(false)
@@ -26,6 +29,7 @@ export function ThemeToggle() {
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
+    track(EVENTS.themeToggled, { theme: next })
     localStorage.setItem('download24_theme', next)
     document.documentElement.classList.toggle('light', next === 'light')
     document.documentElement.classList.toggle('dark', next === 'dark')

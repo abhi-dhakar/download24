@@ -13,7 +13,9 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, ArrowDownToLine, ClipboardPaste, History, Info, Search, Trash2, X } from 'lucide-react'
 
-import { PLATFORMS } from '@/lib/platforms'
+import { EVENTS, hostOf } from '@/lib/analytics'
+import { track } from '@/lib/analyticsClient'
+import { PLATFORMS, platformForUrl } from '@/lib/platforms'
 
 // Storage key kept from the legacy inline flow so existing visitors keep history.
 const RECENT_KEY = 'download24in:recent'
@@ -122,12 +124,19 @@ export function Downloader() {
   }, [])
 
   const goToStepTwo = useCallback(
-    (raw: string) => {
+    (raw: string, method: 'submit' | 'paste' | 'clipboard_button' | 'recent' = 'submit') => {
       const candidate = raw.trim()
       const inspected = inspectLink(candidate)
       if (!inspected.ok) {
         setInvalidHint(inspected.reason ?? 'Invalid link format.')
         inputRef.current?.focus()
+        // The pasted text itself is never sent — only why it was rejected.
+        track(EVENTS.linkRejected, {
+          method,
+          reason: inspected.reason,
+          source_host: inspected.host ?? hostOf(candidate),
+          input_length: candidate.length
+        })
         return
       }
 
@@ -135,6 +144,13 @@ export function Downloader() {
         const next = [candidate, ...current.filter((entry) => entry !== candidate)].slice(0, MAX_RECENT)
         writeRecent(next)
         return next
+      })
+
+      track(EVENTS.linkSubmitted, {
+        method,
+        source_host: inspected.host,
+        platform: platformForUrl(candidate)?.id ?? 'unknown',
+        entry_page: window.location.pathname
       })
 
       setNavigating(true)
@@ -150,7 +166,7 @@ export function Downloader() {
       if (inspectLink(text).ok) {
         event.preventDefault()
         setUrl(text)
-        goToStepTwo(text)
+        goToStepTwo(text, 'paste')
       }
     },
     [goToStepTwo]
@@ -165,9 +181,15 @@ export function Downloader() {
       }
       setUrl(text)
       if (inspectLink(text).ok) {
-        goToStepTwo(text)
+        goToStepTwo(text, 'clipboard_button')
       } else {
         setInvalidHint(inspectLink(text).reason ?? null)
+        track(EVENTS.linkRejected, {
+          method: 'clipboard_button',
+          reason: inspectLink(text).reason,
+          source_host: hostOf(text),
+          input_length: text.length
+        })
       }
     } catch {
       setNotice('Browser blocked clipboard reading. Press Ctrl+V or Cmd+V directly in the input.')
@@ -322,7 +344,8 @@ export function Downloader() {
                   type="button"
                   onClick={() => {
                     setUrl(entry)
-                    goToStepTwo(entry)
+                    track(EVENTS.recentLinkReused, { source_host: hostOf(entry) })
+                    goToStepTwo(entry, 'recent')
                   }}
                   className="max-w-[12rem] truncate text-white/70 hover:text-white"
                   title={entry}
@@ -347,6 +370,7 @@ export function Downloader() {
           <button
             type="button"
             onClick={() => {
+              track(EVENTS.recentHistoryCleared, { entries: recent.length })
               setRecent([])
               writeRecent([])
             }}

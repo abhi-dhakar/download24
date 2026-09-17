@@ -45,6 +45,8 @@ import {
 import { DownloadStepper } from '@/components/download/DownloadStepper'
 import { DownloadingScene, SuccessScene } from '@/components/illustrations/ProgressArt'
 import { PlatformMark } from '@/components/PlatformMark'
+import { EVENTS, hostOf } from '@/lib/analytics'
+import { posthogIdentityParams, track } from '@/lib/analyticsClient'
 import { buildFilename, readPending } from '@/lib/pending'
 
 type Phase = 'downloading' | 'done' | 'error'
@@ -162,14 +164,37 @@ export function DownloadFlow() {
   /* The transfer                                                            */
   /* ---------------------------------------------------------------------- */
 
+  /** Shared analytics context for every step-3 event. */
+  const eventBase = useMemo(
+    () => ({
+      platform: snapshot?.platformId ?? 'unknown',
+      source_host: hostOf(src),
+      quality_label: label,
+      kind,
+      ext,
+      size_label: sizeLabel,
+      size_estimated: estimated,
+      mp3: audioMp3
+    }),
+    [audioMp3, estimated, ext, kind, label, sizeLabel, snapshot?.platformId, src]
+  )
+  const startedAtRef = useRef<number>(0)
+  const attemptRef = useRef(0)
+
   const finishDone = useCallback(
     (fileName: string | null) => {
       stopPolling()
       setSavedName(fileName ?? filename)
       setLivePhase('finished')
       setPhase('done')
+      track(EVENTS.downloadFinishedViewed, {
+        ...eventBase,
+        attempt: attemptRef.current,
+        wait_ms: startedAtRef.current ? Date.now() - startedAtRef.current : null,
+        confirmed_by_server: fileName !== null
+      })
     },
-    [filename, stopPolling]
+    [eventBase, filename, stopPolling]
   )
 
   const run = useCallback(async () => {
@@ -182,6 +207,11 @@ export function DownloadFlow() {
     stopPolling()
     const jobId = newJobId()
     const startedAt = Date.now()
+    startedAtRef.current = startedAt
+    attemptRef.current += 1
+    if (attemptRef.current > 1) {
+      track(EVENTS.downloadRetried, { ...eventBase, attempt: attemptRef.current })
+    }
 
     setPhase('downloading')
     setLivePhase('starting')
@@ -191,8 +221,12 @@ export function DownloadFlow() {
     // Native download via a hidden same-origin iframe. Chrome runs it through
     // its download manager: visible in the Downloads shelf with the real name
     // and a live progress bar while the bytes are transferring.
+    // An iframe navigation carries no custom headers, so the PostHog ids ride
+    // along as query params and the API links its events to this session.
     const iframe = iframeRef.current
-    if (iframe) iframe.src = `${apiHref}&mode=stream&job=${encodeURIComponent(jobId)}`
+    if (iframe) {
+      iframe.src = `${apiHref}&mode=stream&job=${encodeURIComponent(jobId)}${posthogIdentityParams()}`
+    }
 
     // Polled for the *phase* only: finished / failed. No counters are read, so
     // a slow transfer renders exactly like a fast one.
@@ -221,18 +255,23 @@ export function DownloadFlow() {
           finishDone(data.fileName ?? null)
         } else if (data.phase === 'failed') {
           stopPolling()
-          setFailure({
-            message: data.errorMessage ?? 'The download could not be completed.',
-            hint: data.errorHint
-          })
+          const message = data.errorMessage ?? 'The download could not be completed.'
+          setFailure({ message, hint: data.errorHint })
           setLivePhase('failed')
           setPhase('error')
+          track(EVENTS.downloadErrorViewed, {
+            ...eventBase,
+            attempt: attemptRef.current,
+            error_message: message,
+            error_hint: data.errorHint,
+            wait_ms: Date.now() - startedAt
+          })
         }
       } catch {
         /* network blip — next poll retries */
       }
     }, 1000)
-  }, [apiHref, finishDone, formatId, src, stopPolling])
+  }, [apiHref, eventBase, finishDone, formatId, src, stopPolling])
 
   useEffect(() => {
     // Runs on every *real* mount. React StrictMode's simulated mount→unmount→
@@ -249,8 +288,13 @@ export function DownloadFlow() {
   const cancel = useCallback(() => {
     stopPolling()
     if (iframeRef.current) iframeRef.current.src = 'about:blank'
+    track(EVENTS.downloadCancelled, {
+      ...eventBase,
+      phase: livePhase,
+      wait_ms: startedAtRef.current ? Date.now() - startedAtRef.current : null
+    })
     router.push(`/download?url=${encodeURIComponent(src)}`)
-  }, [router, src, stopPolling])
+  }, [eventBase, livePhase, router, src, stopPolling])
 
   const isAudio = kind === 'audio'
   const isBigFile = (parseSizeLabel(sizeLabel) ?? 0) >= BIG_FILE_BYTES

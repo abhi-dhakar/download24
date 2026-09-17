@@ -1,10 +1,10 @@
 /**
  * FeatureArt — spot illustrations for the feature cards.
  *
- * Variants map 1:1 to `FEATURE_HIGHLIGHTS[].icon` in `lib/seo.ts`, so the
- * marketing copy and the artwork can never drift apart. Same drawing system as
- * `HeroIllustration` / `StepArt`: theme tokens + currentColor, SMIL/CSS motion,
- * `aria-hidden` (the card title carries the semantics).
+ * Variants map 11 to FEATURE_HIGHLIGHTS icons in lib/seo, so the
+ * marketing copy and the artwork can never drift apart Same drawing system as
+ * HeroIllustration StepArt theme tokens currentColor SMIL CSS motion
+ * aria-hidden the card title carries the semantics
  */
 
 import type { JSX } from 'react'
@@ -16,18 +16,28 @@ const ART: Record<FeatureArtVariant, JSX.Element> = {
   sparkles: (
     <g>
       {/* monitor */}
-      <rect x="24" y="22" width="132" height="84" rx="10" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" strokeWidth="1.5" />
+      <rect x="24" y="22" width="132" height="84" rx="10" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" strokeWidth="2" />
       <rect x="34" y="32" width="112" height="52" rx="6" fill="var(--color-ink-800)" />
-      <path d="M70 48.5v19l16-9.5-16-9.5Z" fill="url(#feature-art-accent)" />
+      <path d="M70 48v19l16-9-16-10Z" fill="url(#feature-art-accent)" />
       <rect x="34" y="90" width="52" height="4" rx="2" fill="var(--color-accent-soft)">
-        <animate attributeName="width" values="18;52;18" keyTimes="0;0.6;1" dur="3.8s" repeatCount="indefinite" />
+        <animate attributeName="width" values="18;52;18" keyTimes="0;0.6;1" dur="4s" repeatCount="indefinite" />
       </rect>
-      <path d="M78 106h24l6 12H72l6-12Z" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" strokeWidth="1.5" />
+      <path d="M78 106h24l6 12H72l6-12Z" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" strokeWidth="2" />
       <rect x="62" y="118" width="56" height="6" rx="3" fill="var(--color-ink-800)" />
       {/* 4K badge */}
       <g className="animate-bob">
         <rect x="118" y="8" width="46" height="26" rx="13" fill="url(#feature-art-accent)" />
-        <text x="141" y="26" fontSize="13" fontWeight="800" textAnchor="middle" fill="#fff">4K</text>
+        <text
+          x="141"
+          y="21"
+          dominantBaseline="central"
+          fontSize="13"
+          fontWeight="800"
+          textAnchor="middle"
+          fill="#fff"
+        >
+          4K
+        </text>
       </g>
       {/* quality ladder rising out of the screen */}
       <g stroke="var(--color-accent-soft)" strokeWidth="3" strokeLinecap="round" opacity="0.55">
@@ -37,49 +47,115 @@ const ART: Record<FeatureArtVariant, JSX.Element> = {
     </g>
   ),
 
-  /* "No registration required" — a shielded profile, key crossed out */
+  /* "No registration required" — clean user profile card with a instant access checkmark badge */
   'user-x': (
-    <g>
-      {/* shield */}
-      <path
-        d="M90 16l52 18v34c0 30-22 48-52 60-30-12-52-30-52-60V34l52-18Z"
+    <g transform="translate(5, 5)">
+      {/* Background card container */}
+      <rect
+        x="40"
+        y="20"
+        width="90"
+        height="85"
+        rx="16"
         fill="var(--color-ink-850)"
         stroke="var(--color-line-strong)"
-        strokeWidth="1.5"
+        strokeWidth="2"
       />
-      {/* profile */}
-      <circle cx="78" cy="72" r="13" fill="none" stroke="var(--color-accent-soft)" strokeWidth="3" />
-      <path d="M54 108c4-13 13-20 24-20s20 7 24 20" stroke="var(--color-accent-soft)" strokeWidth="3" strokeLinecap="round" fill="none" />
-      {/* crossed-out key */}
-      <g>
-        <circle cx="122" cy="62" r="8" fill="none" stroke="currentColor" strokeWidth="2.6" className="text-white/45" />
-        <path d="M128 68l14 14m0-14-14 14" stroke="var(--color-danger)" strokeWidth="2.8" strokeLinecap="round" />
+
+      {/* User Avatar Head */}
+      <circle
+        cx="85"
+        cy="48"
+        r="14"
+        fill="none"
+        stroke="var(--color-accent-soft)"
+        strokeWidth="3"
+      />
+
+      {/* User Avatar Shoulders */}
+      <path
+        d="M62 84c3-12 11-18 23-18s20 6 23 18"
+        fill="none"
+        stroke="var(--color-accent-soft)"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+
+      {/* Floating Checkmark Badge - Highlighting instant access without login */}
+      <g className="animate-bob" transform="translate(108, 18)">
+        <circle cx="16" cy="16" r="16" fill="var(--color-ok)" />
+        <path
+          d="M9 16l5 5 9-10"
+          stroke="#fff"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </g>
-      {/* check badge */}
-      <circle cx="54" cy="44" r="12" fill="var(--color-ok)" className="animate-bob" />
-      <path d="M48.5 44.5l3.5 3.5 6.5-7.5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="60" className="animate-draw-check" />
     </g>
   ),
 
-  /* "Fast & free" — a lightning bolt with speed lines and a timer */
+  /* "Fast Free" — a central bolt clean speed lines and an MP3 badge */
   zap: (
-    <g>
-      {/* speed lines */}
-      <g stroke="var(--color-accent-soft)" strokeWidth="3" strokeLinecap="round" opacity="0.6">
-        <path d="M16 52h20" className="animate-pulse-soft" />
-        <path d="M10 72h26" className="animate-pulse-soft" style={{ animationDelay: '0.4s' }} />
-        <path d="M16 92h20" className="animate-pulse-soft" style={{ animationDelay: '0.8s' }} />
+    <g transform="translate(10, 5)">
+      {/* Parallel speed lines on the left */}
+      <g
+        stroke="var(--color-accent-soft)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        opacity="0.6"
+      >
+        <path d="M5 45h20" className="animate-pulse-soft" />
+        <path
+          d="M0 60h25"
+          className="animate-pulse-soft"
+          style={{ animationDelay: '0.4s' }}
+        />
+        <path
+          d="M5 75h20"
+          className="animate-pulse-soft"
+          style={{ animationDelay: '0.8s' }}
+        />
       </g>
-      {/* bolt */}
-      <g className="animate-drift">
-        <path d="M96 12 60 78h26l-8 48 42-66H94l10-48h-8Z" fill="url(#feature-art-accent)" stroke="var(--color-accent-deep)" strokeWidth="2" strokeLinejoin="round" />
+
+      {/* Main bolt */}
+      <g>
+        <path
+          d="M75 10 40 70h25l-8 40 40-55H70l10-45h-5Z"
+          fill="url(#feature-art-accent)"
+          stroke="var(--color-accent-deep)"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
       </g>
-      {/* timer chip */}
-      <g className="animate-bob" style={{ animationDelay: '0.7s' }}>
-        <rect x="112" y="96" width="52" height="28" rx="14" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" />
-        <circle cx="126" cy="110" r="8" fill="none" stroke="var(--color-ok)" strokeWidth="2.4" />
-        <path d="M126 106v4.5l3 2" stroke="var(--color-ok)" strokeWidth="2" strokeLinecap="round" fill="none" />
-        <text x="146" y="114.5" fontSize="12" fontWeight="700" textAnchor="middle" fill="currentColor" className="text-white/70">3s</text>
+
+      {/* MP3 Chip on the right */}
+      <g
+        transform="translate(105, 75)"
+        className="animate-bob"
+        style={{ animationDelay: '0.7s' }}
+      >
+        <rect
+          x="0"
+          y="0"
+          width="50"
+          height="30"
+          rx="15"
+          fill="var(--color-ink-850)"
+          stroke="var(--color-line-strong)"
+          strokeWidth="2"
+        />
+        <text
+          x="25"
+          y="15"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="13"
+          fontWeight="800"
+          fill="currentColor"
+        >
+          MP3
+        </text>
       </g>
     </g>
   ),
@@ -93,16 +169,16 @@ const ART: Record<FeatureArtVariant, JSX.Element> = {
         <rect x="66" y="24" width="76" height="52" rx="9" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" transform="rotate(4 104 50)" />
       </g>
       {/* front card with a play mark */}
-      <rect x="42" y="42" width="86" height="58" rx="10" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" strokeWidth="1.5" />
+      <rect x="42" y="42" width="86" height="58" rx="10" fill="var(--color-ink-850)" stroke="var(--color-line-strong)" strokeWidth="2" />
       <rect x="52" y="52" width="66" height="30" rx="6" fill="var(--color-ink-800)" />
-      <path d="M79 59.5v15l13-7.5-13-7.5Z" fill="url(#feature-art-accent)" />
+      <path d="M79 59v15l13-7-13-8Z" fill="url(#feature-art-accent)" />
       <rect x="52" y="88" width="40" height="4" rx="2" fill="var(--color-ink-700)" />
       {/* orbiting dots */}
       <g>
         <circle cx="146" cy="38" r="6" fill="var(--color-accent)" className="animate-bob" />
-        <circle cx="156" cy="82" r="4.5" fill="var(--color-cyan-glow)" className="animate-bob-slow" style={{ animationDelay: '0.6s' }} />
+        <circle cx="156" cy="82" r="5" fill="var(--color-cyan-glow)" className="animate-bob-slow" style={{ animationDelay: '0.6s' }} />
         <circle cx="30" cy="30" r="4" fill="var(--color-ok)" className="animate-bob-slow" style={{ animationDelay: '1.2s' }} />
-        <circle cx="22" cy="98" r="3.5" fill="var(--color-warn)" className="animate-bob" style={{ animationDelay: '0.9s' }} />
+        <circle cx="22" cy="98" r="4" fill="var(--color-warn)" className="animate-bob" style={{ animationDelay: '0.9s' }} />
       </g>
     </g>
   )
@@ -118,7 +194,7 @@ export function FeatureArt({
   return (
     <svg
       viewBox="0 0 180 130"
-      className={`h-auto w-full ${className}`}
+      className={className ? `h-auto w-full ${className}` : "h-auto w-full"}
       fill="none"
       aria-hidden="true"
       focusable="false"

@@ -36,7 +36,7 @@ export function PlatformBar({
       aria-label="Supported platforms"
       className="relative z-30 border-b border-line bg-ink-950/65 backdrop-blur-xl"
     >
-      <div className="mx-auto flex w-full max-w-[100rem] items-center gap-3 px-3 sm:px-6">
+      <div className="mx-auto flex h-12 w-full max-w-[100rem] items-center gap-3 px-3 sm:px-6">
         {/* Section label — only when there is room for it (xl+). */}
         <div className="hidden shrink-0 items-center gap-2 xl:flex">
           <span className="relative flex h-1.5 w-1.5" aria-hidden="true">

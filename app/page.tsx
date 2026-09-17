@@ -194,7 +194,7 @@ export default function HomePage() {
         <section
           id="downloader"
           aria-labelledby="downloader-heading"
-          className="relative isolate overflow-hidden pt-10 pb-8 sm:pt-16 sm:pb-12"
+          className="relative isolate overflow-hidden pt-8 pb-8 sm:pt-10 sm:pb-12"
         >
           {/* Subtle Ambient Background */}
           <div aria-hidden="true" className="hero-aurora animate-float opacity-30" />
@@ -203,28 +203,18 @@ export default function HomePage() {
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
             {/* ------------------------------------------------- left: copy + input */}
             <div className="text-center lg:text-left">
-              {/* Minimal Brand & Status Pill */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3.5 py-1 text-xs text-white/75 backdrop-blur-md">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-ok" />
-                </span>
-                <span className="font-semibold text-white">Download24<span className="text-accent">.in</span></span>
-                <span className="text-white/30">•</span>
-                <span className="text-white/60">Free 4K &amp; MP3 Downloader</span>
-              </div>
-
+              
               {/* Clean, High-Impact Headline */}
               <h1
                 id="downloader-heading"
-                className="mt-6 font-display text-[clamp(2.2rem,5vw,3.8rem)] font-extrabold tracking-tight text-white leading-[1.1]"
+                className="mt-4 font-display text-[clamp(2.2rem,5vw,3.8rem)] font-extrabold tracking-tight text-white leading-[1.1]"
               >
                 Download Online Videos in{' '}
                 <span className="text-gradient">4K &amp; MP3</span>
               </h1>
 
               {/* Concise Subtitle */}
-              <p className="mx-auto mt-4 max-w-xl text-balance text-sm leading-relaxed text-white/60 sm:text-base lg:mx-0">
+              <p className="mx-auto mt-2 max-w-xl text-balance text-sm leading-relaxed text-white/60 sm:text-base lg:mx-0">
                 Paste any link from YouTube, Instagram Reels, Facebook, TikTok, or X.{' '}
                 High speed, no watermarks, and no registration required.
               </p>
@@ -234,26 +224,7 @@ export default function HomePage() {
                 <Downloader />
               </div>
 
-              {/* Streamlined Platform Support Icons */}
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-white/50 lg:justify-start">
-                <span>Supported:</span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                  <PlatformMark id="youtube" className="h-3.5 w-3.5" /> YouTube
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                  <PlatformMark id="instagram" className="h-3.5 w-3.5" /> Instagram
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                  <PlatformMark id="tiktok" className="h-3.5 w-3.5" /> TikTok
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                  <PlatformMark id="facebook" className="h-3.5 w-3.5" /> Facebook
-                </span>
-                <Link href="/platforms" className="text-accent hover:underline ml-1">
-                  +1,000 more
-                </Link>
-              </div>
-
+          
               <noscript>
                 <p className="mx-auto mt-6 max-w-xl rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-warn lg:mx-0">
                   JavaScript is required for the live extractor. You can use the direct API:{' '}

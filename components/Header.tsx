@@ -34,7 +34,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-ink-950/80 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-950/65">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         
         {/* Brand Logo */}
         <Link
@@ -47,8 +47,8 @@ export function Header() {
             <Image
               src="/logo.png"
               alt="Download24 logo"
-              width={40}
-              height={40}
+              width={32}
+              height={32}
               className="h-full w-full object-cover"
               priority
             />
@@ -60,9 +60,9 @@ export function Header() {
                 Download<span className="text-accent">24</span>
                 <span className="text-xs font-semibold text-white/40">.in</span>
               </span>
-              <span className="hidden rounded-md border border-accent/25 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent sm:inline-block">
+              {/* <span className="hidden rounded-md border border-accent/25 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent sm:inline-block">
                 4K · MP3
-              </span>
+              </span> */}
             </div>
           </div>
         </Link>

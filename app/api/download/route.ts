@@ -40,8 +40,8 @@ import {
 import { DOWNLOAD_MODE, LIMITS } from '@/lib/site'
 import {
   buildTeraboxPayload,
+  forwardBody,
   isMediaExtension,
-  mergeProgress,
   openTeraboxFile,
   proxyBody,
   TeraboxError
@@ -167,19 +167,9 @@ function preparedResponse(
   finishJob: (fileName?: string) => void
 ): Response {
   return new Response(
-    mergeProgress(
-      fileBody(prepared, releaseSlot),
-      {
-        onProgress: ({ percent, receivedBytes }) =>
-          updateLiveJob(jobId, {
-            phase: 'streaming',
-            ...(percent !== null ? { percent } : {}),
-            receivedBytes
-          }),
-        onDone: () => finishJob(filename)
-      },
-      prepared.size
-    ),
+    forwardBody(fileBody(prepared, releaseSlot), {
+      onDone: () => finishJob(filename)
+    }),
     {
       status: 200,
       headers: transferHeaders(filename, prepared.ext, {
@@ -303,10 +293,7 @@ export async function GET(request: Request): Promise<Response> {
 
       if (!forceStream && DOWNLOAD_MODE === 'redirect' && isSafePublicMediaUrl(opened.finalUrl)) {
         void opened.response.body?.cancel().catch(() => {})
-        updateLiveJob(jobId, {
-          phase: 'redirect',
-          ...(opened.size ? { totalBytes: opened.size } : {})
-        })
+        updateLiveJob(jobId, { phase: 'redirect' })
         return NextResponse.redirect(opened.finalUrl, {
           status: 302,
           headers: {
@@ -327,23 +314,12 @@ export async function GET(request: Request): Promise<Response> {
       }
 
       const knownSize = opened.size ?? undefined
-      updateLiveJob(jobId, {
-        phase: 'streaming',
-        ...(knownSize ? { totalBytes: knownSize } : {})
-      })
+      updateLiveJob(jobId, { phase: 'streaming' })
 
       transferStarted = true
       return new Response(
         proxyBody(upstreamBody, {
           onSettled: releaseSlot,
-          onProgress: (bytes) => {
-            updateLiveJob(jobId, {
-              receivedBytes: bytes,
-              ...(knownSize && knownSize > 0
-                ? { percent: Math.min(100, Math.round((bytes / knownSize) * 1000) / 10) }
-                : {})
-            })
-          },
           onDone: () => finishJob(finalName)
         }),
         {
@@ -432,19 +408,18 @@ export async function GET(request: Request): Promise<Response> {
         resolveStartup()
       }
 
-      /** Polled live view for `/download/progress`, fed by yt-dlp's stderr. */
+      /**
+       * Polled live view for `/download/progress`, fed by yt-dlp's stderr.
+       * Only the phase is recorded: while the source→server fetch is climbing
+       * the job reads `downloading`, and the short tail after 100% (the flush
+       * to the browser) reads `streaming`. No percentages or byte counts are
+       * stored — step 3 renders no transfer telemetry.
+       */
       const absorbProgressLine = (line: string) => {
         const update = parseYtDlpProgressLine(line)
         if (!update) return
         updateLiveJob(jobId, {
-          // While the source→server byte fetch is climbing, label it as the
-          // download; the short "streaming" tail is the final flush after 100%.
-          phase:
-            update.percent !== null && update.percent >= 99.5 ? 'streaming' : 'downloading',
-          percent: update.percent ?? undefined,
-          totalBytes: update.totalBytes ?? undefined,
-          speedBytesPerSec: update.speedBytesPerSec ?? undefined,
-          receivedBytes: bytesSent
+          phase: update.percent !== null && update.percent >= 99.5 ? 'streaming' : 'downloading'
         })
       }
       job.onProgress(absorbProgressLine)
@@ -543,17 +518,11 @@ export async function GET(request: Request): Promise<Response> {
         onProgress: (line) => {
           const update = parseYtDlpProgressLine(line)
           if (!update) return
+          // yt-dlp downloads first; a follow-up `[Merger]` state is not a
+          // `[download]` line, so once the download hits 100% the job reads
+          // `processing` for the merge/transcode that follows.
           updateLiveJob(jobId, {
-            // yt-dlp downloads first; a follow-up `[Merger]` state is not a
-            // `[download]` line, so once the download hits 100% we show the
-            // merge/transcode as a brief "processing" hold below.
-            phase: update.percent !== null && update.percent >= 99.5 ? 'processing' : 'downloading',
-            totalBytes: update.totalBytes ?? undefined,
-            percent:
-              update.percent !== null && update.percent >= 99.5
-                ? 99.5
-                : (update.percent ?? undefined),
-            speedBytesPerSec: update.speedBytesPerSec ?? undefined
+            phase: update.percent !== null && update.percent >= 99.5 ? 'processing' : 'downloading'
           })
         }
       })

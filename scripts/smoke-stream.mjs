@@ -9,10 +9,12 @@
  *   → updateLiveJob    → finishLiveJob (lib/liveJobs.ts)
  *
  * Assertions:
- *   1. the pipe path streams the exact file bytes and reports a monotonically
- *      increasing 0→100% with a real total size and speed before completion;
- *   2. the prepare (disk file) path reports the same parsed totals on stdout;
- *   3. the live-job registry ends in `finished` with the right file name.
+ *   1. the pipe path streams the exact file bytes while yt-dlp's stderr lines
+ *      parse into a monotonically increasing percentage (the only progress
+ *      signal left — it thresholds the job phase, it is never rendered);
+ *   2. the prepare (disk file) path parses the same percentages on stdout;
+ *   3. the live-job registry ends in `finished` with the right file name and
+ *      stores no transfer telemetry (no percent / bytes / speed / ETA).
  *
  * Usage: node scripts/smoke-stream.mjs [http://127.0.0.1:8998/c.mp4]
  */
@@ -74,21 +76,15 @@ const jobId = registerLiveJob('smoke-' + Date.now().toString(36))
 const jobId2 = registerLiveJob('smoke2-' + Date.now().toString(36))
 
 const percentSnapshots = []
-const totalSnapshots = new Set()
-let sawSpeed = false
 
 const absorb = (job) => (line) => {
   const update = parseYtDlpProgressLine(line)
   if (!update) return
+  // Mirrors the download route: the percentage only picks the phase.
   updateLiveJob(job, {
-    phase: update.percent !== null && update.percent >= 99.5 ? 'downloading' : 'streaming',
-    percent: update.percent ?? undefined,
-    totalBytes: update.totalBytes ?? undefined,
-    speedBytesPerSec: update.speedBytesPerSec ?? undefined
+    phase: update.percent !== null && update.percent >= 99.5 ? 'streaming' : 'downloading'
   })
   if (update.percent !== null) percentSnapshots.push(update.percent)
-  if (update.totalBytes !== null) totalSnapshots.add(update.totalBytes)
-  if (update.speedBytesPerSec) sawSpeed = true
 }
 
 /* ------------------------------------------------------------------ path A */
@@ -114,17 +110,12 @@ await new Promise((resolve, reject) => {
 const cleanExit = exitCode === 0
 if (cleanExit) finishLiveJob(jobId, 'sample.mp4')
 check(cleanExit, `yt-dlp exited 0 (got ${exitCode})`)
-// The toy server serves a 600000-byte file; yt-dlp *displays* it as the
-// rounded "585.94KiB", so the parsed totalBytes (~600003) is a display
-// approximation of the real size — we assert both here.
 check(bytes === 600000, `streamed all file bytes (${bytes} === 600000)`, `bytes=${bytes}`)
 
 const peaks = percentSnapshots.map((p) => p).filter((p, i, a) => a.indexOf(p) === i)
 console.log(`  distinct percent values seen: ${peaks.length}  →`, peaks.slice(0, 12), peaks.length > 12 ? `… +${peaks.length - 12}` : '')
 check(percentSnapshots.some((p) => p > 0 && p < 60), 'saw an *early* percent (<60%) before completion')
 check(percentSnapshots.some((p) => p >= 99), 'saw a 100% (done) line')
-check(totalSnapshots.has(600003), 'reported totalBytes = 600003 (parsed 585.94KiB)', `totals=${[...totalSnapshots].join(',')}`)
-check(sawSpeed, 'reported a non-zero speedBytesPerSec')
 
 // Monotonicity over the *first* N (frag retries can bounce; compare running max)
 let runningMax = -1
@@ -138,13 +129,15 @@ check(monotonic, 'percent increased without falling')
 const finalJob = readLiveJob(jobId)
 console.log('  final job state:', JSON.stringify(finalJob))
 check(finalJob?.phase === 'finished', 'live job ended in `finished`')
-check(finalJob?.percent === 100, 'live job percent is 100')
 check(finalJob?.fileName === 'sample.mp4', 'live job carries the file name')
+const leaked = Object.keys(finalJob ?? {}).filter((key) =>
+  ['percent', 'totalBytes', 'speedBytesPerSec', 'receivedBytes'].includes(key)
+)
+check(leaked.length === 0, 'live job stores no transfer telemetry', `leaked=${leaked.join(',')}`)
 
 /* ------------------------------------------------------------------ path B */
 console.log('\n--- Path B: prepare a file on disk (no merge), parse stdout progress ---')
 const prepareSnapshots = []
-const prepareTotals = new Set()
 let prepared
 try {
   prepared = await prepareFile(toyUrl, option, {
@@ -153,14 +146,8 @@ try {
     onProgress: (line) => {
       const update = parseYtDlpProgressLine(line)
       if (!update) return
-      updateLiveJob(jobId2, {
-        phase: 'downloading',
-        percent: update.percent ?? undefined,
-        totalBytes: update.totalBytes ?? undefined,
-        speedBytesPerSec: update.speedBytesPerSec ?? undefined
-      })
+      updateLiveJob(jobId2, { phase: 'downloading' })
       if (update.percent !== null) prepareSnapshots.push(update.percent)
-      if (update.totalBytes !== null) prepareTotals.add(update.totalBytes)
     }
   })
   finishLiveJob(jobId2, `sample.${prepared.ext}`)
@@ -168,7 +155,6 @@ try {
   check(prepared.size === 600000, `prepared file has all bytes (${prepared.size} === 600000)`)
   check(prepareSnapshots.some((p) => p > 0 && p < 99), 'prepare path saw an early percent')
   check(prepareSnapshots.some((p) => p >= 99), 'prepare path saw 100%')
-  check(prepareTotals.has(600003), 'prepare path reported totalBytes = 600003')
 } catch (error) {
   check(false, `prepare path completed (${error.message})`, error.stack)
 }

@@ -19,8 +19,11 @@
  * `--quiet`. With `-o -`, yt-dlp then flips its internal `logtostderr` switch,
  * so the human log (including the `[download] Destination: -` size line and one
  * `[download]  46.1% of … at …/s` update per line) goes to **stderr** while the
- * raw media bytes stay on stdout. `lib/progress.ts` parses those lines so the
- * UI can animate a real percentage even on a chunked, length-less response.
+ * raw media bytes stay on stdout. `lib/progress.ts` reads the percentage off
+ * those lines, which is what lets the download route tell a still-fetching job
+ * (`downloading`) from one that has reached 100% and is now flushing to the
+ * browser (`streaming`) or merging on disk (`processing`) — see `lib/liveJobs.ts`.
+ * Nothing is rendered from it: step 3 shows an indeterminate animation.
  * (`--quiet` would set `noprogress` and suppress every update, which is exactly
  * the \"jumps straight to 100%\" bug this fixes.)
  */

@@ -26,7 +26,7 @@ Downloading is a guided, three-page journey instead of an inline result panel:
 | --- | --- | --- |
 | 1 — Paste link | `/` (also every `/platform` page) | The hero input validates the URL client-side, then hands over to step 2. Clipboard paste, recent-link history and the `/` keyboard shortcut live here. |
 | 2 — Choose quality | `/download?url=…` | The page runs `POST /api/parse`, animates while extracting, then shows the video details (thumbnail, title, channel, duration, platform) and every quality preset from 4K down to MP3. |
-| 3 — Download | `/download/progress?src=…&f=…` | The chosen preset streams from `/api/download` while a live gauge animates the transfer — percentage, bytes, speed and ETA — and finishes with a success scene plus "download another" actions. |
+| 3 — Download | `/download/progress?src=…&f=…` | The chosen preset streams from `/api/download` while the page shows the selected file (thumbnail, title, platform, quality, size), an ambient "it is running" animation and plain instructions on how long to expect — **no** percentage, byte counter, speed or ETA — then flips to a success scene with "download another" actions. |
 
 Hand-off details worth knowing:
 
@@ -67,7 +67,7 @@ fonts, no network requests:
 | `HeroIllustration.tsx` | The homepage showpiece: a browser window resolving a link into quality options, an animated progress bar, a file dropping into a folder with a success check, floating "4K / MP3 / no watermark" chips and a rotating orbit ring. |
 | `StepArt.tsx` | Four spot illustrations for the how-to steps (copy the link, paste it, pick a quality, save the file). |
 | `FeatureArt.tsx` | Four feature-card illustrations (4K monitor, no-signup shield, speed bolt, multi-platform layers). |
-| `ProgressArt.tsx` | The step-3 `ProgressGauge` (determinate + indeterminate), the `SuccessScene` check and the step-2 `LinkMissingArt` empty state. |
+| `ProgressArt.tsx` | The step-3 `DownloadingScene` (indeterminate source → channel → falling file → download shelf), the `SuccessScene` check and the step-2 `LinkMissingArt` empty state. |
 
 Drawing conventions:
 
@@ -77,8 +77,9 @@ Drawing conventions:
 * motion uses translate/opacity CSS keyframes (`--animate-bob`, `--animate-flow-dash`,
   `--animate-draw-check`, … in `app/globals.css`) plus SMIL `<animate>`/`<animateTransform>` for
   rotations and progress fills — the same approach as `components/Spinner.tsx`;
-* the gauge's arc geometry is bound to React state with a short CSS transition, so it eases between
-  chunk updates instead of jumping;
+* step 3 is deliberately **indeterminate**: `DownloadingScene` loops the same few seconds of motion
+  (rotating arc, flowing dashes, a file dropping into the shelf) instead of binding any geometry to
+  transfer state, so nothing on the page implies a percentage it cannot honestly report;
 * `prefers-reduced-motion` strips the CSS animations globally (SMIL keeps running, matching the
   existing spinner behaviour).
 
@@ -162,6 +163,14 @@ curl -s -X POST 'localhost:3000/api/parse?refresh=1' -H 'content-type: applicati
 
 # stream a preset (index = DownloadOption.id from the response above)
 curl -sL -o clip.mp4 'localhost:3000/api/download?src=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Daqz-KE-bpKQ&f=2'
+
+# poll the phase of a download started with &job=<id> (step 3's completion signal)
+curl -s 'localhost:3000/api/download/progress?id=<jobId>'
+# → {"ok":true,"jobId":"<jobId>","phase":"downloading"}
+#   phase ∈ starting | downloading | processing | streaming | redirect | finished | failed,
+#   plus `fileName` once delivery starts and `errorMessage`/`errorHint` on failure.
+#   Unknown/expired jobs answer {"ok":true,"gone":true,"phase":"finished"}.
+#   No percentage, byte counter, speed or ETA is exposed — step 3 renders none of it.
 ```
 
 Response headers worth knowing: `X-Cache: HIT|MISS`, `X-Cache-Ttl`, `X-Request-Duration-Ms`, and on
@@ -255,8 +264,10 @@ changes its player) and runs `next start`.
   Download file" progress indicator on both flow pages.
 * `lib/pending.ts` owns the sessionStorage hand-off and the filename sanitiser used when the browser
   saves the blob.
-* Streaming progress is throttled to ~150 ms per state emission with an exponential-moving-average
-  speed readout, so chunk events never thrash React renders.
+* The server still parses yt-dlp's `--newline` output into a job phase (`lib/progress.ts` →
+  `lib/liveJobs.ts`), and step 3 polls `/api/download/progress` for that **phase alone** — it is the
+  only completion signal a hidden-iframe download offers. The counters yt-dlp reports never reach
+  the UI: `DownloadFlow` reads `phase`/`fileName`/errors and renders nothing numeric.
 
 ## Legal
 

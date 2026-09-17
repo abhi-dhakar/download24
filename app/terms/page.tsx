@@ -92,7 +92,7 @@ export default function TermsPage() {
             </p>
             <p className="mt-2">
               Rights holders should send takedown requests to the platform where the content is actually hosted
-              (YouTube, Instagram, TikTok, Facebook, X, Vimeo, Dailymotion, Reddit or Twitch), each of which
+              (YouTube, Instagram, TikTok, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch or TeraBox), each of which
               operates its own notice-and-takedown procedure. Requests that also reach us will be answered by
               pointing at that procedure.
             </p>
@@ -119,7 +119,7 @@ export default function TermsPage() {
             </h2>
             <p className="mt-2">
               {SITE.name} is not affiliated with, endorsed by, or sponsored by YouTube, Google, Meta,
-              Instagram, Facebook, TikTok, ByteDance, X Corp., Twitter, Vimeo, Dailymotion, Reddit or Twitch.
+              Instagram, Facebook, TikTok, ByteDance, X Corp., Twitter, Vimeo, Dailymotion, Reddit, Twitch or TeraBox (Baidu).
               Names, brand marks and logos belong to their owners and appear here only to identify which links
               the resolver understands. Using this service does not exempt you from each platform’s terms of
               service.

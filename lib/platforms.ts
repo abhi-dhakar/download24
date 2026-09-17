@@ -21,6 +21,7 @@ export type PlatformId =
   | 'dailymotion'
   | 'reddit'
   | 'twitch'
+  | 'terabox'
 
 export interface Platform {
   id: PlatformId
@@ -37,6 +38,12 @@ export interface Platform {
   /** Best resolution this source is realistically offered in. */
   maxResolution: 2160 | 1440 | 1080 | 720 | 480
   supportsMp3: boolean
+  /**
+   * A file host rather than a streaming site: links are share URLs whose files
+   * are delivered by the dedicated engine in `lib/terabox.ts` (yt-dlp has no
+   * TeraBox extractor).
+   */
+  fileShare?: boolean
   /** Watermark-free extraction guarantee (TikTok). */
   noWatermark?: boolean
   /** Short, keyword-bearing sentence used in the grid and in the JSON-LD. */
@@ -180,6 +187,44 @@ export const PLATFORMS: readonly Platform[] = [
       'Download Twitch clips and past broadcasts in up to 1080p60 source quality as MP4.',
     qualities: ['1080p', '720p', '480p'],
     demoUrl: 'https://clips.twitch.tv/SpicyGracefulRamenPeteZahHuh'
+  },
+  {
+    id: 'terabox',
+    name: 'TeraBox',
+    displayName: 'TeraBox',
+    hosts: [
+      'terabox.com',
+      'terabox.app',
+      'terabox.fun',
+      'terabox.best',
+      'teraboxapp.com',
+      '1024terabox.com',
+      '1024tera.com',
+      '4funbox.com',
+      'mirrobox.com',
+      'nephobox.com',
+      'freeterabox.com',
+      'momerybox.com',
+      'tibibox.com',
+      'gibibox.com',
+      'pebibox.com',
+      'teraboxshare.com',
+      'teraboxlink.com',
+      'terasharelink.com',
+      'terasharefile.com',
+      'terafileshare.com',
+      'bestclouddrive.com',
+      'dubox.com',
+      'fancybox.in'
+    ],
+    accent: '#2f6bff',
+    accentAlt: '#7cc4ff',
+    maxResolution: 1080,
+    supportsMp3: false,
+    fileShare: true,
+    blurb:
+      'Download TeraBox share links — single videos, whole folders and original-quality files — with no login, no pop-ups and no fake premium wall.',
+    qualities: ['Original file', '1080p', '720p', 'Folder shares']
   }
 ] as const
 
@@ -226,7 +271,15 @@ export const ALLOWED_HOSTS: ReadonlySet<string> = new Set([
   'www.tiktok.com',
   'shared.tiktok.com',
   'mobile.twitter.com',
-  'studio.youtube.com'
+  'studio.youtube.com',
+  // TeraBox serves the share API from per-region sub-domains.
+  'dm.terabox.com',
+  'www.teraboxapp.com',
+  'dm.1024tera.com',
+  'www.1024tera.com',
+  'www.4funbox.com',
+  'www.mirrobox.com',
+  'www.nephobox.com'
 ])
 
 /** Platforms whose logo grid is rendered above the fold. */

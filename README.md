@@ -5,9 +5,16 @@ inspired by SaveFrom.net. There is **no Express server**: link extraction happen
 Route Handler (`app/api/parse/route.ts`) that shells out to the real `yt-dlp` binary through
 `youtube-dl-exec`, and finished files are streamed to the browser from `app/api/download/route.ts`.
 
+TeraBox share links are the one exception: `yt-dlp` ships no TeraBox extractor, so `lib/terabox.ts`
+resolves those shares natively (share page → `jsToken`/`dp-logid` → `/share/list` → signed `dlink`)
+and the download route proxies the CDN response.
+
 ```
 Visitor ── paste link ──▶ POST /api/parse ──▶ LRU cache (15 min) ──▶ yt-dlp -J ──▶ format triage
         ── click 4K ────▶ GET /api/download ─▶ yt-dlp -f f137+ba -o - ─▶ piped to the browser
+
+TeraBox share ──▶ lib/terabox.ts ──▶ share page + jsToken ──▶ /share/list ──▶ one option per file
+              ──▶ GET /api/download ─▶ fresh dlink ──▶ CDN bytes piped (or 302 in redirect mode)
 ```
 
 ## The three-page download flow
@@ -42,7 +49,7 @@ Hand-off details worth knowing:
 | `/platforms` | All supported networks: capability table (max quality / watermark-free / MP3) plus the platform grid. |
 | `/faq` | The FAQ accordion. Carries the `FAQPage` JSON-LD (the same array renders the visible answers). |
 | `/download`, `/download/progress` | Steps 2 and 3 of the flow (see above). |
-| `/[slug]` | Per-platform landing pages (`/youtube-video-download`, `/instagram-video-download`, …) — ten SEO-tuned pages that reuse the same hero input. |
+| `/[slug]` | Per-platform landing pages (`/youtube-video-download`, `/instagram-video-download`, `/terabox-video-download`, …) — eleven SEO-tuned pages that reuse the same hero input. |
 | `/terms`, `/privacy` | Legal pages. |
 
 Navigation (header, footer, mobile drawer) links the five top-level destinations; `sitemap.xml`
@@ -78,7 +85,7 @@ Drawing conventions:
 
 | Area | What ships here |
 | --- | --- |
-| Platforms | YouTube, YouTube Shorts, Instagram (Reels/IGTV), TikTok (no watermark), Facebook, X/Twitter, Vimeo, Dailymotion, Reddit, Twitch clips — plus any other extractor the installed `yt-dlp` supports (`lib/platforms.ts` is the allow-list). |
+| Platforms | YouTube, YouTube Shorts, Instagram (Reels/IGTV), TikTok (no watermark), Facebook, X/Twitter, Vimeo, Dailymotion, Reddit, Twitch clips and **TeraBox share links** (single files, multi-file shares and folders) — plus any other extractor the installed `yt-dlp` supports (`lib/platforms.ts` is the allow-list). |
 | Qualities | 4K/2160p, 1440p, 1080p, 720p, 480p, 360p, 240p **and** MP3 audio, each with container (MP4/WebM/MKV), codec family, fps, bitrate and estimated size. |
 | Merging | Modern YouTube publishes *no* muxed streams. Options above 720p are therefore flagged `needsMerge` and muxed server-side with `-c copy` (never re-encoded) via ffmpeg. |
 | Caching | `lru-cache` with a 15-minute TTL and a 2,000-entry cap in `lib/cache.ts`. Keys ignore tracking junk (`?si=`, `?utm_*`, `?t=`) so the same video is one entry regardless of how the link was shared. Errors get a 45-second negative cache so one dead link cannot be hammered. |
@@ -132,6 +139,10 @@ Everything is optional; see `.env.example` for the full annotated list.
 | `RATE_LIMIT_EXTRACT_PER_MIN` | `40` | Extractions per hashed client per minute |
 | `RATE_LIMIT_DOWNLOAD_PER_MIN` | `12` | Downloads per hashed client per minute |
 | `EXTRA_ALLOWED_HOSTS` | unset | Add hosts to the allow-list without touching code |
+| `TERABOX_COOKIE` | unset | `ndus` token, Cookie header or JSON — answers TeraBox's verification wall |
+| `TERABOX_RESOLVE_PROXY` | unset | Optional `?mode=resolve&surl=…` resolver used when TeraBox blocks the host's region |
+| `TERABOX_MAX_FILES` / `TERABOX_MAX_DEPTH` | `60` / `2` | How many files a share may expand into and how deep folders are walked |
+| `TERABOX_API_BASE` / `TERABOX_TIMEOUT_MS` / `TERABOX_USER_AGENT` | unset | Pin the API origin, the per-call timeout or the browser UA the share page is fetched with |
 
 On non-`localhost` hosts `robots.txt`/`sitemap.xml` are emitted; on `localhost` robots disallows
 everything and the sitemap is empty, so a dev box can never leak into the index.
@@ -191,6 +202,31 @@ changes its player) and runs `next start`.
 * The download route holds its per-IP concurrency slot until the stream closes or is cancelled, not until
   the handler returns, and kills the `yt-dlp` child on client disconnect (`ReadableStream.cancel`).
 
+**TeraBox engine (`lib/terabox.ts`)**
+
+* TeraBox is a *file host*, not a streaming site, and `yt-dlp` has no extractor for it, so the
+  share flow is implemented directly: fetch `https://<host>/s/<surl>`, scrape the `jsToken`,
+  `dp-logid` and `bdstoken` tokens out of the HTML (plus the `og:image` preview), then call
+  `/share/list?shorturl=…&root=1` with the absorbed cookies.
+* Folders are walked recursively (`root=0&dir=/folder`) up to `TERABOX_MAX_DEPTH` levels and
+  `TERABOX_MAX_FILES` files, so one share link can list every video it contains. Each file becomes
+  a normal `DownloadOption` — `lib/types.ts` only grows an optional `remoteFile` field so the
+  download route knows which share path to open.
+* Failed `errno`s are mapped to the shared error codes (`4000020`/`400141` → verification required,
+  `9000` → region blocked, `-9`/`115` → expired share); a `TERABOX_COOKIE` that hits a verification
+  wall is retried once anonymously, matching what a browser does.
+* Share links that render their tokens client-side are caught by a second path: every mirror is
+  retried on the older `/api/shorturlinfo?shorturl=…&root=1` endpoint, which answers without a
+  `jsToken`. When TeraBox reports video dimensions they set the quality chip; otherwise the file
+  name (`…-1080p.mp4`) is the hint, and a file with neither shows as "Original file" rather than a
+  made-up resolution.
+* Because signed `dlink`s expire in minutes, nothing is ever replayed from cache: `/api/download`
+  re-resolves the share and opens a fresh link, then pipes the CDN bytes (`X-Download-Mode:
+  terabox-cdn`) or 302s to the signed URL when `DOWNLOAD_MODE=redirect`.
+* `TERABOX_RESOLVE_PROXY` is an optional escape hatch for hosts whose region TeraBox refuses to
+  serve at all (`?mode=resolve&surl=…&raw=1` contract); every URL returned upstream still passes
+  the same SSRF/public-host guard as the rest of the app.
+
 **Frontend flow**
 
 * `components/Downloader.tsx` is step 1 everywhere (homepage + platform pages): it validates, records
@@ -208,6 +244,6 @@ changes its player) and runs `next start`.
 ## Legal
 
 Demo project. Not affiliated with YouTube, Google, Meta, Instagram, Facebook, TikTok, ByteDance, X Corp.,
-Twitter, Vimeo, Dailymotion, Reddit or Twitch. No media is hosted or stored. You are responsible for
+Twitter, Vimeo, Dailymotion, Reddit, Twitch or TeraBox (Baidu). No media is hosted or stored. You are responsible for
 respecting copyright and each platform's terms — see `app/terms/page.tsx`, which you should have a lawyer
 review before going public.

@@ -73,7 +73,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title,
       description:
-        'Download24.in — free multi-platform video downloader. 4K MP4 & MP3 from YouTube, Instagram, Facebook, X, Reddit, Twitch and more.'
+        'Download24.in — free multi-platform video downloader. 4K MP4 & MP3 from YouTube, Instagram, Facebook, X, Reddit, Twitch and TeraBox share links.'
     }
   }
 }
@@ -215,7 +215,7 @@ export default function HomePage() {
 
               {/* Concise Subtitle */}
               <p className="mx-auto mt-2 max-w-xl text-balance text-sm leading-relaxed text-white/60 sm:text-base lg:mx-0">
-                Paste any link from YouTube, Instagram Reels, Facebook, TikTok, or X.{' '}
+                Paste any link from YouTube, Instagram Reels, Facebook, TikTok, X, or a TeraBox share.{' '}
                 High speed, no watermarks, and no registration required.
               </p>
 

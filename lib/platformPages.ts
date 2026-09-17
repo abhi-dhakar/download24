@@ -548,6 +548,71 @@ export const PLATFORM_PAGES: Record<string, PlatformPageConfig> = {
           'Click the share button on the Twitch clip, copy the link, paste it into download24, and click Download to save the 60fps MP4.'
       }
     ]
+  },
+
+  'terabox-video-download': {
+    slug: 'terabox-video-download',
+    platformId: 'terabox',
+    title: 'TeraBox Video & File Downloader',
+    shortTitle: 'TeraBox',
+    metaTitle: 'TeraBox Video Downloader — Download TeraBox Share Links Free | download24',
+    metaDescription:
+      'Download TeraBox videos, folders and files in original quality without login. Free online TeraBox downloader with folder support, no ads and no premium wall.',
+    h1: 'Download TeraBox Videos',
+    h1Highlight: 'Without Login or Premium Wall',
+    subtitle:
+      'Paste a TeraBox, 1024tera, Teraboxapp or mirror share link and save the original files — single videos, whole folders and multi-file shares — straight to your device.',
+    inputPlaceholder: 'Paste TeraBox link (e.g., https://www.terabox.com/s/1AbCdEf...)',
+    sampleUrl: 'https://www.terabox.com/s/1GV28I3ea5rR_oR_f6LZGwQ',
+    theme: {
+      primary: '#2f6bff',
+      primaryOnLight: '#1d4ed8',
+      secondary: '#7cc4ff',
+      glowRgb: '47, 107, 255',
+      heroGradient: 'radial-gradient(40% 40% at 50% 20%, rgba(47, 107, 255, 0.28), rgba(124, 196, 255, 0.14), transparent 70%)'
+    },
+    features: [
+      {
+        title: 'Original Files, Zero Re-Encoding',
+        description:
+          'The direct CDN stream is handed to your browser untouched, so a 1080p upload stays 1080p and downloads never lose quality.',
+        icon: 'sparkles'
+      },
+      {
+        title: 'Folder & Multi-File Shares',
+        description:
+          'Shared a whole folder? Every video and file inside it is listed with its size, ready to download one by one.',
+        icon: 'zap'
+      },
+      {
+        title: 'No TeraBox Login Required',
+        description:
+          'Public share links resolve without an account, an app install or the "install the TeraBox app to continue" wall.',
+        icon: 'music'
+      }
+    ],
+    faqs: [
+      {
+        question: 'How do I download a TeraBox video without the app?',
+        answer:
+          'Copy the share link (it looks like https://www.terabox.com/s/1AbCdEf...), paste it into the box above and press Download. The file list opens with every video and file in the share, and each row downloads straight from TeraBox\u2019s own CDN.'
+      },
+      {
+        question: 'Do TeraBox mirror domains work too?',
+        answer:
+          'Yes. terabox.com, terabox.app, teraboxapp.com, 1024terabox.com, 1024tera.com, 4funbox.com, mirrobox.com, nephobox.com, freeterabox.com, momerybox.com, tibibox.com, teraboxshare.com and the other official mirrors all resolve through the same engine.'
+      },
+      {
+        question: 'Can I download a whole TeraBox folder?',
+        answer:
+          'Yes. When a share link points at a folder, the engine walks it and lists the files inside (up to a server-side limit), so you can pick the video you want instead of downloading an archive.'
+      },
+      {
+        question: 'Why does a TeraBox link sometimes ask for verification?',
+        answer:
+          'TeraBox occasionally challenges datacenter IPs before it releases a download link. The server operator can add a TeraBox cookie (TERABOX_COOKIE) to answer that challenge; retrying the link a minute later also helps.'
+      }
+    ]
   }
 }
 

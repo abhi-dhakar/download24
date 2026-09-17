@@ -84,7 +84,7 @@ const FEATURES = [
     title: 'Multi-platform by design',
     lead: 'One engine, every network you actually use.',
     points: [
-      'YouTube, Shorts, Instagram, TikTok, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch',
+      'YouTube, Shorts, Instagram, TikTok, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch, TeraBox',
       'Clean renditions for Reels & TikTok — no burned-in watermark',
       '1,000+ additional sites through the yt-dlp extractor library'
     ]

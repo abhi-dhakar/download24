@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `${SITE.name} — Free Online Video Downloader (4K MP4 & MP3)`,
     description:
-      'Paste a link from YouTube, TikTok, Instagram, Facebook or X and download 4K/1080p/720p MP4 or MP3 audio instantly.',
+      'Paste a link from YouTube, TikTok, Instagram, Facebook or X — or a TeraBox share — and download 4K/1080p/720p MP4 or MP3 audio instantly.',
     images: [{ url: SITE.ogImage, alt: `${SITE.name} downloader interface` }]
   },
   robots: {

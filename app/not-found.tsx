@@ -17,7 +17,7 @@ export default function NotFound() {
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/60">
           The page you asked for does not exist on this host. If you were trying to download a video, paste its
           link into the box instead — the extractor understands YouTube, TikTok, Instagram, Facebook, X, Vimeo,
-          Dailymotion, Reddit and Twitch.
+          Dailymotion, Reddit, Twitch and TeraBox share links.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link

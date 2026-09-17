@@ -151,6 +151,11 @@ export function Footer() {
                   Twitch Clip Downloader
                 </Link>
               </li>
+              <li>
+                <Link href="/terabox-video-download" className="transition-colors hover:text-white">
+                  TeraBox Downloader
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
@@ -160,8 +165,8 @@ export function Footer() {
             <strong className="font-semibold text-white/70">Disclaimer.</strong> {SITE.name} is an
             independent demonstration project and is not affiliated with, endorsed by, or sponsored by
             YouTube, Google, Meta, Instagram, Facebook, TikTok, ByteDance, X Corp., Twitter, Vimeo,
-            Dailymotion, Reddit or Twitch. All trademarks, brand names and logos belong to their respective
-            owners and are used here for identification only.
+            Dailymotion, Reddit, Twitch or TeraBox (Baidu). All trademarks, brand names and logos belong
+            to their respective owners and are used here for identification only.
           </p>
           <p className="mt-2 text-xs leading-relaxed text-white/50">
             We do not host, store or upload any media. Downloads are retrieved from the public source you

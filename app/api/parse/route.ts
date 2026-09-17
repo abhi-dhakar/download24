@@ -27,6 +27,7 @@ import {
 import { clientKeyFromRequest, consumeRateLimit, validateMediaUrl } from '@/lib/security'
 import { LIMITS } from '@/lib/site'
 import { getPlatform } from '@/lib/platforms'
+import { TeraboxError, buildTeraboxPayload } from '@/lib/terabox'
 import type { ParseErrorResponse, ParsePayload, ParseResponse } from '@/lib/types'
 import { ExtractionError, extractInfo, ffmpegAvailable } from '@/lib/ytdlp'
 
@@ -230,6 +231,34 @@ function collapsePlaylist(raw: YtDlpVideo): { video: YtDlpVideo; entries: number
   return { video: raw, entries: undefined }
 }
 
+/**
+ * Maps a native TeraBox failure onto the shared error contract, so the step-2
+ * page can render it exactly like a yt-dlp failure.
+ */
+function statusForTeraboxFailure(error: TeraboxError): {
+  code: ParseErrorResponse['code']
+  status: number
+  hint?: string
+} {
+  switch (error.code) {
+    case 'INVALID_SHARE_URL':
+      return { code: 'INVALID_URL', status: 400, hint: error.hint }
+    case 'PASSWORD_REQUIRED':
+      return { code: 'LOGIN_REQUIRED', status: 403, hint: error.hint }
+    case 'REGION_BLOCKED':
+      return { code: 'GEOBLOCKED', status: 403, hint: error.hint }
+    case 'NOT_FOUND':
+    case 'EMPTY_SHARE':
+      return { code: 'UNAVAILABLE', status: 404, hint: error.hint }
+    case 'VERIFICATION_REQUIRED':
+      return { code: 'SERVER_UNAVAILABLE', status: 503, hint: error.hint }
+    case 'TIMEOUT':
+      return { code: 'TIMEOUT', status: 504, hint: error.hint }
+    default:
+      return { code: 'EXTRACTION_FAILED', status: 502, hint: error.hint }
+  }
+}
+
 async function handleParse(request: Request): Promise<NextResponse> {
   const startedAt = performance.now()
 
@@ -282,18 +311,29 @@ async function handleParse(request: Request): Promise<NextResponse> {
   const sourceUrl = validation.href
 
   try {
-    const raw = (await extractInfo(sourceUrl, {
-      playlistLimit,
-      timeoutMs: LIMITS.extractTimeoutMs,
-      signal: request.signal
-    })) as YtDlpVideo
+    let payload: ParsePayload
 
-    const hasFfmpeg = await ffmpegAvailable()
-    const { video, entries } = collapsePlaylist(raw)
-    const payload = buildParsePayload(video, sourceUrl, {
-      ffmpegAvailable: hasFfmpeg,
-      playlistCount: entries
-    })
+    if (validation.platformId === 'terabox') {
+      // TeraBox links are *file shares*, not stream pages, and yt-dlp ships no
+      // extractor for them — lib/terabox.ts resolves the share itself.
+      payload = await buildTeraboxPayload(sourceUrl, {
+        timeoutMs: Math.min(LIMITS.extractTimeoutMs, 30_000),
+        signal: request.signal
+      })
+    } else {
+      const raw = (await extractInfo(sourceUrl, {
+        playlistLimit,
+        timeoutMs: LIMITS.extractTimeoutMs,
+        signal: request.signal
+      })) as YtDlpVideo
+
+      const hasFfmpeg = await ffmpegAvailable()
+      const { video, entries } = collapsePlaylist(raw)
+      payload = buildParsePayload(video, sourceUrl, {
+        ffmpegAvailable: hasFfmpeg,
+        playlistCount: entries
+      })
+    }
 
     if (payload.options.length === 0) {
       const negative: NegativeEntry = {
@@ -329,6 +369,35 @@ async function handleParse(request: Request): Promise<NextResponse> {
     if (request.signal?.aborted) {
       // The visitor navigated away mid-extraction; nothing to report anywhere.
       return errorResponse('TIMEOUT', 'The request was cancelled before extraction finished.', 408, startedAt)
+    }
+
+    if (error instanceof TeraboxError) {
+      const mapped = statusForTeraboxFailure(error)
+      const transient =
+        mapped.code === 'TIMEOUT' ||
+        mapped.code === 'SERVER_UNAVAILABLE' ||
+        mapped.code === 'RATE_LIMITED' ||
+        mapped.code === 'TOO_MANY_REQUESTS'
+      if (!transient) {
+        const negative: NegativeEntry = {
+          code: mapped.code,
+          message: error.message,
+          status: mapped.status,
+          ...(mapped.hint ? { hint: mapped.hint } : {})
+        }
+        negativeCache.set(cacheKey, negative)
+      }
+      console.warn(
+        `[parse] terabox ${error.code} for ${sourceUrl}: ${cleanUpstreamError(error.message, 220)}`
+      )
+      return errorResponse(
+        mapped.code,
+        error.message,
+        mapped.status,
+        startedAt,
+        mapped.hint,
+        mapped.code === 'SERVER_UNAVAILABLE' ? 30 : undefined
+      )
     }
 
     if (error instanceof ExtractionError) {

@@ -35,7 +35,7 @@ export const SITE = {
     'download24 — Free Online Video Downloader (4K MP4 & MP3)',
   tagline: 'Paste a link. Pick 4K, 1080p or MP3. Download it free.',
   description:
-    'Free online video downloader by download24. Paste any link to download videos in up to 4K Ultra HD, 1080p Full HD, 720p HD, 480p or MP3 audio from YouTube, TikTok without watermark, Instagram Reels, Facebook, X/Twitter, Vimeo, Dailymotion, Reddit and Twitch clips. No registration, no app, no limits.',
+    'Free online video downloader by download24. Paste any link to download videos in up to 4K Ultra HD, 1080p Full HD, 720p HD, 480p or MP3 audio from YouTube, TikTok without watermark, Instagram Reels, Facebook, X/Twitter, Vimeo, Dailymotion, Reddit, Twitch clips and TeraBox share links. No registration, no app, no limits.',
   keywords: [
     'download24',
     'download24.in',
@@ -55,6 +55,10 @@ export const SITE = {
     'dailymotion downloader',
     'reddit video downloader',
     'twitch clip downloader',
+    'terabox downloader',
+    'terabox video downloader',
+    'download terabox video without login',
+    'terabox share link download',
     'mp3 converter',
     'youtube to mp3',
     '1080p downloader',

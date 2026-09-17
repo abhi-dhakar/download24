@@ -197,7 +197,7 @@ export function validateMediaUrl(input: unknown): UrlValidation {
       error: {
         code: 'UNSUPPORTED_URL',
         message: `${url.hostname} is not on the supported network list yet.`,
-        hint: 'YouTube, TikTok, Instagram, Facebook, X, Vimeo, Dailymotion, Reddit and Twitch are supported.'
+        hint: 'YouTube, TikTok, Instagram, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch and TeraBox shares are supported.'
       }
     }
   }

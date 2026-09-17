@@ -232,7 +232,7 @@ export function howToSchema(steps: HowToStep[] = HOW_TO_STEPS) {
       position: index + 1,
       name: step.title,
       text: step.description,
-      url: `${canonicalOrigin}/#step-${index + 1}`
+      url: `${canonicalOrigin}/how-it-works#step-${index + 1}`
     }))
   }
 }

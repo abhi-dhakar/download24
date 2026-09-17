@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowDownToLine } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpRight } from 'lucide-react'
 
 import { Downloader } from '@/components/Downloader'
 import { FaqAccordion } from '@/components/FaqAccordion'
 import { FeatureHighlights } from '@/components/FeatureHighlights'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { HeroIllustration } from '@/components/illustrations/HeroIllustration'
 import { HowToDownload } from '@/components/HowToDownload'
 import { PlatformBar } from '@/components/PlatformBar'
 import { PlatformGrid } from '@/components/PlatformGrid'
@@ -14,17 +15,20 @@ import { PlatformMark } from '@/components/PlatformMark'
 import { PLATFORMS } from '@/lib/platforms'
 import {
   breadcrumbSchema,
-  faqPageSchema,
-  howToSchema,
   serializeJsonLd,
   webApplicationSchema
 } from '@/lib/seo'
-import { SITE, canonicalOrigin } from '@/lib/site'
+import { canonicalOrigin } from '@/lib/site'
 
 /*
  * Download24.in — India's fast, free, no-signup video downloader.
  * Metadata is tuned for Indian search intent (Hindi/English mix, JioFiber-friendly
  * quality choices) plus the global 4K / MP3 keywords that drive most traffic.
+ *
+ * The homepage is step 1 of the three-page download flow: the hero box hands
+ * the pasted link to `/download` (details + options), which hands the chosen
+ * format to `/download/progress` (animated transfer). The FAQ / HowTo JSON-LD
+ * live on their dedicated `/faq` and `/how-it-works` pages.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const title =
@@ -92,13 +96,6 @@ function StructuredData({ id, data }: { id: string; data: unknown }) {
 /* -------------------------------------------------------------------------- */
 /* Content constants                                                          */
 /* -------------------------------------------------------------------------- */
-
-const HERO_BADGES = [
-  { icon: '⚡', label: 'Instant extraction' },
-  { icon: '🇮🇳', label: 'Made for India' },
-  { icon: '🔒', label: 'No signup ever' },
-  { icon: '🎬', label: 'Up to 4K UHD' }
-]
 
 const HERO_STATS = [
   { value: `${PLATFORMS.length}+`, label: 'Platforms', sub: 'YouTube, IG, FB…' },
@@ -177,8 +174,6 @@ export default function HomePage() {
   return (
     <>
       <StructuredData id="ld-web-application" data={webApplicationSchema()} />
-      <StructuredData id="ld-faq" data={faqPageSchema()} />
-      <StructuredData id="ld-howto" data={howToSchema()} />
       <StructuredData
         id="ld-breadcrumb"
         data={breadcrumbSchema([
@@ -190,84 +185,87 @@ export default function HomePage() {
       <Header />
 
       {/* "Works with" strip under the navbar — every supported network, with icons. */}
-      <PlatformBar allPlatformsHref="#supported-platforms" />
+      <PlatformBar />
 
       <main id="main" className="flex-1">
         {/* ================================================================ */}
-                {/* ================================================================ */}
         {/* HERO SECTION                                                     */}
         {/* ================================================================ */}
         <section
           id="downloader"
           aria-labelledby="downloader-heading"
-          className="relative isolate overflow-hidden pt-12 pb-8 sm:pt-20 sm:pb-12"
+          className="relative isolate overflow-hidden pt-10 pb-8 sm:pt-16 sm:pb-12"
         >
           {/* Subtle Ambient Background */}
           <div aria-hidden="true" className="hero-aurora animate-float opacity-30" />
           <div aria-hidden="true" className="grid-lines opacity-40" />
 
-          <div className="relative mx-auto w-full max-w-4xl px-4 text-center sm:px-6">
-            
-            {/* Minimal Brand & Status Pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3.5 py-1 text-xs text-white/75 backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-ok" />
-              </span>
-              <span className="font-semibold text-white">Download24<span className="text-accent">.in</span></span>
-              <span className="text-white/30">•</span>
-              <span className="text-white/60">Free 4K &amp; MP3 Downloader</span>
-            </div>
+          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+            {/* ------------------------------------------------- left: copy + input */}
+            <div className="text-center lg:text-left">
+              {/* Minimal Brand & Status Pill */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3.5 py-1 text-xs text-white/75 backdrop-blur-md">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-ok" />
+                </span>
+                <span className="font-semibold text-white">Download24<span className="text-accent">.in</span></span>
+                <span className="text-white/30">•</span>
+                <span className="text-white/60">Free 4K &amp; MP3 Downloader</span>
+              </div>
 
-            {/* Clean, High-Impact Headline */}
-            <h1
-              id="downloader-heading"
-              className="mt-6 font-display text-[clamp(2.2rem,5vw,3.8rem)] font-extrabold tracking-tight text-white leading-[1.1]"
-            >
-              Download Online Videos in{' '}
-              <span className="text-gradient">4K &amp; MP3</span>
-            </h1>
-
-            {/* Concise Subtitle */}
-            <p className="mx-auto mt-4 max-w-xl text-balance text-sm leading-relaxed text-white/60 sm:text-base">
-              Paste any link from YouTube, Instagram Reels, Facebook, TikTok, or X. 
-              High speed, no watermarks, and no registration required.
-            </p>
-
-            {/* Downloader Input Box */}
-            <div className="mt-8">
-              <Downloader />
-            </div>
-
-            {/* Streamlined Platform Support Icons */}
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-white/50">
-              <span>Supported:</span>
-              <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                <PlatformMark id="youtube" className="h-3.5 w-3.5" /> YouTube
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                <PlatformMark id="instagram" className="h-3.5 w-3.5" /> Instagram
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                <PlatformMark id="tiktok" className="h-3.5 w-3.5" /> TikTok
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
-                <PlatformMark id="facebook" className="h-3.5 w-3.5" /> Facebook
-              </span>
-              <a
-                href="#supported-platforms"
-                className="text-accent hover:underline ml-1"
+              {/* Clean, High-Impact Headline */}
+              <h1
+                id="downloader-heading"
+                className="mt-6 font-display text-[clamp(2.2rem,5vw,3.8rem)] font-extrabold tracking-tight text-white leading-[1.1]"
               >
-                +1,000 more
-              </a>
+                Download Online Videos in{' '}
+                <span className="text-gradient">4K &amp; MP3</span>
+              </h1>
+
+              {/* Concise Subtitle */}
+              <p className="mx-auto mt-4 max-w-xl text-balance text-sm leading-relaxed text-white/60 sm:text-base lg:mx-0">
+                Paste any link from YouTube, Instagram Reels, Facebook, TikTok, or X.{' '}
+                High speed, no watermarks, and no registration required.
+              </p>
+
+              {/* Downloader Input Box */}
+              <div className="mt-8">
+                <Downloader />
+              </div>
+
+              {/* Streamlined Platform Support Icons */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-white/50 lg:justify-start">
+                <span>Supported:</span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
+                  <PlatformMark id="youtube" className="h-3.5 w-3.5" /> YouTube
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
+                  <PlatformMark id="instagram" className="h-3.5 w-3.5" /> Instagram
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
+                  <PlatformMark id="tiktok" className="h-3.5 w-3.5" /> TikTok
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-1 text-white/70 border border-line">
+                  <PlatformMark id="facebook" className="h-3.5 w-3.5" /> Facebook
+                </span>
+                <Link href="/platforms" className="text-accent hover:underline ml-1">
+                  +1,000 more
+                </Link>
+              </div>
+
+              <noscript>
+                <p className="mx-auto mt-6 max-w-xl rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-warn lg:mx-0">
+                  JavaScript is required for the live extractor. You can use the direct API:{' '}
+                  <code className="font-mono ml-1">/api/parse?url=YOUR-LINK</code>
+                </p>
+              </noscript>
             </div>
 
-            <noscript>
-              <p className="mx-auto mt-6 max-w-xl rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-warn">
-                JavaScript is required for the live extractor. You can use the direct API: 
-                <code className="font-mono ml-1">/api/parse?url=YOUR-LINK</code>
-              </p>
-            </noscript>
+            {/* --------------------------------------------- right: illustration */}
+            <div aria-hidden="true" className="mx-auto w-full max-w-[440px] lg:max-w-none">
+              <HeroIllustration />
+            </div>
           </div>
 
           {/* Minimalist Stats Bar */}
@@ -320,21 +318,30 @@ export default function HomePage() {
           aria-labelledby="features-heading"
           className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
         >
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-              Features
-            </p>
-            <h2
-              id="features-heading"
-              className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+                Features
+              </p>
+              <h2
+                id="features-heading"
+                className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
+              >
+                Built for the way Indians actually download
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-white/55">
+                Data packs matter. Storage matters. So Download24.in shows real
+                file sizes, remembers your preferred quality and never wastes a
+                second on ads or captchas.
+              </p>
+            </div>
+            <Link
+              href="/features"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
             >
-              Built for the way Indians actually download
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-white/55">
-              Data packs matter. Storage matters. So Download24.in shows real
-              file sizes, remembers your preferred quality and never wastes a
-              second on ads or captchas.
-            </p>
+              All features
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
           <div className="mt-6">
             <FeatureHighlights />
@@ -366,12 +373,13 @@ export default function HomePage() {
                 desktop URL bar.
               </p>
             </div>
-            <a
-              href="#downloader"
-              className="rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
+            <Link
+              href="/how-it-works"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
             >
-              ↑ Paste a link
-            </a>
+              Detailed guide
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
           <div className="mt-6">
             <HowToDownload />
@@ -386,21 +394,30 @@ export default function HomePage() {
           aria-labelledby="platforms-heading"
           className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
         >
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-              Supported networks
-            </p>
-            <h2
-              id="platforms-heading"
-              className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+                Supported networks
+              </p>
+              <h2
+                id="platforms-heading"
+                className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
+              >
+                One tool, {PLATFORMS.length}+ platforms
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-white/55">
+                The same extraction engine handles every network below — so
+                quality options, MP3 conversion and merging behave the same
+                wherever your link came from.
+              </p>
+            </div>
+            <Link
+              href="/platforms"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
             >
-              One tool, {PLATFORMS.length}+ platforms
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-white/55">
-              The same extraction engine handles every network below — so
-              quality options, MP3 conversion and merging behave the same
-              wherever your link came from.
-            </p>
+              All platforms
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
           <div className="mt-6">
             <PlatformGrid />
@@ -507,7 +524,7 @@ export default function HomePage() {
           aria-labelledby="faq-heading"
           className="mx-auto w-full max-w-4xl px-4 pt-16 sm:px-6"
         >
-          <div className="text-center">
+          <div className="flex flex-col items-center gap-2 text-center">
             <p className="text-xs font-semibold tracking-widest text-accent uppercase">
               FAQ
             </p>
@@ -520,7 +537,11 @@ export default function HomePage() {
             <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/55">
               These answers are also published as{' '}
               <span className="font-mono text-white/70">FAQPage</span>{' '}
-              structured data, so Google can surface them directly.
+              structured data on the{' '}
+              <Link href="/faq" className="text-accent hover:underline">
+                dedicated FAQ page
+              </Link>
+              , so Google can surface them directly.
             </p>
           </div>
           <div className="mt-6">

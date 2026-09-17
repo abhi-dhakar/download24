@@ -10,7 +10,7 @@ export function Footer() {
   return (
     <footer className="mt-20 border-t border-line bg-ink-950" role="contentinfo">
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
               <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white/0">
@@ -42,6 +42,39 @@ export function Footer() {
             </p>
           </div>
 
+          <nav aria-labelledby="footer-explore">
+            <h2 id="footer-explore" className="text-[11px] font-semibold text-white/45 uppercase tracking-wider">
+              Explore
+            </h2>
+            <ul className="mt-3 flex flex-col gap-2 text-sm text-white/60">
+              <li>
+                <Link href="/downloader" className="transition-colors hover:text-white">
+                  Downloader
+                </Link>
+              </li>
+              <li>
+                <Link href="/features" className="transition-colors hover:text-white">
+                  Features
+                </Link>
+              </li>
+              <li>
+                <Link href="/how-it-works" className="transition-colors hover:text-white">
+                  How it works
+                </Link>
+              </li>
+              <li>
+                <Link href="/platforms" className="transition-colors hover:text-white">
+                  Supported platforms
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="transition-colors hover:text-white">
+                  FAQ
+                </Link>
+              </li>
+            </ul>
+          </nav>
+
           <nav aria-labelledby="footer-legal">
             <h2 id="footer-legal" className="text-[11px] font-semibold text-white/45 uppercase tracking-wider">
               Legal
@@ -63,7 +96,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/#faq" className="transition-colors hover:text-white">
+                <Link href="/faq" className="transition-colors hover:text-white">
                   Frequently asked questions
                 </Link>
               </li>

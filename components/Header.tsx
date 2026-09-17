@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Menu, Sparkles, X } from 'lucide-react'
+import { ClipboardPaste, Menu, X } from 'lucide-react'
 
 import { PLATFORM_PAGES } from '@/lib/platformPages'
 import { PlatformMark } from './PlatformMark'
@@ -92,7 +92,10 @@ export function Header() {
             onClick={() => setMobileOpen(false)}
             className="hidden sm:inline-flex group relative items-center gap-2 rounded-xl border border-line-strong bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-accent/40 hover:bg-white/[0.08] hover:text-white active:scale-95 sm:px-4 sm:text-sm"
           >
-            <Sparkles className="h-3.5 w-3.5 text-accent transition-transform group-hover:rotate-12" aria-hidden="true" />
+            <ClipboardPaste
+              className="h-3.5 w-3.5 text-accent transition-transform group-hover:scale-110"
+              aria-hidden="true"
+            />
             <span>Paste Link</span>
           </a>
 
@@ -129,7 +132,7 @@ export function Header() {
               onClick={() => setMobileOpen(false)}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep py-3 text-sm font-bold text-white shadow-glow"
             >
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
               <span>Paste Video Link Now</span>
             </a>
 

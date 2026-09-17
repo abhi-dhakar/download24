@@ -20,6 +20,7 @@ export type MarkId =
   | 'dailymotion'
   | 'reddit'
   | 'twitch'
+  | 'terabox'
   | 'generic'
 
 interface Props {
@@ -165,6 +166,31 @@ export function PlatformMark({ id, className = 'h-6 w-6', branded = true, title 
             fill={accent}
           />
           <path d="M13.6 7.6h1.5v4.6h-1.5zm4.1 0h1.5v4.6h-1.5z" fill={accent} />
+        </svg>
+      )
+    case 'terabox':
+      return (
+        <svg {...common}>
+          {title ? <title>{title}</title> : null}
+          <defs>
+            <linearGradient id="tb-glow" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor={accent} />
+              <stop offset="1" stopColor={platform?.accentAlt ?? '#7cc4ff'} />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#tb-glow)" />
+          <path
+            d="M12 6.6a4.3 4.3 0 0 0-4.15 3.14A3 3 0 0 0 8.5 15.8h7a2.85 2.85 0 0 0 .3-5.68A4.3 4.3 0 0 0 12 6.6z"
+            fill="#ffffff"
+          />
+          <path
+            d="M12 9.4v3.1m0 0-1.5-1.5M12 12.5l1.5-1.5"
+            stroke={accent}
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
         </svg>
       )
     case 'generic':

@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowDownToLine, Clipboard, History, Info, Search, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ArrowDownToLine, ClipboardPaste, History, Info, Search, Trash2, X } from 'lucide-react'
 
 import { PLATFORMS } from '@/lib/platforms'
 
@@ -206,7 +206,7 @@ export function Downloader() {
               aria-hidden="true"
             />
             <label htmlFor={inputId} className="sr-only">
-              Paste video or audio link from YouTube, Instagram, Facebook, X, Reddit or Twitch
+              Paste a video or audio link from YouTube, Instagram, Facebook, X, Reddit, Twitch or TeraBox
             </label>
             <input
               id={inputId}
@@ -220,7 +220,7 @@ export function Downloader() {
               spellCheck={false}
               aria-describedby={helpId}
               aria-invalid={invalidHint ? true : undefined}
-              placeholder="Paste YouTube Shorts, Instagram Reels, FB, or X link..."
+              placeholder="Paste a YouTube, Instagram, TikTok, X or TeraBox link..."
               value={url}
               onChange={(event) => {
                 const next = event.target.value
@@ -255,7 +255,7 @@ export function Downloader() {
                 title="Paste link from clipboard"
                 aria-label="Paste link from clipboard"
               >
-                <Clipboard className="h-3.5 w-3.5" aria-hidden="true" />
+                <ClipboardPaste className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden xs:inline">Paste</span>
               </button>
             </div>

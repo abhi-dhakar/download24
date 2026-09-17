@@ -14,7 +14,7 @@ import { canonicalOrigin } from '@/lib/site'
 export const metadata: Metadata = {
   title: 'Supported platforms — 10+ networks, one downloader',
   description:
-    'Every network the download24 downloader supports: YouTube, Shorts, Instagram Reels, TikTok without watermark, Facebook, X/Twitter, Vimeo, Dailymotion, Reddit and Twitch clips — plus 1,000+ sites via yt-dlp.',
+    'Every network the download24 downloader supports: YouTube, Shorts, Instagram Reels, TikTok without watermark, Facebook, X/Twitter, Vimeo, Dailymotion, Reddit, Twitch clips and TeraBox share links — plus 1,000+ sites via yt-dlp.',
   keywords: [
     'supported video platforms',
     'youtube downloader',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Supported platforms — 10+ networks, one downloader',
     description:
-      'YouTube, Instagram, TikTok, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch and 1,000+ more sites through one paste-and-download box.',
+      'YouTube, Instagram, TikTok, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch, TeraBox and 1,000+ more sites through one paste-and-download box.',
     url: `${canonicalOrigin}/platforms`,
     type: 'website'
   },

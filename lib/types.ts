@@ -10,6 +10,8 @@ export type QualityTier =
   | '360'
   | '240'
   | 'audio'
+  /** File shares (TeraBox) publish no resolution metadata — the file is the source. */
+  | 'original'
 
 export const QUALITY_ORDER: QualityTier[] = [
   '2160',
@@ -20,7 +22,8 @@ export const QUALITY_ORDER: QualityTier[] = [
   '480',
   '360',
   '240',
-  'audio'
+  'audio',
+  'original'
 ]
 
 export const QUALITY_LABEL: Record<QualityTier, string> = {
@@ -32,7 +35,8 @@ export const QUALITY_LABEL: Record<QualityTier, string> = {
   '480': '480p SD',
   '360': '360p Mobile',
   '240': '240p Data saver',
-  audio: 'MP3 Audio'
+  audio: 'MP3 Audio',
+  original: 'Original file'
 }
 
 /** Marketing tag rendered as a pill next to a resolution. */
@@ -53,8 +57,12 @@ export interface DownloadOption {
    * portrait media (1080x1920 reports 1920), and yt-dlp matches against that.
    */
   streamHeight?: number
-  /** Container the finished file will use. */
-  ext: 'mp4' | 'webm' | 'mkv' | 'm4a' | 'mp3' | 'opus'
+  /**
+   * Container the finished file will use. Known media containers keep
+   * autocomplete; file shares (TeraBox) can legitimately hold anything, so the
+   * union stays open for those.
+   */
+  ext: 'mp4' | 'webm' | 'mkv' | 'm4a' | 'mp3' | 'opus' | (string & {})
   kind: 'video' | 'audio'
   /** True when video and audio already live in the same stream (no merge step). */
   muxed: boolean
@@ -72,6 +80,17 @@ export interface DownloadOption {
   tags: DownloadTag[]
   /** For audio options: the upstream selector (`bestaudio`, `f251`, ...). */
   audioFormatId?: string
+  /**
+   * Routing data for engines that are **not** yt-dlp. TeraBox file shares are
+   * fetched by path after a fresh token/signature resolve, because the signed
+   * `dlink` handed out during extraction expires within minutes.
+   */
+  remoteFile?: {
+    path: string
+    name: string
+    /** Signed URL captured at parse time; only used as a first-try hint. */
+    dlink?: string
+  }
 }
 
 export interface VideoMeta {

@@ -36,6 +36,13 @@ import {
   validateMediaUrl
 } from '@/lib/security'
 import { DOWNLOAD_MODE, LIMITS } from '@/lib/site'
+import {
+  buildTeraboxPayload,
+  isMediaExtension,
+  openTeraboxFile,
+  proxyBody,
+  TeraboxError
+} from '@/lib/terabox'
 import type { DownloadOption, ParsePayload } from '@/lib/types'
 import {
   canPipeDirectly,
@@ -214,6 +221,76 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const key = cacheKeyFor({ url: sourceUrl })
+
+    /* ---------------------------------------------------------------------- */
+    /* TeraBox — file shares, delivered by the native engine.                  */
+    /* ---------------------------------------------------------------------- */
+    if (validation.platformId === 'terabox') {
+      let sharePayload = parseCache.get(key)
+      if (!sharePayload) {
+        sharePayload = await buildTeraboxPayload(sourceUrl, {
+          timeoutMs: Math.min(LIMITS.extractTimeoutMs, 30_000),
+          signal: request.signal
+        })
+        parseCache.set(key, sharePayload, { ttl: LIMITS.cacheTtlMs })
+      }
+
+      const shareOption = pickOption(sharePayload, requestedIndex, audioOnly)
+      if (!shareOption?.remoteFile) {
+        return jsonError(
+          'That file is no longer part of the share.',
+          410,
+          'Run the extraction again to refresh the share contents.'
+        )
+      }
+
+      // TeraBox hands out signed links that expire within minutes, so the file
+      // is opened fresh on every click instead of replaying a cached URL.
+      const opened = await openTeraboxFile(sourceUrl, shareOption.remoteFile, {
+        signal: request.signal
+      })
+      const ext = opened.ext || shareOption.ext
+      // TeraBox file names keep their own extension, so strip it before the
+      // generic sanitiser runs (it only knows media containers and would let
+      // `notes.pdf` through as `notes.pdf.pdf`).
+      const rawName = shareOption.remoteFile.name || sharePayload.meta.title
+      const stem = ext && rawName.toLowerCase().endsWith(`.${ext}`)
+        ? rawName.slice(0, -(ext.length + 1))
+        : rawName
+      const baseName = sanitizeFilename(stem || sharePayload.meta.title, 'terabox-file')
+
+      if (DOWNLOAD_MODE === 'redirect' && isSafePublicMediaUrl(opened.finalUrl)) {
+        void opened.response.body?.cancel().catch(() => {})
+        return NextResponse.redirect(opened.finalUrl, {
+          status: 302,
+          headers: {
+            'Cache-Control': 'no-store',
+            'X-Download-Mode': 'redirect',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Robots-Tag': 'noindex, nofollow'
+          }
+        })
+      }
+
+      const upstreamBody = opened.response.body
+      if (!upstreamBody) {
+        void opened.response.body?.cancel().catch(() => {})
+        return jsonError('TeraBox returned an empty file.', 502, 'Retry the download once.')
+      }
+
+      transferStarted = true
+      return new Response(proxyBody(upstreamBody, releaseSlot), {
+        status: 200,
+        headers: transferHeaders(`${baseName}.${ext}`, ext, {
+          'X-Download-Mode': 'terabox-cdn',
+          ...(opened.size ? { 'Content-Length': String(opened.size) } : {}),
+          ...(isMediaExtension(ext) || !opened.contentType
+            ? {}
+            : { 'Content-Type': opened.contentType })
+        })
+      })
+    }
+
     const cached = parseCache.get(key)
 
     // Redirect mode needs live URLs, so it skips a potentially stale entry.
@@ -391,6 +468,15 @@ export async function GET(request: Request): Promise<Response> {
 
     return preparedResponse(prepared, filename, option, releaseSlot)
   } catch (error) {
+    if (error instanceof TeraboxError) {
+      console.warn(`[download] terabox ${error.code} for ${sourceUrl}: ${cleanUpstreamError(error.message, 200)}`)
+      return jsonError(
+        error.message,
+        error.code === 'VERIFICATION_REQUIRED' ? 503 : error.code === 'TIMEOUT' ? 504 : 502,
+        error.hint
+      )
+    }
+
     const err = error as { message?: string; stderr?: string }
     const message = err?.stderr || err?.message || 'Download failed.'
     console.error('[download] error', cleanUpstreamError(message, 240))

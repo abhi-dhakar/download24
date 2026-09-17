@@ -57,7 +57,8 @@ const TIER_SHORT: Record<DownloadOption['tier'], string> = {
   '480': '480p',
   '360': '360p',
   '240': '240p',
-  audio: 'MP3'
+  audio: 'MP3',
+  original: 'FILE'
 }
 
 const TAG_STYLE: Record<string, string> = {
@@ -474,7 +475,7 @@ export function DownloadDetails() {
             <p className="mt-2 text-sm font-semibold text-white">{failure.message}</p>
             <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-white/55">
               Check the link for typos, or pick one from a supported platform — YouTube, Instagram,
-              TikTok, Facebook, X, Vimeo, Dailymotion, Reddit and Twitch all work.
+              TikTok, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch and TeraBox share links all work.
             </p>
             <Link
               href="/"

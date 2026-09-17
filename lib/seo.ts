@@ -104,7 +104,7 @@ export const FEATURE_HIGHLIGHTS: FeatureHighlight[] = [
     title: 'Multi-platform support',
     keyword: 'all platforms downloader',
     description:
-      'Ten networks in one box: YouTube, Shorts, TikTok, Instagram, Facebook, X, Vimeo, Dailymotion, Reddit and Twitch, with new extractors arriving whenever yt-dlp adds them.',
+      'Eleven networks in one box: YouTube, Shorts, TikTok, Instagram, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch clips and native TeraBox share support, with more extractors arriving whenever yt-dlp adds them.',
     icon: 'layers'
   }
 ]

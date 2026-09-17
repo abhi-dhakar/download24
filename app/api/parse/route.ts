@@ -251,6 +251,8 @@ function statusForTeraboxFailure(error: TeraboxError): {
     case 'EMPTY_SHARE':
       return { code: 'UNAVAILABLE', status: 404, hint: error.hint }
     case 'VERIFICATION_REQUIRED':
+    // TeraBox answered with something unmapped: worth a retry, never a "dead link".
+    case 'UPSTREAM_ERROR':
       return { code: 'SERVER_UNAVAILABLE', status: 503, hint: error.hint }
     case 'TIMEOUT':
       return { code: 'TIMEOUT', status: 504, hint: error.hint }

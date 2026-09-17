@@ -5,14 +5,17 @@
  *
  * Reads the selection made on step 2 from the query string (`src`, `f`,
  * `label`, `ext`, `kind`, `size`, `title`, `a`) plus a sessionStorage snapshot
- * with the thumbnail/platform, then streams the file from `/api/download`
- * while the UI animates: a live progress gauge, transfer speed, ETA and a
- * moving byte counter. When the last chunk lands, the blob is handed to the
- * browser's save dialog and the panel switches to the success scene.
+ * with the thumbnail/platform. It then starts the download the way the browser
+ * does it natively — a hidden same-origin iframe pointing at
+ * `/api/download?…&mode=stream&job=<id>` — so Chrome runs the file through its
+ * own download manager: the file shows up in the Downloads shelf, with a real
+ * percentage and the final filename, while the bytes are still transferring.
  *
- * If the streamed fetch fails (e.g. `DOWNLOAD_MODE=redirect` bouncing to a CDN
- * without CORS headers) the component falls back to a plain navigation, which
- * lets the browser download the file natively.
+ * The live percentage comes from `/api/download/progress?id=<id>`. The server
+ * parses yt-dlp's `--newline` progress lines (see `lib/progress.ts`) for every
+ * delivery path — direct pipe, TeraBox and the prepare/merge phase — so the
+ * gauge animates the actual 0→100% instead of jumping to "done" only once the
+ * file has fully landed.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -35,7 +38,29 @@ import { ProgressGauge, SuccessScene } from '@/components/illustrations/Progress
 import { PlatformMark } from '@/components/PlatformMark'
 import { buildFilename, readPending } from '@/lib/pending'
 
-type Phase = 'downloading' | 'saving' | 'done' | 'error' | 'fallback'
+type Phase = 'downloading' | 'done' | 'error'
+
+type LivePhase =
+  | 'starting'
+  | 'downloading'
+  | 'processing'
+  | 'streaming'
+  | 'redirect'
+  | 'finished'
+  | 'failed'
+
+interface LiveProgress {
+  ok: boolean
+  gone?: boolean
+  phase: LivePhase
+  percent: number | null
+  totalBytes: number | null
+  speedBytesPerSec: number | null
+  receivedBytes: number
+  fileName?: string | null
+  errorMessage?: string
+  errorHint?: string
+}
 
 interface Failure {
   message: string
@@ -75,6 +100,14 @@ function parseSizeLabel(label: string | null): number | null {
   return Number.isFinite(value) ? value * scale : null
 }
 
+/** Random token used to key the server-side live progress entry. */
+function newJobId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+}
+
 export function DownloadFlow() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -95,12 +128,17 @@ export function DownloadFlow() {
   const [speed, setSpeed] = useState(0)
   const [elapsed, setElapsed] = useState(0)
   const [failure, setFailure] = useState<Failure | null>(null)
-  const [snapshot, setSnapshot] = useState(readPendingSafe(src))
+  const [snapshot] = useState(readPendingSafe(src))
+  const [livePhase, setLivePhase] = useState<LivePhase>('starting')
+  const [serverPercent, setServerPercent] = useState<number | null>(null)
+  const [savedName, setSavedName] = useState<string | null>(null)
 
-  const abortRef = useRef<AbortController | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const startedRef = useRef(0)
-  const emitRef = useRef(0)
-  const speedRef = useRef(0)
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastBytesRef = useRef(0)
+  const lastPollRef = useRef(0)
 
   const apiHref = useMemo(() => {
     const params = new URLSearchParams({ src })
@@ -111,20 +149,26 @@ export function DownloadFlow() {
 
   const filename = useMemo(() => buildFilename(title, ext), [title, ext])
 
+  const stopPolling = useCallback(() => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    pollTimerRef.current = null
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current)
+    elapsedTimerRef.current = null
+  }, [])
+
   /* ---------------------------------------------------------------------- */
   /* The transfer                                                            */
   /* ---------------------------------------------------------------------- */
 
-  const saveBlob = useCallback((blob: Blob) => {
-    const objectUrl = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = objectUrl
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(objectUrl)
-  }, [filename])
+  const finishDone = useCallback(
+    (fileName: string | null) => {
+      stopPolling()
+      setSavedName(fileName ?? filename)
+      setLivePhase('finished')
+      setPhase('done')
+    },
+    [filename, stopPolling]
+  )
 
   const run = useCallback(async () => {
     if (!src || !formatId) {
@@ -133,110 +177,147 @@ export function DownloadFlow() {
       return
     }
 
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
+    stopPolling()
+    const jobId = newJobId()
 
     setPhase('downloading')
+    setLivePhase('starting')
+    setServerPercent(null)
     setFailure(null)
+    setSavedName(null)
     setReceived(0)
     setSpeed(0)
     setElapsed(0)
     setTotal(parseSizeLabel(sizeLabel))
-    speedRef.current = 0
     startedRef.current = performance.now()
-    emitRef.current = 0
+    lastBytesRef.current = 0
+    lastPollRef.current = performance.now()
 
-    try {
-      const response = await fetch(apiHref, { signal: controller.signal })
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current)
+    elapsedTimerRef.current = setInterval(() => {
+      setElapsed((performance.now() - startedRef.current) / 1000)
+    }, 250)
 
-      if (!response.ok || !response.body) {
-        let message = `The download could not start (HTTP ${response.status}).`
-        let hint: string | undefined
-        try {
-          const payload = (await response.json()) as { message?: string; hint?: string }
-          message = payload.message ?? message
-          hint = payload.hint
-        } catch {
-          /* non-JSON error body */
-        }
-        setFailure({ message, hint })
-        setPhase('error')
-        return
-      }
+    // Native download via a hidden same-origin iframe. Chrome runs it through
+    // its download manager: visible in the Downloads shelf with the real name
+    // and a live progress bar while the bytes are transferring.
+    const iframe = iframeRef.current
+    if (iframe) iframe.src = `${apiHref}&mode=stream&job=${encodeURIComponent(jobId)}`
 
-      const contentLength = Number(response.headers.get('content-length') ?? 0)
-      if (contentLength > 0) setTotal(contentLength)
-      else {
-        const headerEstimate = parseSizeLabel(response.headers.get('x-size-estimate'))
-        if (headerEstimate) setTotal(headerEstimate)
-      }
-
-      const reader = response.body.getReader()
-      const chunks: BlobPart[] = []
-      let bytes = 0
-      let lastTime = performance.now()
-      let lastBytes = 0
-
-      /* Throttled state emission: chunk events fire far faster than paints. */
-      const emit = (now: number) => {
-        setReceived(bytes)
-        setSpeed(speedRef.current)
-        setElapsed((now - startedRef.current) / 1000)
-        emitRef.current = now
-      }
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        if (!value) continue
-
-        chunks.push(value as unknown as BlobPart)
-        bytes += value.byteLength
-
-        const now = performance.now()
-        const dt = (now - lastTime) / 1000
-        if (dt >= 0.25) {
-          const instantaneous = (bytes - lastBytes) / dt
-          speedRef.current = speedRef.current === 0 ? instantaneous : speedRef.current * 0.7 + instantaneous * 0.3
-          lastTime = now
-          lastBytes = bytes
-        }
-        if (now - emitRef.current > 150) emit(now)
-      }
-
-      emit(performance.now())
-      setPhase('saving')
-      saveBlob(
-        new Blob(chunks, {
-          type: response.headers.get('content-type') ?? 'application/octet-stream'
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/download/progress?id=${encodeURIComponent(jobId)}`, {
+          cache: 'no-store'
         })
-      )
-      setPhase('done')
-    } catch (error) {
-      if ((error as Error)?.name === 'AbortError') return
-      setFailure({
-        message: 'The stream was interrupted before the file finished.',
-        hint: 'Your network or the source platform dropped the connection. Retry, or use the direct link below.'
-      })
-      setPhase('error')
-    }
-  }, [apiHref, filename, formatId, saveBlob, sizeLabel, src])
+        if (!response.ok) return
+        const data = (await response.json()) as LiveProgress
+
+        if (!data || data.ok !== true) return
+
+        if (data.gone) {
+          // The registry already dropped the job: trust the iframe's download.
+          finishDone(null)
+          return
+        }
+
+        const state = data
+
+        if (state.totalBytes && state.totalBytes > 0) setTotal(state.totalBytes)
+        if (typeof state.receivedBytes === 'number') setReceived(state.receivedBytes)
+        setLivePhase(state.phase)
+        if (typeof state.percent === 'number') setServerPercent(state.percent)
+
+        // Prefer the server's measured speed; fall back to a client-side
+        // estimate from the received-byte counter.
+        const now = performance.now()
+        const dt = (now - lastPollRef.current) / 1000
+        if (state.speedBytesPerSec && state.speedBytesPerSec > 0) {
+          setSpeed(state.speedBytesPerSec)
+        } else if (dt >= 0.5) {
+          const instantaneous = (state.receivedBytes - lastBytesRef.current) / dt
+          if (instantaneous > 0) {
+            setSpeed((current) => (current === 0 ? instantaneous : current * 0.7 + instantaneous * 0.3))
+          }
+          lastBytesRef.current = state.receivedBytes
+          lastPollRef.current = now
+        }
+
+        if (state.phase === 'finished') {
+          finishDone(state.fileName ?? null)
+        } else if (state.phase === 'failed') {
+          stopPolling()
+          setFailure({
+            message: state.errorMessage ?? 'The download could not be completed.',
+            hint: state.errorHint
+          })
+          setLivePhase('failed')
+          setPhase('error')
+        }
+      } catch {
+        /* network blip — next poll retries */
+      }
+    }, 700)
+  }, [apiHref, finishDone, formatId, sizeLabel, src, stopPolling])
 
   useEffect(() => {
+    // Runs on every *real* mount. React StrictMode's simulated mount→unmount→
+    // mount is safe here: the cleanup detaches the iframe and stops polling,
+    // and the second invocation re-arms the transfer with a fresh job id.
     void run()
-    return () => abortRef.current?.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run captures every input it needs; re-running on identity churn would restart transfers.
-  }, [])
+    return () => {
+      stopPolling()
+      // Detach the iframe so the navigation is cancelled if the page unmounts.
+      if (iframeRef.current) iframeRef.current.src = 'about:blank'
+    }
+  }, [run, stopPolling])
 
   const cancel = useCallback(() => {
-    abortRef.current?.abort()
+    stopPolling()
+    if (iframeRef.current) iframeRef.current.src = 'about:blank'
     router.push(`/download?url=${encodeURIComponent(src)}`)
-  }, [router, src])
+  }, [router, src, stopPolling])
 
-  const percent = total && total > 0 ? Math.min(99.5, (received / total) * 100) : null
-  const eta = total && total > 0 && speed > 0 ? (total - received) / speed : null
+  const eta = total && total > 0 && speed > 0 ? Math.max(0, (total - received) / speed) : null
   const isAudio = kind === 'audio'
+
+  /**
+   * The gauge's number. Order of precedence:
+   *   1. the server's own percentage (yt-dlp's real 0→100%);
+   *   2. bytes received ÷ known total (server→client hop);
+   *   3. `null` → indeterminate spinning arc while the source is still starting.
+   */
+  const displayPercent = (() => {
+    if (phase === 'done' || livePhase === 'finished') return 100
+    if (serverPercent !== null && serverPercent >= 0) {
+      return Math.min(99.5, serverPercent)
+    }
+    if (total && total > 0 && received > 0) {
+      return Math.min(99.5, (received / total) * 100)
+    }
+    return null
+  })()
+
+  const statusLabel = (() => {
+    switch (livePhase) {
+      case 'starting':
+        return 'Contacting the source…'
+      case 'downloading':
+        return 'Receiving from source…'
+      case 'processing':
+        return 'Merging / converting…'
+      case 'streaming':
+        return 'Saving to your device…'
+      case 'redirect':
+        return 'Sending to your browser…'
+      case 'finished':
+        return 'Complete'
+      case 'failed':
+        return 'Stopped'
+      default:
+        return 'Preparing…'
+    }
+  })()
 
   /* -------------------------------------------------------------- no src */
   if (!src) {
@@ -264,6 +345,15 @@ export function DownloadFlow() {
   return (
     <div className="mx-auto w-full max-w-3xl">
       <DownloadStepper current={3} />
+
+      {/* Hidden iframe drives the browser's native download manager. */}
+      <iframe
+        ref={iframeRef}
+        title="download-frame"
+        aria-hidden="true"
+        tabIndex={-1}
+        className="hidden"
+      />
 
       {/* ------------------------------------------------------------ card */}
       <section
@@ -302,12 +392,16 @@ export function DownloadFlow() {
         </header>
 
         {/* ------------------------------------------------- downloading */}
-        {(phase === 'downloading' || phase === 'saving') && (
+        {phase === 'downloading' && (
           <div className="mt-8 animate-rise" aria-live="polite" aria-busy="true">
             <div className="mx-auto w-52 sm:w-60">
               <ProgressGauge
-                percent={percent}
-                caption={total && total > 0 ? `${formatBytes(received)} / ${formatBytes(total)}` : `${formatBytes(received)} transferred`}
+                percent={displayPercent}
+                caption={
+                  total && total > 0
+                    ? `${formatBytes(received)} / ${formatBytes(total)}`
+                    : `${formatBytes(received)} transferred`
+                }
               />
             </div>
 
@@ -315,9 +409,9 @@ export function DownloadFlow() {
             <div className="mx-auto mt-6 h-2.5 w-full max-w-md overflow-hidden rounded-full bg-ink-800">
               <div
                 className={`h-full rounded-full bg-gradient-to-r from-accent-soft via-accent to-accent-deep transition-[width] duration-300 ${
-                  percent === null ? 'w-1/3 animate-pulse-soft' : ''
+                  displayPercent === null ? 'w-1/3 animate-pulse-soft' : ''
                 }`}
-                style={percent === null ? undefined : { width: `${Math.max(2, percent)}%` }}
+                style={displayPercent === null ? undefined : { width: `${Math.max(2, displayPercent)}%` }}
               />
             </div>
 
@@ -339,18 +433,20 @@ export function DownloadFlow() {
               </div>
               <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
                 <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">
-                  {phase === 'saving' ? 'Saving' : eta !== null ? 'Remaining' : 'Elapsed'}
+                  {eta !== null ? 'Remaining' : 'Elapsed'}
                 </dt>
                 <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
-                  {phase === 'saving' ? 'file…' : eta !== null ? formatDuration(eta) : formatDuration(elapsed)}
+                  {eta !== null ? formatDuration(eta) : formatDuration(elapsed)}
                 </dd>
               </div>
             </dl>
 
-            <p className="mt-5 text-center text-xs text-white/45">
-              {total && total > 0 && estimated
+            <p className="mt-3 text-center text-xs font-medium text-accent/90">{statusLabel}</p>
+
+            <p className="mt-2 text-center text-xs text-white/45">
+              {total && total > 0 && estimated && displayPercent !== null
                 ? 'Size is the platform’s estimate — the real file may differ slightly.'
-                : 'Keep this tab open; the file streams straight to your device and nothing is stored on the server.'}
+                : 'Your browser is saving the file — watch its download bar for the live percentage.'}
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
@@ -376,7 +472,7 @@ export function DownloadFlow() {
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-sm">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-3 py-1.5 font-semibold text-ok ring-1 ring-inset ring-ok/25">
                 <Check className="h-3.5 w-3.5 stroke-[3]" aria-hidden="true" />
-                Saved as {filename}
+                Saved as {savedName ?? filename}
               </span>
             </div>
 
@@ -384,7 +480,7 @@ export function DownloadFlow() {
               <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
                 <dt className="text-[10px] font-semibold tracking-wide text-white/40 uppercase">Size</dt>
                 <dd className="mt-0.5 text-sm font-semibold text-white tabular-nums">
-                  {formatBytes(received)}
+                  {formatBytes(total && total > 0 ? total : received)}
                 </dd>
               </div>
               <div className="rounded-xl border border-line bg-white/[0.02] px-2 py-2.5">
@@ -425,8 +521,8 @@ export function DownloadFlow() {
             </div>
 
             <p className="mt-5 max-w-md text-center text-xs text-white/40">
-              Didn&apos;t get a save prompt? Check your browser&apos;s download bar — some browsers
-              save silently to your Downloads folder.
+              The file is in your browser&apos;s Downloads. Didn&apos;t get it? Use “Save again”,
+              or the direct link on the quality page.
             </p>
           </div>
         )}
@@ -460,7 +556,7 @@ export function DownloadFlow() {
                 Pick another quality
               </Link>
               <a
-                href={apiHref}
+                href={`${apiHref}&mode=stream`}
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
               >
                 <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -474,7 +570,7 @@ export function DownloadFlow() {
       {/* Quiet footer note mirroring step 2 */}
       <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-white/40">
         <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden="true" />
-        Streams are proxied through Download24 and never written to disk.
+        Streams are proxied through Download24 and never stored on disk.
       </p>
     </div>
   )

@@ -14,6 +14,15 @@
  *      audio transcode is written to a temp file first and streamed from there,
  *      while genuinely muxed sources are piped straight through for zero latency
  *      and zero disk use.
+ *
+ * Progress reporting: for a piped transfer we pass `--newline` without
+ * `--quiet`. With `-o -`, yt-dlp then flips its internal `logtostderr` switch,
+ * so the human log (including the `[download] Destination: -` size line and one
+ * `[download]  46.1% of … at …/s` update per line) goes to **stderr** while the
+ * raw media bytes stay on stdout. `lib/progress.ts` parses those lines so the
+ * UI can animate a real percentage even on a chunked, length-less response.
+ * (`--quiet` would set `noprogress` and suppress every update, which is exactly
+ * the \"jumps straight to 100%\" bug this fixes.)
  */
 
 import { spawn, type ChildProcessByStdio } from 'node:child_process'
@@ -312,6 +321,8 @@ export function buildDownloadArgs({
     '--no-warnings',
     '--no-color',
     '--ignore-config',
+    // Never switch output into a `\r` spinner: progress lines must be
+    // terminable by newline so they can be parsed incrementally from stderr.
     '--newline',
     '--no-mtime',
     '--retries',
@@ -325,7 +336,10 @@ export function buildDownloadArgs({
   ]
 
   if (firstEntryOnly) args.push('--playlist-items', '1')
+  // `-o -` flips yt-dlp's internal `logtostderr`, so the human log (progress
+  // included) lands on stderr while the media bytes stay clean on stdout.
   if (quiet) args.push('--quiet')
+  else args.push('--no-quiet')
   if (cookiesPath) args.push('--cookies', cookiesPath)
   if (process.env.YTDL_USER_AGENT) args.push('--user-agent', process.env.YTDL_USER_AGENT)
   if (process.env.FFMPEG_PATH?.trim()) args.push('--ffmpeg-location', process.env.FFMPEG_PATH.trim())
@@ -363,6 +377,11 @@ export interface StreamJob {
   dispose: () => void
   readonly startedAt: number
   stderrTail: () => string
+  /**
+   * Raw (utf8) progress lines parsed from stderr. `--newline` guarantees each
+   * update is a whole line. `lib/progress.ts` turns them into percentages.
+   */
+  onProgress: (cb: ((line: string) => void) | null) => void
 }
 
 export interface StreamJobOptions {
@@ -374,6 +393,12 @@ export interface StreamJobOptions {
 export interface PrepareJobOptions extends StreamJobOptions {
   /** Container preference for the merge step; ignored when nothing is merged. */
   mergeOutputFormat?: DownloadOption['ext']
+  /**
+   * Raw (utf8) `--newline` progress lines from stdout. For a *file* output
+   * yt-dlp keeps media bytes on disk and prints only the human log to stdout,
+   * so these lines are pure progress text (see `lib/progress.ts`).
+   */
+  onProgress?: (line: string) => void
 }
 
 export function startStreamJob(url: string, option: DownloadOption, options: StreamJobOptions = {}): StreamJob {
@@ -384,16 +409,33 @@ export function startStreamJob(url: string, option: DownloadOption, options: Str
       url,
       option,
       output: '-',
-      quiet: true,
+      quiet: false,
       firstEntryOnly: options.firstEntryOnly ?? false
     }),
     { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }
   ) as YtDlpChild
 
   let stderrBuffer = ''
+  /** Last *completed* line; `--newline` keeps updates coming `\n`-terminated. */
+  let stderrLine = ''
+  const linesSeen: string[] = []
+  let progressListener: ((line: string) => void) | null = null
+
   child.stderr.setEncoding('utf8')
   child.stderr.on('data', (chunk: string) => {
     stderrBuffer = (stderrBuffer + chunk).slice(-8000)
+    stderrLine += chunk.replace(/\u001b\[[0-9;]*m/g, '')
+    let newlineIndex = stderrLine.indexOf('\n')
+    while (newlineIndex !== -1) {
+      const line = stderrLine.slice(0, newlineIndex).replace(/\r/g, '').trim()
+      stderrLine = stderrLine.slice(newlineIndex + 1)
+      if (line) {
+        linesSeen.push(line)
+        if (linesSeen.length > 5) linesSeen.shift()
+        progressListener?.(line)
+      }
+      newlineIndex = stderrLine.indexOf('\n')
+    }
   })
 
   const timeoutMs = options.timeoutMs ?? LIMITS.extractTimeoutMs
@@ -418,7 +460,12 @@ export function startStreamJob(url: string, option: DownloadOption, options: Str
     child,
     dispose,
     startedAt,
-    stderrTail: () => stderrBuffer.slice(-1200) || 'yt-dlp exited without writing any data.'
+    stderrTail: () =>
+      stderrBuffer.replace(/\u001b\[[0-9;]*m/g, '').slice(-1200) || 'yt-dlp exited without writing any data.',
+    onProgress(cb: ((line: string) => void) | null) {
+      progressListener = cb
+      if (cb) for (const line of linesSeen) cb(line)
+    }
   }
 }
 
@@ -495,17 +542,32 @@ export async function prepareFile(
       url,
       option,
       output: template,
-      quiet: true,
+      quiet: false,
       mergeOutputFormat: options.mergeOutputFormat,
       firstEntryOnly: options.firstEntryOnly ?? false
     }),
-    { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true }
+    { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }
   )
 
   let stderrBuffer = ''
   child.stderr?.setEncoding('utf8')
   child.stderr?.on('data', (chunk: string) => {
     stderrBuffer = (stderrBuffer + chunk).slice(-12_000)
+  })
+
+  // For a disk-file output, stdout carries only the `--newline` progress log
+  // (the media bytes go to the temp file). Feed each completed line forward.
+  let stdoutLine = ''
+  child.stdout?.setEncoding('utf8')
+  child.stdout?.on('data', (chunk: string) => {
+    stdoutLine += chunk.replace(/\u001b\[[0-9;]*m/g, '')
+    let newlineIndex = stdoutLine.indexOf('\n')
+    while (newlineIndex !== -1) {
+      const line = stdoutLine.slice(0, newlineIndex).replace(/\r/g, '').trim()
+      stdoutLine = stdoutLine.slice(newlineIndex + 1)
+      if (line) options.onProgress?.(line)
+      newlineIndex = stdoutLine.indexOf('\n')
+    }
   })
 
   const timeoutMs = options.timeoutMs ?? LIMITS.downloadTimeoutMs

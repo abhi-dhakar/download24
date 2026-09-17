@@ -20,6 +20,8 @@
 import { NextResponse } from 'next/server'
 
 import { cacheKeyFor, parseCache } from '@/lib/cache'
+import { failLiveJob, finishLiveJob, registerLiveJob, updateLiveJob } from '@/lib/liveJobs'
+import { parseYtDlpProgressLine } from '@/lib/progress'
 import {
   buildParsePayload,
   cleanUpstreamError,
@@ -39,6 +41,7 @@ import { DOWNLOAD_MODE, LIMITS } from '@/lib/site'
 import {
   buildTeraboxPayload,
   isMediaExtension,
+  mergeProgress,
   openTeraboxFile,
   proxyBody,
   TeraboxError
@@ -159,19 +162,37 @@ function preparedResponse(
   prepared: PreparedFile,
   filename: string,
   option: DownloadOption,
-  releaseSlot: () => void
+  releaseSlot: () => void,
+  jobId: string,
+  finishJob: (fileName?: string) => void
 ): Response {
-  return new Response(fileBody(prepared, releaseSlot), {
-    status: 200,
-    headers: transferHeaders(filename, prepared.ext, {
-      'Content-Length': String(prepared.size),
-      'Accept-Ranges': 'none',
-      'X-Download-Mode': 'prepared',
-      'X-Download-Prepare-Ms': String(prepared.elapsedMs),
-      'X-Merged-Streams': option.needsMerge ? option.formatIds.join('+') : 'single',
-      'X-Temp-File-Bytes': String(prepared.size)
-    })
-  })
+  return new Response(
+    mergeProgress(
+      fileBody(prepared, releaseSlot),
+      {
+        onProgress: ({ percent, receivedBytes }) =>
+          updateLiveJob(jobId, {
+            phase: 'streaming',
+            ...(percent !== null ? { percent } : {}),
+            receivedBytes
+          }),
+        onDone: () => finishJob(filename)
+      },
+      prepared.size
+    ),
+    {
+      status: 200,
+      headers: transferHeaders(filename, prepared.ext, {
+        'Content-Length': String(prepared.size),
+        'Accept-Ranges': 'none',
+        'X-Download-Mode': 'prepared',
+        'X-Job-Id': jobId,
+        'X-Download-Prepare-Ms': String(prepared.elapsedMs),
+        'X-Merged-Streams': option.needsMerge ? option.formatIds.join('+') : 'single',
+        'X-Temp-File-Bytes': String(prepared.size)
+      })
+    }
+  )
 }
 
 export async function GET(request: Request): Promise<Response> {
@@ -180,6 +201,16 @@ export async function GET(request: Request): Promise<Response> {
   const indexRaw = url.searchParams.get('f') ?? url.searchParams.get('option') ?? '0'
   const audioOnly =
     (url.searchParams.get('a') ?? '') === 'mp3' || url.searchParams.get('type') === 'audio'
+  // The progress page generates its own id so it can poll before the response
+  // arrives; `/api/download` echoes it back via `X-Job-Id` and registers the
+  // live progress entry under it.
+  const preferredJobId = url.searchParams.get('job') ?? url.searchParams.get('id')
+  // The animated step-3 page needs a server stream: it both reports live
+  // progress and forces `Content-Disposition: attachment`, which makes Chrome
+  // run the download in its own download manager (visible while transferring).
+  // `DOWNLOAD_MODE=redirect` stays in charge for direct links / curl, whose
+  // callers get a plain 302 to the CDN.
+  const forceStream = url.searchParams.get('mode') === 'stream'
 
   const validation = validateMediaUrl(source)
   if (!validation.ok) return jsonError(validation.error.message, 400, validation.error.hint)
@@ -219,6 +250,11 @@ export async function GET(request: Request): Promise<Response> {
     slot.release()
   }
 
+  // Live progress entry for the whole job. Created before any extraction work
+  // so the poller has something to read during the (long) prepare phase.
+  const jobId = registerLiveJob(preferredJobId)
+  const finishJob = (fileName?: string) => finishLiveJob(jobId, fileName)
+
   try {
     const key = cacheKeyFor({ url: sourceUrl })
 
@@ -237,6 +273,11 @@ export async function GET(request: Request): Promise<Response> {
 
       const shareOption = pickOption(sharePayload, requestedIndex, audioOnly)
       if (!shareOption?.remoteFile) {
+        failLiveJob(
+          jobId,
+          'That file is no longer part of the share.',
+          'Run the extraction again to refresh the share contents.'
+        )
         return jsonError(
           'That file is no longer part of the share.',
           410,
@@ -258,14 +299,20 @@ export async function GET(request: Request): Promise<Response> {
         ? rawName.slice(0, -(ext.length + 1))
         : rawName
       const baseName = sanitizeFilename(stem || sharePayload.meta.title, 'terabox-file')
+      const finalName = `${baseName}.${ext}`
 
-      if (DOWNLOAD_MODE === 'redirect' && isSafePublicMediaUrl(opened.finalUrl)) {
+      if (!forceStream && DOWNLOAD_MODE === 'redirect' && isSafePublicMediaUrl(opened.finalUrl)) {
         void opened.response.body?.cancel().catch(() => {})
+        updateLiveJob(jobId, {
+          phase: 'redirect',
+          ...(opened.size ? { totalBytes: opened.size } : {})
+        })
         return NextResponse.redirect(opened.finalUrl, {
           status: 302,
           headers: {
             'Cache-Control': 'no-store',
             'X-Download-Mode': 'redirect',
+            'X-Job-Id': jobId,
             'X-Content-Type-Options': 'nosniff',
             'X-Robots-Tag': 'noindex, nofollow'
           }
@@ -275,26 +322,49 @@ export async function GET(request: Request): Promise<Response> {
       const upstreamBody = opened.response.body
       if (!upstreamBody) {
         void opened.response.body?.cancel().catch(() => {})
+        failLiveJob(jobId, 'TeraBox returned an empty file.', 'Retry the download once.')
         return jsonError('TeraBox returned an empty file.', 502, 'Retry the download once.')
       }
 
-      transferStarted = true
-      return new Response(proxyBody(upstreamBody, releaseSlot), {
-        status: 200,
-        headers: transferHeaders(`${baseName}.${ext}`, ext, {
-          'X-Download-Mode': 'terabox-cdn',
-          ...(opened.size ? { 'Content-Length': String(opened.size) } : {}),
-          ...(isMediaExtension(ext) || !opened.contentType
-            ? {}
-            : { 'Content-Type': opened.contentType })
-        })
+      const knownSize = opened.size ?? undefined
+      updateLiveJob(jobId, {
+        phase: 'streaming',
+        ...(knownSize ? { totalBytes: knownSize } : {})
       })
+
+      transferStarted = true
+      return new Response(
+        proxyBody(upstreamBody, {
+          onSettled: releaseSlot,
+          onProgress: (bytes) => {
+            updateLiveJob(jobId, {
+              receivedBytes: bytes,
+              ...(knownSize && knownSize > 0
+                ? { percent: Math.min(100, Math.round((bytes / knownSize) * 1000) / 10) }
+                : {})
+            })
+          },
+          onDone: () => finishJob(finalName)
+        }),
+        {
+          status: 200,
+          headers: transferHeaders(finalName, ext, {
+            'X-Download-Mode': 'terabox-cdn',
+            'X-Job-Id': jobId,
+            ...(knownSize ? { 'Content-Length': String(knownSize) } : {}),
+            ...(isMediaExtension(ext) || !opened.contentType
+              ? {}
+              : { 'Content-Type': opened.contentType })
+          })
+        }
+      )
     }
 
     const cached = parseCache.get(key)
 
     // Redirect mode needs live URLs, so it skips a potentially stale entry.
-    const wantsRedirect = DOWNLOAD_MODE === 'redirect'
+    // `forceStream` keeps the animated page on the proxied stream path.
+    const wantsRedirect = DOWNLOAD_MODE === 'redirect' && !forceStream
     let payload: ParsePayload
     try {
       payload = !wantsRedirect && cached ? cached : await buildFreshPayload(sourceUrl, request)
@@ -305,6 +375,11 @@ export async function GET(request: Request): Promise<Response> {
 
     const option = pickOption(payload, requestedIndex, audioOnly)
     if (!option) {
+      failLiveJob(
+        jobId,
+        'That quality is no longer offered for this link.',
+        'Run the extraction again to refresh the available formats.'
+      )
       return jsonError(
         'That quality is no longer offered for this link.',
         410,
@@ -318,11 +393,13 @@ export async function GET(request: Request): Promise<Response> {
     if (wantsRedirect && option.kind === 'video' && option.muxed) {
       const direct = await upstreamUrlFor(sourceUrl, option)
       if (direct) {
+        updateLiveJob(jobId, { phase: 'redirect' })
         return NextResponse.redirect(direct, {
           status: 302,
           headers: {
             'Cache-Control': 'no-store',
             'X-Download-Mode': 'redirect',
+            'X-Job-Id': jobId,
             'X-Content-Type-Options': 'nosniff',
             'X-Robots-Tag': 'noindex, nofollow'
           }
@@ -355,6 +432,23 @@ export async function GET(request: Request): Promise<Response> {
         resolveStartup()
       }
 
+      /** Polled live view for `/download/progress`, fed by yt-dlp's stderr. */
+      const absorbProgressLine = (line: string) => {
+        const update = parseYtDlpProgressLine(line)
+        if (!update) return
+        updateLiveJob(jobId, {
+          // While the source→server byte fetch is climbing, label it as the
+          // download; the short "streaming" tail is the final flush after 100%.
+          phase:
+            update.percent !== null && update.percent >= 99.5 ? 'streaming' : 'downloading',
+          percent: update.percent ?? undefined,
+          totalBytes: update.totalBytes ?? undefined,
+          speedBytesPerSec: update.speedBytesPerSec ?? undefined,
+          receivedBytes: bytesSent
+        })
+      }
+      job.onProgress(absorbProgressLine)
+
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
           const onData = (chunk: Buffer) => {
@@ -366,6 +460,7 @@ export async function GET(request: Request): Promise<Response> {
           stdout.once('error', (error: Error) => {
             settleStartup(error.message)
             controller.error(error)
+            job.onProgress(null)
             job.dispose()
             releaseSlot()
           })
@@ -375,7 +470,9 @@ export async function GET(request: Request): Promise<Response> {
             settleStartup(
               clean ? (bytesSent > 0 ? null : 'The source returned an empty file.') : errorFromChildFailure(job, code)
             )
+            job.onProgress(null)
             if (clean) {
+              finishJob(`${baseName}.${option.ext}`)
               try {
                 controller.close()
               } catch {
@@ -392,7 +489,9 @@ export async function GET(request: Request): Promise<Response> {
         },
         cancel() {
           // The visitor hit "Cancel" or closed the tab: stop paying for bytes.
+          job.onProgress(null)
           job.dispose()
+          finishJob(`${baseName}.${option.ext}`)
           releaseSlot()
         }
       })
@@ -408,6 +507,7 @@ export async function GET(request: Request): Promise<Response> {
         job.dispose()
         const message = startupError ?? 'The download could not be started.'
         console.warn(`[download] pipe failure for ${sourceUrl}: ${cleanUpstreamError(message, 200)}`)
+        failLiveJob(jobId, message, 'Try a lower resolution, or re-run the extraction first.')
         return jsonError(
           message,
           /did not start|timed out/i.test(message) ? 504 : 502,
@@ -421,6 +521,7 @@ export async function GET(request: Request): Promise<Response> {
         headers: transferHeaders(`${baseName}.${option.ext}`, option.ext, {
           'X-Download-Mode': 'pipe',
           'X-Download-Setup-Ms': String(Date.now() - job.startedAt),
+          'X-Job-Id': jobId,
           ...(option.sizeLabel ? { 'X-Size-Estimate': option.sizeLabel } : {})
         })
       })
@@ -438,19 +539,39 @@ export async function GET(request: Request): Promise<Response> {
           option.needsMerge && (option.ext === 'mp4' || option.ext === 'webm')
             ? option.ext
             : undefined,
-        firstEntryOnly
+        firstEntryOnly,
+        onProgress: (line) => {
+          const update = parseYtDlpProgressLine(line)
+          if (!update) return
+          updateLiveJob(jobId, {
+            // yt-dlp downloads first; a follow-up `[Merger]` state is not a
+            // `[download]` line, so once the download hits 100% we show the
+            // merge/transcode as a brief "processing" hold below.
+            phase: update.percent !== null && update.percent >= 99.5 ? 'processing' : 'downloading',
+            totalBytes: update.totalBytes ?? undefined,
+            percent:
+              update.percent !== null && update.percent >= 99.5
+                ? 99.5
+                : (update.percent ?? undefined),
+            speedBytesPerSec: update.speedBytesPerSec ?? undefined
+          })
+        }
       })
     } catch (error) {
       const err = error as { message?: string; code?: string }
-      console.warn(`[download] prepare failure for ${sourceUrl}: ${cleanUpstreamError(err?.message, 200)}`)
-      return jsonError(
+      const message =
         err?.code === 'TIMEOUT'
           ? 'Preparing that file took too long and was stopped.'
-          : 'The server could not finish preparing this file.',
+          : 'The server could not finish preparing this file.'
+      const hint = /ffmpeg/i.test(err?.message ?? '')
+        ? 'This host needs ffmpeg installed for merged video and MP3 output.'
+        : 'Try a lower resolution, or re-run the extraction first.'
+      console.warn(`[download] prepare failure for ${sourceUrl}: ${cleanUpstreamError(err?.message, 200)}`)
+      failLiveJob(jobId, message, hint)
+      return jsonError(
+        message,
         err?.code === 'TIMEOUT' ? 504 : err?.code === 'SERVER_UNAVAILABLE' ? 503 : 502,
-        /ffmpeg/i.test(err?.message ?? '')
-          ? 'This host needs ffmpeg installed for merged video and MP3 output.'
-          : 'Try a lower resolution, or re-run the extraction first.'
+        hint
       )
     }
 
@@ -458,6 +579,7 @@ export async function GET(request: Request): Promise<Response> {
     // free the slot *before* marking the transfer as started.
     if (request.signal?.aborted) {
       await removePreparedFile(prepared.path)
+      failLiveJob(jobId, 'The download was cancelled before it could start.')
       return jsonError('The download was cancelled before it could start.', 408)
     }
 
@@ -466,10 +588,11 @@ export async function GET(request: Request): Promise<Response> {
     const filename = `${baseName}.${prepared.ext}`
     transferStarted = true
 
-    return preparedResponse(prepared, filename, option, releaseSlot)
+    return preparedResponse(prepared, filename, option, releaseSlot, jobId, finishJob)
   } catch (error) {
     if (error instanceof TeraboxError) {
       console.warn(`[download] terabox ${error.code} for ${sourceUrl}: ${cleanUpstreamError(error.message, 200)}`)
+      failLiveJob(jobId, error.message, error.hint)
       return jsonError(
         error.message,
         error.code === 'VERIFICATION_REQUIRED' || error.code === 'UPSTREAM_ERROR'
@@ -483,11 +606,13 @@ export async function GET(request: Request): Promise<Response> {
 
     const err = error as { message?: string; stderr?: string }
     const message = err?.stderr || err?.message || 'Download failed.'
+    const hint = cleanUpstreamError(message, 200)
     console.error('[download] error', cleanUpstreamError(message, 240))
+    failLiveJob(jobId, 'The download could not be completed.', hint)
     return jsonError(
       'The download could not be completed.',
       /ffmpeg/i.test(message) ? 503 : 502,
-      cleanUpstreamError(message, 200)
+      hint
     )
   } finally {
     if (!transferStarted) releaseSlot()

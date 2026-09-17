@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "postinstall": "node scripts/install-ytdlp.mjs",
-    "test:terabox": "node scripts/terabox-selftest.mjs"
+    "test:terabox": "node scripts/terabox-selftest.mjs",
+    "test:progress": "node scripts/test-progress.mjs",
+    "smoke:stream": "node scripts/smoke-stream.mjs"
   },
   "dependencies": {
     "lru-cache": "11.5.2",

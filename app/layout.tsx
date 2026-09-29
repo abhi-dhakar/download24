@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Sora } from 'next/font/google'
+import localFont from 'next/font/local'
 
 import './globals.css'
 
@@ -8,14 +8,25 @@ import { serializeJsonLd, websiteSchema } from '@/lib/seo'
 import { SITE, canonicalOrigin, isProductionSite } from '@/lib/site'
 
 /*
- * Fonts are self-hosted at build time by `next/font` (no third-party request,
- * no FOUC, and `display: swap` plus metric-aware fallback keeps CLS at 0).
+ * Neo-brutalist type trio, self-hosted as local `.woff2` files
+ * (`app/fonts/`, see that folder's README + OFL.txt):
+ *
+ *   Archivo Black  → display headings: very heavy, very tight, no italics
+ *   Space Grotesk  → body/UI: quirky geometric grotesque, variable 300–700
+ *   Space Mono     → labels, tags, stats, keyboard hints
+ *
+ * `next/font/local` hashes + serves them from our own origin, so the build
+ * never reaches out to Google Fonts (works offline and in locked-down CI),
+ * no third-party request happens at runtime, and `display: swap` plus the
+ * metric-aware fallback keeps CLS at 0.
  */
-const inter = Inter({
-  subsets: ['latin'],
+const archivoBlack = localFont({
+  src: './fonts/archivo-black-latin-400-normal.woff2',
+  weight: '400',
+  style: 'normal',
   display: 'swap',
-  variable: '--font-inter',
-  adjustFontFallback: true,
+  variable: '--font-archivo',
+  preload: true,
   fallback: [
     'ui-sans-serif',
     'system-ui',
@@ -24,16 +35,38 @@ const inter = Inter({
     'Roboto',
     'Helvetica Neue',
     'Arial',
-    'Noto Sans',
     'sans-serif'
   ]
 })
 
-const sora = Sora({
-  subsets: ['latin'],
+const spaceGrotesk = localFont({
+  src: './fonts/space-grotesk-latin-wght-normal.woff2',
+  weight: '300 700',
+  style: 'normal',
   display: 'swap',
-  variable: '--font-sora',
-  fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif']
+  variable: '--font-grotesk',
+  preload: true,
+  fallback: [
+    'ui-sans-serif',
+    'system-ui',
+    '-apple-system',
+    'Segoe UI',
+    'Roboto',
+    'Helvetica Neue',
+    'Arial',
+    'sans-serif'
+  ]
+})
+
+const spaceMono = localFont({
+  src: [
+    { path: './fonts/space-mono-latin-400.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/space-mono-latin-700.woff2', weight: '700', style: 'normal' }
+  ],
+  display: 'swap',
+  variable: '--font-mono-space',
+  preload: false,
+  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
 })
 
 /**
@@ -118,13 +151,21 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: SITE.themeColor,
+  // Matches `--color-paper` in app/globals.css for both themes.
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0d0d14' },
+    { media: '(prefers-color-scheme: light)', color: '#fff9ec' }
+  ],
   colorScheme: 'dark light'
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang={SITE.language} className={`${inter.variable} ${sora.variable}`} suppressHydrationWarning>
+    <html
+      lang={SITE.language}
+      className={`${archivoBlack.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -138,11 +179,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteSchema()) }}
         />
       </head>
-      <body className="min-h-dvh bg-ink-950 font-sans text-white/92 antialiased">
+      <body className="nb-page min-h-dvh font-sans antialiased">
         <ScrollToTop />
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+          className="nb-btn nb-btn-sun nb-btn-sm sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100]"
         >
           Skip to main content
         </a>

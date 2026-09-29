@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowDownToLine, ArrowUpRight } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpRight, Check, Sparkles, Star, Zap } from 'lucide-react'
 
 import { Downloader } from '@/components/Downloader'
 import { FaqAccordion } from '@/components/FaqAccordion'
@@ -11,7 +11,6 @@ import { HeroIllustration } from '@/components/illustrations/HeroIllustration'
 import { HowToDownload } from '@/components/HowToDownload'
 import { PlatformBar } from '@/components/PlatformBar'
 import { PlatformGrid } from '@/components/PlatformGrid'
-import { PlatformMark } from '@/components/PlatformMark'
 import { PLATFORMS } from '@/lib/platforms'
 import {
   breadcrumbSchema,
@@ -29,6 +28,10 @@ import { canonicalOrigin } from '@/lib/site'
  * the pasted link to `/download` (details + options), which hands the chosen
  * format to `/download/progress` (animated transfer). The FAQ / HowTo JSON-LD
  * live on their dedicated `/faq` and `/how-it-works` pages.
+ *
+ * Visual language: playfulness-first neo-brutalism — cream paper and ink
+ * borders, candy-highlight headlines, hard offset shadows, tilted stickers and
+ * a marquee band in place of a corporate gradient hero.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const title =
@@ -98,10 +101,10 @@ function StructuredData({ id, data }: { id: string; data: unknown }) {
 /* -------------------------------------------------------------------------- */
 
 const HERO_STATS = [
-  { value: `${PLATFORMS.length}+`, label: 'Platforms', sub: 'YouTube, IG, FB…' },
-  { value: '4K', label: 'Max quality', sub: '2160p 60fps' },
-  { value: '<3s', label: 'Avg. parse', sub: 'from paste to link' },
-  { value: '100%', label: 'Free forever', sub: 'no hidden limits' }
+  { value: '4K', label: 'Max quality', sub: '2160p 60fps', tone: 'bg-sun text-[#101010]' },
+  { value: '<3s', label: 'Avg. parse', sub: 'paste → links', tone: 'bg-punch text-[#101010]' },
+  { value: '100%', label: 'Free forever', sub: 'no hidden limits', tone: 'bg-lime text-[#101010]' },
+  { value: '0', label: 'Signups', sub: 'ever', tone: 'bg-aqua text-[#101010]' }
 ]
 
 const QUALITY_TABLE = [
@@ -145,24 +148,52 @@ const QUALITY_TABLE = [
 
 const TRUST_POINTS = [
   {
-    title: 'Zero watermarks on Reels & TikTok',
+    title: 'Zero watermarks',
     body:
-      'Download24 asks the platform for the clean rendition, so short-form videos save without an overlay burned into the frame.'
+      'Download24 asks the platform for the clean rendition, so Reels and TikToks save without an overlay burned into the frame.',
+    art: 'a' as const
   },
   {
     title: 'True 4K, never upscaled',
     body:
-      'We show exactly the qualities the source publishes. If a creator uploaded in 2160p60, that is what you get — bit-for-bit.'
+      'We show exactly the qualities the source publishes. If a creator uploaded in 2160p60, that is what you get — bit-for-bit.',
+    art: 'b' as const
   },
   {
     title: 'Works on any device',
     body:
-      'Chrome, Safari, Firefox, Edge, Android and iPhone. Nothing to install — the whole tool lives inside this page.'
+      'Chrome, Safari, Firefox, Edge, Android and iPhone. Nothing to install — the whole tool lives inside this page.',
+    art: 'c' as const
   },
   {
     title: 'Privacy by design',
     body:
-      'Links you paste are used only to fetch the file. We do not store your URLs, downloads or IP after the session ends.'
+      'Links you paste are used only to fetch the file. We do not store your URLs, downloads or IP after the session ends.',
+    art: 'd' as const
+  }
+]
+
+const QUICKIES = [
+  {
+    tone: 'bg-sun text-[#101010]',
+    icon: Zap,
+    title: 'Instagram Reels & TikTok — no watermark',
+    body:
+      'Paste a Reel or a vm.tiktok.com link and Download24 requests the clean master, so the saved MP4 has no logo burned in. The same link also exports the audio as MP3.'
+  },
+  {
+    tone: 'bg-aqua text-[#101010]',
+    icon: Sparkles,
+    title: 'Why 1080p+ videos are “merged”',
+    body:
+      'Modern platforms serve video and audio as two DASH streams. Anything above 720p on YouTube is split like that, so our server downloads both and muxes them with ffmpeg — no re-encode, same quality.'
+  },
+  {
+    tone: 'bg-punch text-[#101010]',
+    icon: Star,
+    title: 'MP3 that actually sounds good',
+    body:
+      'Audio extraction works on every supported network. We pull the highest-bitrate stream, transcode once with LAME at VBR 0, write ID3 tags and stream the finished file to you.'
   }
 ]
 
@@ -189,69 +220,86 @@ export default function HomePage() {
 
       <main id="main" className="flex-1">
         {/* ================================================================ */}
-        {/* HERO SECTION                                                     */}
+        {/* HERO                                                             */}
         {/* ================================================================ */}
         <section
           id="downloader"
           aria-labelledby="downloader-heading"
-          className="relative isolate overflow-hidden pt-8 pb-8 sm:pt-10 sm:pb-12"
+          className="relative isolate overflow-hidden border-b-[3px] border-line bg-paper-2 pt-10 pb-14 sm:pt-14 sm:pb-20"
         >
-          {/* Subtle Ambient Background */}
-          <div aria-hidden="true" className="hero-aurora animate-float opacity-30" />
-          <div aria-hidden="true" className="grid-lines opacity-40" />
+          <div aria-hidden="true" className="nb-grid-lines pointer-events-none absolute inset-0 opacity-60" />
+          <div aria-hidden="true" className="nb-swipe animate-float opacity-60" />
 
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
-            {/* ------------------------------------------------- left: copy + input */}
+          <div className="relative mx-auto grid w-full max-w-6xl items-start gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+            {/* -------------------------------------------------- left: copy */}
             <div className="text-center lg:text-left">
-              
-              {/* Clean, High-Impact Headline */}
-              <h1
-                id="downloader-heading"
-                className="mt-4 font-display text-[clamp(2.2rem,5vw,3.8rem)] font-extrabold tracking-tight text-white leading-[1.1]"
-              >
-                Download Online Videos in{' '}
-                <span className="text-gradient">4K &amp; MP3</span>
+              <p className="nb-sticker">
+                <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+                Free · No signup · No app
+              </p>
+
+              <h1 id="downloader-heading" className="nb-h1 mt-5 text-ink">
+                Download videos in{' '}
+                <span className="relative inline-block">
+                  <span className="nb-mark nb-mark-punch">4K</span>
+                </span>{' '}
+                &amp; <span className="nb-mark nb-mark-aqua">MP3</span>
+                <span className="block text-[clamp(1.1rem,2.2vw,1.7rem)] text-ink-mute">
+                  no watermark, ever
+                </span>
               </h1>
 
-              {/* Concise Subtitle */}
-              <p className="mx-auto mt-2 max-w-xl text-balance text-sm leading-relaxed text-white/60 sm:text-base lg:mx-0">
-                Paste any link from YouTube, Instagram Reels, Facebook, TikTok, X, or a TeraBox share.{' '}
+              <p className="nb-lead mx-auto mt-5 max-w-xl lg:mx-0">
+                Paste any link from YouTube, Instagram Reels, Facebook, TikTok, X, or a TeraBox share.
                 High speed, no watermarks, and no registration required.
               </p>
 
-              {/* Downloader Input Box */}
               <div className="mt-8">
                 <Downloader />
               </div>
 
-          
+              <ul className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                {['No registration', 'No software', 'Server-side ffmpeg'].map((item) => (
+                  <li key={item} className="nb-chip nb-chip-sm nb-chip-soft">
+                    <Check className="h-3 w-3 text-ok-ink" strokeWidth={3.5} aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
               <noscript>
-                <p className="mx-auto mt-6 max-w-xl rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-warn lg:mx-0">
+                <p className="nb-card-flat mx-auto mt-6 max-w-xl bg-surface p-3 text-xs text-ink-soft lg:mx-0">
                   JavaScript is required for the live extractor. You can use the direct API:{' '}
-                  <code className="font-mono ml-1">/api/parse?url=YOUR-LINK</code>
+                  <code>/api/parse?url=YOUR-LINK</code>
                 </p>
               </noscript>
             </div>
 
-            {/* --------------------------------------------- right: illustration */}
-            <div aria-hidden="true" className="mx-auto w-full max-w-[440px] lg:max-w-none">
+            {/* --------------------------------------------- right: artwork */}
+            <div aria-hidden="true" className="mx-auto w-full max-w-[460px] lg:max-w-none">
               <HeroIllustration />
             </div>
           </div>
 
-          {/* Minimalist Stats Bar */}
-          <div className="mx-auto mt-12 max-w-4xl px-4 sm:px-6">
-            <dl className="grid grid-cols-2 divide-x divide-line rounded-2xl border border-line bg-ink-900/40 backdrop-blur-sm sm:grid-cols-4">
-              {HERO_STATS.map((stat) => (
-                <div key={stat.label} className="p-4 text-center">
+          {/* --------------------------------------------------- stats band */}
+          <div className="relative mx-auto mt-12 w-full max-w-5xl px-4 sm:px-6">
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {HERO_STATS.map((stat, index) => (
+                <div
+                  key={stat.label}
+                  className={`nb-card nb-press-card p-4 text-center ${index % 2 === 0 ? 'nb-tilt-l' : 'nb-tilt-r'}`}
+                >
                   <dt className="sr-only">{stat.label}</dt>
                   <dd>
-                    <span className="block font-display text-xl sm:text-2xl font-bold text-white tabular-nums">
+                    <span
+                      className={`inline-block rounded-lg border-[3px] border-line px-2.5 py-0.5 font-display text-xl ${stat.tone}`}
+                    >
                       {stat.value}
                     </span>
-                    <span className="mt-0.5 block text-[11px] font-medium text-white/60">
+                    <span className="mt-2.5 block font-display text-[11px] tracking-wide text-ink uppercase">
                       {stat.label}
                     </span>
+                    <span className="mt-0.5 block font-mono text-[10px] text-ink-mute">{stat.sub}</span>
                   </dd>
                 </div>
               ))}
@@ -260,100 +308,178 @@ export default function HomePage() {
         </section>
 
         {/* ================================================================ */}
-        {/* TRUST STRIP                                                      */}
+        {/* TRUST / WHY                                                      */}
         {/* ================================================================ */}
-        <section
-          aria-label="Why Download24.in"
-          className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
-        >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {TRUST_POINTS.map((point) => (
+        <section aria-labelledby="why-heading" className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6">
+          <div className="max-w-2xl">
+            <p className="nb-kicker">Why Download24</p>
+            <h2 id="why-heading" className="nb-h2 mt-3">
+              Built to be <span className="nb-mark nb-mark-lime">fast</span>, and to stay honest
+            </h2>
+          </div>
+
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {TRUST_POINTS.map((point, index) => (
               <article
                 key={point.title}
-                className="rounded-(--radius-card) border border-line bg-white/[0.02] p-5 transition-colors hover:border-line-strong hover:bg-white/[0.04]"
+                className={`nb-card nb-press-card flex h-full flex-col p-5 ${
+                  index % 2 === 0 ? 'nb-tilt-l' : 'nb-tilt-r'
+                }`}
               >
-                <h3 className="text-sm font-semibold text-white">{point.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-white/60">
-                  {point.body}
-                </p>
+                <span
+                  aria-hidden="true"
+                  className={`grid h-11 w-11 place-items-center rounded-btn border-[3px] border-line font-display text-base ${
+                    ['bg-sun', 'bg-lime', 'bg-aqua', 'bg-punch'][index % 4]
+                  } text-[#101010]`}
+                >
+                  0{index + 1}
+                </span>
+                <h3 className="mt-4 font-display text-sm uppercase">{point.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{point.body}</p>
               </article>
             ))}
           </div>
         </section>
 
         {/* ================================================================ */}
-        {/* FEATURE HIGHLIGHTS                                               */}
+        {/* HOW TO                                                           */}
+        {/* ================================================================ */}
+        <section
+          id="how-to-download"
+          aria-labelledby="howto-heading"
+          className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-xl">
+              <p className="nb-kicker">Four steps</p>
+              <h2 id="howto-heading" className="nb-h2 mt-3">
+                Link to file in <span className="nb-mark nb-mark-aqua">seconds</span>
+              </h2>
+              <p className="nb-lead mt-3">
+                No account, no queue, no software — the whole flow runs in the browser you already have.
+              </p>
+            </div>
+            <Link href="/how-it-works" className="nb-btn nb-btn-sun">
+              Full walkthrough
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+
+          <div className="mt-8">
+            <HowToDownload />
+          </div>
+        </section>
+
+        {/* ================================================================ */}
+        {/* FEATURES                                                         */}
         {/* ================================================================ */}
         <section
           id="features"
           aria-labelledby="features-heading"
           className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
         >
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-                Features
-              </p>
-              <h2
-                id="features-heading"
-                className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
-              >
-                Built for the way Indians actually download
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/55">
-                Data packs matter. Storage matters. So Download24.in shows real
-                file sizes, remembers your preferred quality and never wastes a
-                second on ads or captchas.
-              </p>
-            </div>
-            <Link
-              href="/features"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
-            >
+          <div className="max-w-2xl">
+            <p className="nb-kicker">Feature sheet</p>
+            <h2 id="features-heading" className="nb-h2 mt-3">
+              Everything, <span className="nb-mark nb-mark-punch">included</span>
+            </h2>
+            <p className="nb-lead mt-3">
+              No tiers, no credits, no “pro” upsell. Every capability below is on by default for every
+              visitor.
+            </p>
+          </div>
+
+          <div className="mt-8">
+            <FeatureHighlights />
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/features" className="nb-btn nb-btn-brand">
               All features
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-          <div className="mt-6">
-            <FeatureHighlights />
-          </div>
         </section>
 
         {/* ================================================================ */}
-        {/* HOW-TO                                                           */}
+        {/* QUALITY GUIDE                                                    */}
         {/* ================================================================ */}
         <section
-          id="how-to-download"
-          aria-labelledby="how-heading"
+          id="qualities"
+          aria-labelledby="qualities-heading"
           className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
         >
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-                How it works
-              </p>
-              <h2
-                id="how-heading"
-                className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
-              >
-                Download any video in 4 easy steps
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr]">
+            <div>
+              <p className="nb-kicker">Quality guide</p>
+              <h2 id="qualities-heading" className="nb-h2 mt-3">
+                Which quality is <span className="nb-mark">right</span> for you?
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/55">
-                Works the same on Android, iPhone, Windows, macOS and Linux —
-                whether you copied the link from an app share-sheet or a
-                desktop URL bar.
+              <p className="nb-lead mt-3">
+                We only offer what the source publishes — nothing is upscaled. The sizes below are
+                indicative for a 1-hour video; the result panel shows the exact size for your clip.
               </p>
+
+              <div className="nb-card mt-6 overflow-hidden">
+                <table className="w-full border-collapse text-left text-sm">
+                  <caption className="sr-only">
+                    Video download quality comparison: 4K, 1440p, 1080p, 720p, 480p, 360p and MP3
+                  </caption>
+                  <thead>
+                    <tr className="border-b-[3px] border-line bg-surface-2 font-mono text-[10px] tracking-[0.12em] uppercase">
+                      <th scope="col" className="px-4 py-3 font-bold">
+                        Quality
+                      </th>
+                      <th scope="col" className="px-4 py-3 font-bold">
+                        Resolution
+                      </th>
+                      <th scope="col" className="px-4 py-3 font-bold">
+                        Typical size
+                      </th>
+                      <th scope="col" className="hidden px-4 py-3 font-bold sm:table-cell">
+                        Best for
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {QUALITY_TABLE.map((row) => (
+                      <tr key={row.tier} className="border-t-[2.5px] border-line align-top last:border-b-0">
+                        <th scope="row" className="px-4 py-3 text-left font-bold text-ink">
+                          {row.tier}
+                        </th>
+                        <td className="px-4 py-3 font-mono text-xs text-ink-soft tabular-nums">
+                          {row.height}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-ink-soft tabular-nums">
+                          {row.size}
+                        </td>
+                        <td className="hidden px-4 py-3 text-xs text-ink-mute sm:table-cell">
+                          {row.note}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <Link
-              href="/how-it-works"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
-            >
-              Detailed guide
-              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-          <div className="mt-6">
-            <HowToDownload />
+
+            <div className="flex flex-col gap-5">
+              {QUICKIES.map((quickie) => (
+                <article key={quickie.title} className="nb-card nb-press-card overflow-hidden">
+                  <span
+                    aria-hidden="true"
+                    className={`flex items-center gap-2 border-b-[3px] border-line px-4 py-2 font-mono text-[10px] font-bold tracking-[0.16em] uppercase ${quickie.tone}`}
+                  >
+                    <quickie.icon className="h-3.5 w-3.5" aria-hidden="true" />
+                    Good to know
+                  </span>
+                  <div className="p-5">
+                    <h3 className="font-display text-sm uppercase">{quickie.title}</h3>
+                    <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{quickie.body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -363,126 +489,28 @@ export default function HomePage() {
         <section
           id="supported-platforms"
           aria-labelledby="platforms-heading"
-          className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
+          className="mt-16 border-y-[3px] border-line bg-paper-2 py-16"
         >
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-                Supported networks
-              </p>
-              <h2
-                id="platforms-heading"
-                className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
-              >
-                One tool, {PLATFORMS.length}+ platforms
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/55">
-                The same extraction engine handles every network below — so
-                quality options, MP3 conversion and merging behave the same
-                wherever your link came from.
-              </p>
-            </div>
-            <Link
-              href="/platforms"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
-            >
-              All platforms
-              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-          <div className="mt-6">
-            <PlatformGrid />
-          </div>
-        </section>
-
-        {/* ================================================================ */}
-        {/* QUALITY REFERENCE                                                */}
-        {/* ================================================================ */}
-        <section
-          id="qualities"
-          aria-labelledby="qualities-heading"
-          className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6"
-        >
-          <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr]">
-            <div>
-              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-                Quality guide
-              </p>
-              <h2
-                id="qualities-heading"
-                className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
-              >
-                Which quality is right for you?
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/55">
-                We only offer what the source publishes — nothing is upscaled.
-                The sizes below are indicative for a 1-hour video; the result
-                panel shows the exact size for your specific clip.
-              </p>
-              <div className="mt-5 overflow-hidden rounded-(--radius-card) border border-line">
-                <table className="w-full border-collapse text-left text-sm">
-                  <caption className="sr-only">
-                    Video download quality comparison: 4K, 1440p, 1080p, 720p, 480p, 360p and MP3
-                  </caption>
-                  <thead>
-                    <tr className="bg-white/[0.04] text-[11px] tracking-wide text-white/55 uppercase">
-                      <th scope="col" className="px-3 py-2.5 font-semibold">Quality</th>
-                      <th scope="col" className="px-3 py-2.5 font-semibold">Resolution</th>
-                      <th scope="col" className="px-3 py-2.5 font-semibold">Typical size</th>
-                      <th scope="col" className="hidden px-3 py-2.5 font-semibold sm:table-cell">
-                        Best for
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {QUALITY_TABLE.map((row) => (
-                      <tr key={row.tier} className="border-t border-line align-top">
-                        <th scope="row" className="px-3 py-2.5 text-left font-semibold text-white/90">
-                          {row.tier}
-                        </th>
-                        <td className="px-3 py-2.5 text-white/60 tabular-nums">{row.height}</td>
-                        <td className="px-3 py-2.5 text-white/60 tabular-nums">{row.size}</td>
-                        <td className="hidden px-3 py-2.5 text-white/50 sm:table-cell">{row.note}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="max-w-2xl">
+                <p className="nb-kicker">Supported networks</p>
+                <h2 id="platforms-heading" className="nb-h2 mt-3">
+                  One tool, <span className="nb-mark nb-mark-lime">{PLATFORMS.length}+ platforms</span>
+                </h2>
+                <p className="nb-lead mt-3">
+                  The same extraction engine handles every network below — so quality options, MP3
+                  conversion and merging behave the same wherever your link came from.
+                </p>
               </div>
+              <Link href="/platforms" className="nb-btn nb-btn-ink">
+                All platforms
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <article className="rounded-(--radius-card) border border-line bg-white/[0.02] p-5">
-                <h3 className="text-base font-semibold text-white">
-                  Instagram Reels &amp; TikTok — no watermark
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-                  Paste a Reel or a{' '}
-                  <span className="font-mono text-white/75">vm.tiktok.com</span>{' '}
-                  link and Download24 requests the clean master, so the saved MP4
-                  has no logo burned in. The same link also exports the audio as MP3.
-                </p>
-              </article>
-              <article className="rounded-(--radius-card) border border-line bg-white/[0.02] p-5">
-                <h3 className="text-base font-semibold text-white">
-                  Why 1080p+ videos are &ldquo;merged&rdquo;
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-                  Modern platforms serve video and audio as two DASH streams.
-                  Anything above 720p on YouTube is split like that, so our
-                  server downloads both and muxes them with ffmpeg — no
-                  re-encode, same quality.
-                </p>
-              </article>
-              <article className="rounded-(--radius-card) border border-line bg-white/[0.02] p-5">
-                <h3 className="text-base font-semibold text-white">
-                  MP3 that actually sounds good
-                </h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-                  Audio extraction works on every supported network. We pull the
-                  highest-bitrate stream, transcode once with LAME at VBR 0,
-                  write ID3 tags and stream the finished file to you.
-                </p>
-              </article>
+            <div className="mt-8">
+              <PlatformGrid />
             </div>
           </div>
         </section>
@@ -490,32 +518,21 @@ export default function HomePage() {
         {/* ================================================================ */}
         {/* FAQ                                                              */}
         {/* ================================================================ */}
-        <section
-          id="faq"
-          aria-labelledby="faq-heading"
-          className="mx-auto w-full max-w-4xl px-4 pt-16 sm:px-6"
-        >
-          <div className="flex flex-col items-center gap-2 text-center">
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-              FAQ
-            </p>
-            <h2
-              id="faq-heading"
-              className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
-            >
-              Questions people ask about Download24.in
+        <section id="faq" aria-labelledby="faq-heading" className="mx-auto w-full max-w-4xl px-4 pt-16 sm:px-6">
+          <div className="text-center">
+            <p className="nb-kicker">Straight answers</p>
+            <h2 id="faq-heading" className="nb-h2 mt-3">
+              Questions people ask
             </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/55">
-              These answers are also published as{' '}
-              <span className="font-mono text-white/70">FAQPage</span>{' '}
-              structured data on the{' '}
-              <Link href="/faq" className="text-accent hover:underline">
+            <p className="nb-lead mx-auto mt-3 max-w-xl">
+              These answers are also published as <code>FAQPage</code> structured data on the{' '}
+              <Link href="/faq" className="nb-link">
                 dedicated FAQ page
               </Link>
               , so Google can surface them directly.
             </p>
           </div>
-          <div className="mt-6">
+          <div className="mt-8">
             <FaqAccordion />
           </div>
         </section>
@@ -523,34 +540,23 @@ export default function HomePage() {
         {/* ================================================================ */}
         {/* FINAL CTA                                                        */}
         {/* ================================================================ */}
-        <section
-          aria-labelledby="cta-heading"
-          className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6"
-        >
-          <div className="relative overflow-hidden rounded-[1.6rem] border border-line bg-gradient-to-br from-accent/[0.15] via-transparent to-cyan-glow/[0.10] p-6 text-center sm:p-12">
-            <div aria-hidden="true" className="hero-aurora animate-float opacity-40" />
+        <section aria-labelledby="cta-heading" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+          <div className="nb-panel nb-press nb-press-xl relative overflow-hidden bg-sun p-6 text-center text-[#101010] sm:p-12">
+            <div aria-hidden="true" className="nb-halftone absolute inset-0 text-[#101010] opacity-25" />
             <div className="relative">
-              <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-                Ready when you are
-              </p>
-              <h2
-                id="cta-heading"
-                className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
-              >
-                One box · {PLATFORMS.length}+ platforms · every quality up to 4K
+              <span className="nb-chip nb-chip-sm bg-[#101010] text-sun">Ready when you are</span>
+              <h2 id="cta-heading" className="nb-h2 mt-5 !text-[#101010]">
+                One box · {PLATFORMS.length}+ platforms · up to 4K
               </h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/60">
-                No installer to trust. No queues. No account to hand your email
-                to. Just paste a link and Download24 does the rest.
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed font-medium text-[#101010]/80 sm:text-base">
+                No installer to trust. No queues. No account to hand your email to. Just paste a link and
+                Download24 does the rest.
               </p>
-              <a
-                href="#downloader"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-6 py-3 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
-              >
-                <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
-                <span>Download a video now</span>
+              <a href="#downloader" className="nb-btn nb-btn-lg nb-btn-brand mt-7">
+                <ArrowDownToLine className="h-5 w-5 stroke-[2.5]" aria-hidden="true" />
+                Download a video now
               </a>
-              <p className="mt-4 text-[11px] text-white/40">
+              <p className="mt-5 font-mono text-[11px] font-bold tracking-wide text-[#101010]/70 uppercase">
                 Free • No ads on the download page • Made in India 🇮🇳
               </p>
             </div>

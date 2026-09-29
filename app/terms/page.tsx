@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { PageHero } from '@/components/ui/PageBlocks'
 import { breadcrumbSchema, serializeJsonLd } from '@/lib/seo'
 import { LIMITS, SITE, canonicalOrigin } from '@/lib/site'
 
@@ -29,22 +30,27 @@ export default function TermsPage() {
         }}
       />
       <Header />
-      <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 py-14 sm:px-6">
-        <p className="text-xs text-white/45">
-          <a href="/" className="underline decoration-white/25 underline-offset-2 hover:text-white">
-            {SITE.name}
-          </a>{' '}
-          / Terms
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-bold text-white">Terms of Service</h1>
-        <p className="mt-2 text-sm text-white/50">
-          Last updated {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}{' '}
-          · applies to {canonicalOrigin.replace(/^https?:\/\//, '')}
-        </p>
+      <main id="main" className="flex-1">
+        <PageHero
+          kicker="Legal"
+          tone="bg-grape text-white"
+          title={
+            <>
+              Terms of <span className="nb-mark nb-mark-aqua">Service</span>
+            </>
+          }
+          lead={
+            <>
+              Last updated{' '}
+              {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} ·
+              applies to {canonicalOrigin.replace(/^https?:\/\//, '')}
+            </>
+          }
+        />
 
-        <div className="mt-8 flex flex-col gap-8 text-sm leading-relaxed text-white/70">
+        <div className="nb-prose mx-auto mt-12 flex w-full max-w-3xl flex-col gap-9 px-4 pb-4 sm:px-6">
           <section id="acceptance" aria-labelledby="acceptance-h">
-            <h2 id="acceptance-h" className="font-display text-lg font-semibold text-white">
+            <h2 id="acceptance-h">
               1. Acceptance of these terms
             </h2>
             <p className="mt-2">
@@ -56,7 +62,7 @@ export default function TermsPage() {
           </section>
 
           <section id="acceptable-use" aria-labelledby="acceptable-use-h">
-            <h2 id="acceptable-use-h" className="font-display text-lg font-semibold text-white">
+            <h2 id="acceptable-use-h">
               2. Acceptable use
             </h2>
             <p className="mt-2">You agree not to use the service to:</p>
@@ -76,12 +82,12 @@ export default function TermsPage() {
             <p className="mt-2">
               Fair-use limits apply per IP address (currently {LIMITS.extractRequestsPerMinute} link extractions and {LIMITS.downloadRequestsPerMinute} downloads per minute,
               with at most {LIMITS.downloadMaxConcurrentPerClient} concurrent downloads). Exceeding them returns HTTP 429 with a{' '}
-              <code className="rounded bg-ink-800 px-1 py-0.5 text-white/80">Retry-After</code> header.
+              <code>Retry-After</code> header.
             </p>
           </section>
 
           <section id="copyright" aria-labelledby="copyright-h">
-            <h2 id="copyright-h" className="font-display text-lg font-semibold text-white">
+            <h2 id="copyright-h">
               3. Copyright and takedown notices
             </h2>
             <p className="mt-2">
@@ -99,7 +105,7 @@ export default function TermsPage() {
           </section>
 
           <section id="no-warranty" aria-labelledby="no-warranty-h">
-            <h2 id="no-warranty-h" className="font-display text-lg font-semibold text-white">
+            <h2 id="no-warranty-h">
               4. No warranty and limitation of liability
             </h2>
             <p className="mt-2">
@@ -114,7 +120,7 @@ export default function TermsPage() {
           </section>
 
           <section id="third-parties" aria-labelledby="third-parties-h">
-            <h2 id="third-parties-h" className="font-display text-lg font-semibold text-white">
+            <h2 id="third-parties-h">
               5. Third-party platforms and trademarks
             </h2>
             <p className="mt-2">
@@ -127,7 +133,7 @@ export default function TermsPage() {
           </section>
 
           <section id="changes" aria-labelledby="changes-h">
-            <h2 id="changes-h" className="font-display text-lg font-semibold text-white">
+            <h2 id="changes-h">
               6. Changes, suspension and governing terms
             </h2>
             <p className="mt-2">
@@ -139,7 +145,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <p className="rounded-xl border border-line bg-white/[0.02] p-4 text-xs text-white/55">
+          <p className="nb-inset p-4 text-xs leading-relaxed text-ink-soft">
             This document is a plain-language template for a demonstration project, not legal advice. Replace it
             with counsel-reviewed terms before operating a public service commercially.
           </p>

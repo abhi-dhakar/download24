@@ -40,11 +40,11 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
       <div>
-        <label htmlFor="admin-token" className="mb-1.5 block text-xs font-medium text-white/60">
+        <label htmlFor="admin-token" className="nb-label mb-2">
           Admin token
         </label>
         <div className="relative">
-          <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" aria-hidden />
+          <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-ink-mute" aria-hidden />
           <input
             id="admin-token"
             type="password"
@@ -57,17 +57,17 @@ export function LoginForm() {
             value={token}
             onChange={(event) => setToken(event.target.value)}
             placeholder="ADMIN_SECRET value"
-            className="w-full rounded-lg border border-line-strong bg-ink-950 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-white/25 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            className="nb-input py-2.5 pr-3 pl-10 text-sm"
           />
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-white/35">
-          Value of <code className="rounded bg-ink-800 px-1 py-0.5 text-[10px] text-accent-soft">ADMIN_SECRET</code> from your deployment&apos;s
+        <p className="mt-2 text-[11px] leading-relaxed text-ink-mute">
+          Value of <code className="text-[11px]">ADMIN_SECRET</code> from your deployment&apos;s
           environment. It is compared in constant time and never stored or logged.
         </p>
       </div>
 
       {error ? (
-        <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+        <p role="alert" className="nb-inset border-danger bg-danger/15 px-3 py-2 text-xs font-medium text-danger-ink">
           {error}
         </p>
       ) : null}
@@ -75,12 +75,12 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={busy || token.length === 0}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-accent-deep via-accent to-accent-soft px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="nb-btn nb-btn-brand nb-btn-block"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
         {busy ? 'Verifying…' : 'Sign in'}
       </button>
-      <p className="text-center text-[11px] text-white/30">5 attempts per minute, then a one-minute lockout.</p>
+      <p className="text-center text-[11px] text-ink-mute">5 attempts per minute, then a one-minute lockout.</p>
     </form>
   )
 }

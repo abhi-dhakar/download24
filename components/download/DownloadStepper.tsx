@@ -5,7 +5,9 @@ import { ArrowDownToLine, Check, Link2, SlidersHorizontal } from 'lucide-react'
  * flow (homepage → /download → /download/progress).
  *
  * Pure server component: the current step arrives as a prop from whichever
- * page renders it, and states are expressed with classes only.
+ * page renders it, and states are expressed with classes only. Each step is a
+ * bordered chip joined by a fat rule — done steps go lime, the current step
+ * goes sun-yellow with a hard shadow, upcoming steps stay flat.
  */
 
 const STEPS = [
@@ -27,37 +29,28 @@ export function DownloadStepper({ current }: { current: 1 | 2 | 3 }) {
 
         return (
           <li key={step.label} className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span
-                aria-current={state === 'current' ? 'step' : undefined}
-                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ring-1 transition-colors ${
-                  state === 'done'
-                    ? 'bg-ok/15 text-ok ring-ok/40'
-                    : state === 'current'
-                      ? 'bg-gradient-to-br from-accent-soft via-accent to-accent-deep text-white shadow-glow ring-accent/40'
-                      : 'bg-white/[0.03] text-white/40 ring-line'
-                }`}
-              >
-                {state === 'done' ? (
-                  <Check className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
-                ) : (
-                  <Icon className="h-4 w-4 stroke-[2.25]" aria-hidden="true" />
-                )}
-              </span>
-              <span
-                className={`hidden truncate text-xs font-semibold sm:block ${
-                  state === 'upcoming' ? 'text-white/40' : 'text-white/85'
-                }`}
-              >
-                {step.label}
-              </span>
-            </div>
+            <span
+              aria-current={state === 'current' ? 'step' : undefined}
+              className={`inline-flex min-w-0 items-center gap-2 rounded-pill border-[2.5px] border-line px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-[0.08em] uppercase sm:px-3 sm:text-[11px] ${
+                state === 'done'
+                  ? 'bg-lime text-[#101010]'
+                  : state === 'current'
+                    ? 'bg-sun text-[#101010] shadow-hard-xs'
+                    : 'bg-surface text-ink-mute'
+              }`}
+            >
+              {state === 'done' ? (
+                <Check className="h-3.5 w-3.5 shrink-0 stroke-[3]" aria-hidden="true" />
+              ) : (
+                <Icon className="h-3.5 w-3.5 shrink-0 stroke-[2.5]" aria-hidden="true" />
+              )}
+              <span className="hidden truncate sm:inline">{step.label}</span>
+              <span className="sm:hidden">{number}</span>
+            </span>
 
             {index < STEPS.length - 1 && (
-              <span aria-hidden="true" className="h-px min-w-3 flex-1 sm:min-w-6">
-                <span
-                  className={`block h-px w-full ${state === 'done' ? 'bg-ok/50' : 'bg-line'}`}
-                />
+              <span aria-hidden="true" className="h-[3px] min-w-3 flex-1">
+                <span className={`block h-[3px] w-full ${state === 'done' ? 'bg-ok' : 'bg-line-soft'}`} />
               </span>
             )}
           </li>

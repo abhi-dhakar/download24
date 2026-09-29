@@ -1,6 +1,11 @@
 import { ImageResponse } from 'next/og'
 
-/** Home-screen tile (180×180), generated at build time. */
+/**
+ * Home-screen tile (180×180), generated at build time.
+ *
+ * Neo-brutalist: cream paper, thick ink frame, sun-yellow plate and the fat
+ * download glyph — matching `components/Logo.tsx` and `app/icon.svg`.
+ */
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
 
@@ -14,25 +19,26 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#05070f'
+          backgroundColor: '#fff9ec'
         }}
       >
         <div
           style={{
-            width: 148,
-            height: 148,
-            borderRadius: 36,
+            width: 156,
+            height: 156,
+            borderRadius: 40,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 10,
-            backgroundImage: 'linear-gradient(140deg, #38bdf8, #0284c7 45%, #2563eb)',
-            color: '#ffffff'
+            backgroundColor: '#ffd23f',
+            border: '7px solid #101010',
+            color: '#101010',
+            fontSize: 74,
+            fontWeight: 800,
+            lineHeight: 1
           }}
         >
-          <div style={{ fontSize: 62, fontWeight: 800, lineHeight: 1 }}>↓</div>
-          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: 1 }}>4K·MP3</div>
+          ↓
         </div>
       </div>
     ),

@@ -1,11 +1,12 @@
 'use client'
 
-import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ClipboardPaste, Menu, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { ArrowDownToLine, ClipboardPaste, Menu, Sparkles, X } from 'lucide-react'
 
 import { PLATFORM_PAGES } from '@/lib/platformPages'
+import { Logo, Wordmark } from './Logo'
 import { PlatformMark } from './PlatformMark'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -17,160 +18,175 @@ const NAV = [
   { href: '/faq', label: 'FAQ' }
 ]
 
+/** Candy ticker that rides above the nav bar on every page. */
+const TICKER = [
+  'Up to 4K Ultra HD',
+  'No watermark',
+  'MP3 audio',
+  'No signup',
+  '15-minute cache',
+  '1,000+ sites'
+]
+
+/**
+ * Each marquee track repeats the list twice so it is always wider than the
+ * viewport; the animation then translates exactly one track width (`-50%`) and
+ * the loop is seamless on any screen.
+ */
+const TICKER_TRACK = [...TICKER, ...TICKER]
+
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = usePathname()
 
-  // Prevent body scrolling when mobile menu is open
+  // Prevent body scrolling when the mobile menu is open.
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
     }
   }, [mobileOpen])
 
+  const isActive = (href: string) =>
+    href === '/downloader' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
+
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-ink-950/80 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-950/65">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        
-        {/* Brand Logo */}
-        <Link
-          href="/"
-          onClick={() => setMobileOpen(false)}
-          className="group flex items-center gap-3 transition-opacity hover:opacity-95"
-          aria-label="Download24.in home"
-        >
-          <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden transition-transform duration-200 group-hover:scale-105">
-            <Image
-              src="/logo.png"
-              alt="Download24 logo"
-              width={32}
-              height={32}
-              className="h-full w-full object-cover"
-              priority
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="font-display text-lg font-bold tracking-tight text-white">
-                Download<span className="text-accent">24</span>
-                <span className="text-xs font-semibold text-white/40">.in</span>
+    <header className="sticky top-0 z-50">
+      {/* ---------------------------------------------------- candy ticker */}
+      <div
+        aria-hidden="true"
+        className="nb-marquee border-b-[3px] border-line bg-sun py-[5px] text-[#101010]"
+      >
+        {[0, 1].map((track) => (
+          <div key={track} className="nb-marquee-track gap-7 pr-7">
+            {TICKER_TRACK.map((item, index) => (
+              <span
+                key={`${item}-${index}`}
+                className="flex shrink-0 items-center gap-2.5 font-mono text-[10px] font-bold tracking-[0.22em] uppercase"
+              >
+                {item}
+                <span aria-hidden="true">★</span>
               </span>
-              {/* <span className="hidden rounded-md border border-accent/25 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent sm:inline-block">
-                4K · MP3
-              </span> */}
-            </div>
-          </div>
-        </Link>
-
-        {/* Center Desktop Navigation */}
-        <nav aria-label="Main Navigation" className="hidden lg:block">
-          <ul className="flex items-center gap-1 text-[13px] font-medium text-white/65">
-            {NAV.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="rounded-lg px-3 py-1.5 transition-all duration-150 hover:bg-white/[0.06] hover:text-white"
-                >
-                  {item.label}
-                </Link>
-              </li>
             ))}
-          </ul>
-        </nav>
-
-        {/* Actions & Hamburger Toggle */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          <ThemeToggle />
-
-          <a
-            href="/#downloader"
-            onClick={() => setMobileOpen(false)}
-            className="hidden sm:inline-flex group relative items-center gap-2 rounded-xl border border-line-strong bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-accent/40 hover:bg-white/[0.08] hover:text-white active:scale-95 sm:px-4 sm:text-sm"
-          >
-            <ClipboardPaste
-              className="h-3.5 w-3.5 text-accent transition-transform group-hover:scale-110"
-              aria-hidden="true"
-            />
-            <span>Paste Link</span>
-          </a>
-
-          {/* Hamburger Mobile Toggle Button */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen((prev) => !prev)}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-nav-panel"
-            aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white/[0.04] text-white/80 transition-all hover:border-line-strong hover:bg-white/[0.08] hover:text-white active:scale-95 lg:hidden"
-          >
-            {mobileOpen ? (
-              <X className="h-5 w-5 text-accent" aria-hidden="true" />
-            ) : (
-              <Menu className="h-5 w-5" aria-hidden="true" />
-            )}
-          </button>
-        </div>
-
+          </div>
+        ))}
       </div>
 
-      {/* Mobile Drawer / Dropdown Navigation */}
+      {/* ------------------------------------------------------- nav plate */}
+      <div className="border-b-[3px] border-line bg-paper/92 backdrop-blur-md supports-[backdrop-filter]:bg-paper/80">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link
+            href="/"
+            onClick={() => setMobileOpen(false)}
+            aria-label="download24.in home"
+            className="group flex shrink-0 items-center gap-2.5"
+          >
+            <Logo className="h-9 w-9 transition-transform duration-150 group-hover:-rotate-6" />
+            <span className="hidden text-ink sm:inline-flex">
+              <Wordmark />
+            </span>
+          </Link>
+
+          {/* centre: desktop navigation */}
+          <nav aria-label="Main Navigation" className="hidden lg:block">
+            <ul className="flex items-center gap-1.5">
+              {NAV.map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`inline-flex items-center rounded-pill border-[2.5px] border-line px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-[0.1em] uppercase transition-colors ${
+                        active
+                          ? 'bg-sun text-[#101010] shadow-hard-xs'
+                          : 'bg-surface text-ink hover:bg-surface-2'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </nav>
+
+          {/* right: actions */}
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+
+            <a href="/#downloader" onClick={() => setMobileOpen(false)} className="nb-btn nb-btn-brand nb-btn-sm hidden sm:inline-flex">
+              <ClipboardPaste className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Paste link</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={() => setMobileOpen((prev) => !prev)}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-panel"
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              className="nb-btn nb-btn-sm h-10 w-10 !px-0 lg:hidden"
+            >
+              {mobileOpen ? (
+                <X className="h-5 w-5 text-danger" aria-hidden="true" />
+              ) : (
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* --------------------------------------------------- mobile drawer */}
       {mobileOpen && (
         <div
           id="mobile-nav-panel"
-          className="fixed inset-x-0 top-16 z-40 h-[calc(100dvh-4rem)] overflow-y-auto border-b border-line bg-ink-950/98 p-5 backdrop-blur-2xl lg:hidden"
+          className="absolute inset-x-0 top-full z-40 max-h-[calc(100dvh-6rem)] overflow-y-auto border-t-[3px] border-line bg-paper px-4 py-5 lg:hidden"
         >
           <div className="flex flex-col gap-6">
-            
-            {/* Quick Action Button for Mobile */}
             <a
               href="/#downloader"
               onClick={() => setMobileOpen(false)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep py-3 text-sm font-bold text-white shadow-glow"
+              className="nb-btn nb-btn-brand nb-btn-lg nb-btn-block"
             >
-              <ClipboardPaste className="h-4 w-4" aria-hidden="true" />
-              <span>Paste Video Link Now</span>
+              <ClipboardPaste className="h-5 w-5" aria-hidden="true" />
+              Paste a link now
             </a>
 
-            {/* Main Links */}
-            <div>
-              <p className="px-1 text-[11px] font-semibold text-accent uppercase tracking-wider">
-                Quick Navigation
-              </p>
-              <ul className="mt-2 flex flex-col gap-1">
-                {NAV.map((item) => (
+            <nav aria-label="Mobile navigation">
+              <p className="nb-kicker">Browse</p>
+              <ul className="mt-3 flex flex-col gap-2.5">
+                {NAV.map((item, index) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-white/80 hover:bg-white/[0.06] hover:text-white"
+                      className={`nb-press nb-press-xs flex items-center gap-3 rounded-btn border-[3px] border-line px-4 py-3 font-display text-base uppercase ${
+                        isActive(item.href) ? 'bg-sun text-[#101010]' : 'bg-surface text-ink'
+                      }`}
                     >
-                      <span>{item.label}</span>
-                      <span className="text-xs text-white/30">→</span>
+                      <span className="font-mono text-[11px] font-bold text-ink-mute">
+                        0{index + 1}
+                      </span>
+                      {item.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
 
-            {/* Dedicated Platform Downloaders */}
-            <div className="border-t border-line/60 pt-4">
-              <p className="px-1 text-[11px] font-semibold text-accent uppercase tracking-wider">
-                Dedicated Platform Engines
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+            <div>
+              <p className="nb-kicker">Dedicated downloaders</p>
+              <div className="mt-3 grid grid-cols-2 gap-2.5">
                 {Object.values(PLATFORM_PAGES).map((page) => (
                   <Link
                     key={page.slug}
                     href={`/${page.slug}`}
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 rounded-xl border border-line bg-white/[0.02] p-2.5 text-xs font-medium text-white/80 hover:border-line-strong hover:bg-white/[0.05] hover:text-white"
+                    className="nb-press nb-press-xs flex items-center gap-2.5 rounded-xl border-[2.5px] border-line bg-surface px-2.5 py-2.5 font-mono text-[11px] font-bold uppercase"
                   >
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-ink-900 ring-1 ring-line">
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 border-line bg-surface-2">
                       <PlatformMark id={page.platformId} className="h-3.5 w-3.5" />
                     </span>
                     <span className="truncate">{page.shortTitle}</span>
@@ -179,19 +195,18 @@ export function Header() {
               </div>
             </div>
 
-            {/* Legal Links Footer */}
-            <div className="flex items-center justify-between border-t border-line/60 pt-4 text-xs text-white/45">
-              <Link href="/terms" onClick={() => setMobileOpen(false)} className="hover:text-white">
-                Terms of Service
+            <div className="nb-band -mx-4 flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[11px]">
+              <Link href="/terms" onClick={() => setMobileOpen(false)} className="nb-link">
+                Terms
               </Link>
-              <span>•</span>
-              <Link href="/privacy" onClick={() => setMobileOpen(false)} className="hover:text-white">
-                Privacy Policy
+              <Link href="/privacy" onClick={() => setMobileOpen(false)} className="nb-link">
+                Privacy
               </Link>
-              <span>•</span>
-              <span>© {new Date().getFullYear()} download24</span>
+              <span className="flex items-center gap-1 font-mono text-ink-mute">
+                <Sparkles className="h-3 w-3 text-sun" aria-hidden="true" />© {new Date().getFullYear()}{' '}
+                download24
+              </span>
             </div>
-
           </div>
         </div>
       )}

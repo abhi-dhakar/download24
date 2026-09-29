@@ -23,7 +23,7 @@ export function TrendBars({ points, unit }: TrendBarsProps) {
           />
         ))}
       </div>
-      <div className="mt-1.5 flex justify-between text-[10px] tabular-nums text-white/30">
+      <div className="mt-1.5 flex justify-between text-[10px] tabular-nums text-ink-mute">
         <span>{points[0]?.label}</span>
         <span>{points[points.length - 1]?.label}</span>
       </div>

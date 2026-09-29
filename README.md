@@ -60,6 +60,32 @@ Navigation (header, footer, mobile drawer) links the five top-level destinations
 advertises `/`, `/features`, `/how-it-works`, `/platforms`, `/faq`, the legal pages and every
 platform page (never the per-user download flow).
 
+## Design system — playful neo-brutalism
+
+The whole site is dressed with one visual language, defined as tokens and
+component classes in `app/globals.css`:
+
+| Layer | What it means |
+| --- | --- |
+| **Surfaces** | Cream "paper" light theme (`#fff9ec`) / midnight-ink dark theme (`#0d0d14`, the default), a faint dot grid (`.nb-page`), and plenty of white space between plates. |
+| **Borders** | 3px solid ink outlines on nearly everything — cards, buttons, chips, inputs, table rows, the footer bands. |
+| **Shadows** | Hard, un-blurred offset shadows (`--shadow-hard-*`); interactive things "press into" their own shadow on hover (`nb-press`, `nb-btn`). |
+| **Colour** | Saturated candy pops that stay identical in both themes (they are always paired with an ink border): sun `#ffd23f`, punch `#ff5ca8`, lime `#b9f24a`, aqua `#35d6e8`, tang `#ff8a3d`, grape `#6f4cf8`, plus the brand blue `#2f5bff`. Text colours are separate, accessible tokens (`text-ink`, `text-ink-soft`, `text-ink-mute`, `text-brand-ink`, `text-ok-ink`, …). |
+| **Type** | Archivo Black for display headings (`nb-h1/h2/h3`, uppercase), Space Grotesk for body, Space Mono for labels, chips, numbers and keyboard hints. All three are **self-hosted** from `app/fonts/` via `next/font/local`, so no build or browser request ever reaches Google Fonts. |
+| **Play** | Tilted cards (`nb-tilt-l/r`), rotated stickers (`nb-sticker`), a candy marquee ticker above the navbar, halftone dots (`nb-halftone`), diagonal stripes (`nb-stripes`), fat highlighter marks (`nb-mark`, `nb-mark-punch`, …) and a `404` plate that still tries to be friendly. |
+
+Handy classes: `nb-card` / `nb-card-sm` / `nb-panel` (plates), `nb-inset`
+(sunken area), `nb-band` (full-width rule), `nb-btn` + `nb-btn-brand|sun|punch|
+lime|ink|ok|danger|ghost` + `nb-btn-sm|lg|block`, `nb-chip` + colour modifiers,
+`nb-input`, `nb-kicker`, `nb-link`, `nb-prose` (legal pages), `nb-swipe` /
+`nb-grid-lines` (hero backdrops), `nb-sheen` / `nb-skeleton` (loading states).
+
+Theming is token-driven: `html.light` remaps the semantic variables only, so
+every utility, opacity modifier and `.nb-*` component re-skins itself with zero
+JavaScript. Platform pages keep their brand identity through three inline
+variables (`--platform-primary`, `--platform-on-light`, `--platform-glow`) read
+by `.platform-highlight`, `.platform-pill` and `.platform-tint-text`.
+
 ## Illustrations
 
 All artwork is **hand-built inline SVG** in `components/illustrations/` — no binary assets, no icon
@@ -67,22 +93,24 @@ fonts, no network requests:
 
 | File | What it draws |
 | --- | --- |
-| `HeroIllustration.tsx` | The homepage showpiece: a browser window resolving a link into quality options, an animated progress bar, a file dropping into a folder with a success check, floating "4K / MP3 / no watermark" chips and a rotating orbit ring. |
+| `HeroIllustration.tsx` | The homepage showpiece: a tilted browser card resolving a link into quality rows, a chunky file dropping into a grape tray, and "4K UHD / MP3" sticker notes — flat candy fills, 4px ink outlines and hard printed shadows. |
 | `StepArt.tsx` | Four spot illustrations for the how-to steps (copy the link, paste it, pick a quality, save the file). |
-| `FeatureArt.tsx` | Four feature-card illustrations (4K monitor, no-signup shield, speed bolt, multi-platform layers). |
-| `ProgressArt.tsx` | The step-3 `DownloadingScene` (indeterminate source → channel → falling file → download shelf), the `SuccessScene` check and the step-2 `LinkMissingArt` empty state. |
+| `FeatureArt.tsx` | Four feature-card illustrations (4K monitor, no-signup card, speed bolt, multi-platform slabs). |
+| `ProgressArt.tsx` | The step-3 `DownloadingScene` (spinning arc → dashed channel → tumbling file card → tray with ripples), the `SuccessScene` badge and the step-2 `LinkMissingArt` empty state. |
 
 Drawing conventions:
 
-* every colour comes from the `@theme` tokens (`var(--color-accent)`, `var(--color-ink-850)`, …) or
-  `currentColor` + `text-white/xx` utilities, so **the artwork re-skins itself in light mode**
-  exactly like the rest of the UI;
+* every colour comes from the theme tokens (`var(--color-sun)`, `var(--color-line)`,
+  `var(--color-surface)`, …), so **the artwork re-skins itself with the theme** exactly like the rest
+  of the UI — nothing is hard-coded except the ink used *on* candy fills;
+* shapes are flat with 3.5–4px outlines and offset "printed" shadows drawn as a duplicated shape
+  (`Plate` in `FeatureArt`, explicit `<rect>` pairs elsewhere);
 * motion uses translate/opacity CSS keyframes (`--animate-bob`, `--animate-flow-dash`,
-  `--animate-draw-check`, … in `app/globals.css`) plus SMIL `<animate>`/`<animateTransform>` for
-  rotations and progress fills — the same approach as `components/Spinner.tsx`;
+  `--animate-draw-check`, `--animate-file-drop`, … in `app/globals.css`) plus SMIL
+  `<animate>`/`<animateTransform>` for rotations — the same approach as `components/Spinner.tsx`;
 * step 3 is deliberately **indeterminate**: `DownloadingScene` loops the same few seconds of motion
-  (rotating arc, flowing dashes, a file dropping into the shelf) instead of binding any geometry to
-  transfer state, so nothing on the page implies a percentage it cannot honestly report;
+  instead of binding any geometry to transfer state, so nothing implies a percentage it cannot
+  honestly report;
 * `prefers-reduced-motion` strips the CSS animations globally (SMIL keeps running, matching the
   existing spinner behaviour).
 
@@ -95,7 +123,7 @@ Drawing conventions:
 | Merging | Modern YouTube publishes *no* muxed streams. Options above 720p are therefore flagged `needsMerge` and muxed server-side with `-c copy` (never re-encoded) via ffmpeg. |
 | Caching | `lru-cache` with a 15-minute TTL and a 2,000-entry cap in `lib/cache.ts`. Keys ignore tracking junk (`?si=`, `?utm_*`, `?t=`) so the same video is one entry regardless of how the link was shared. Errors get a 45-second negative cache so one dead link cannot be hammered. |
 | SEO | `generateMetadata` per page with canonical URLs, OG + Twitter cards, `app/sitemap.ts`, `app/robots.ts`, and a JSON-LD graph (`WebApplication`, `FAQPage` on `/faq`, `HowTo` on `/how-it-works`, `BreadcrumbList` everywhere) generated from the same arrays that render the visible content. |
-| Core Web Vitals | `next/font` with metric-adjusted fallbacks, no third-party requests in the critical path, dimension-locked thumbnails (`CLS = 0`), `scrollbar-gutter: stable`, min-height loading slots, and `prefers-reduced-motion` handling. |
+| Core Web Vitals | `next/font/local` (Archivo Black / Space Grotesk / Space Mono from `app/fonts/`) with metric-adjusted fallbacks, no third-party requests in the critical path, dimension-locked thumbnails (`CLS = 0`), `scrollbar-gutter: stable`, min-height loading slots, and `prefers-reduced-motion` handling. |
 | A11y | Skip link, `aria-live` status regions, `aria-invalid`/`role="alert"` on validation, labelled icon buttons, native `<details>`/`<summary>` accordion, visible focus ring, decorative illustrations `aria-hidden`. |
 | Safety | URL allow-listing, SSRF guards (loopback/RFC1918/CGNAT/link-local/metadata/IPv6-ULA/non-http protocols), body size caps, per-IP rate limiting, per-IP download concurrency, upstream error text sanitised (signed URLs replaced with `<link>`) before it reaches a response or a log. |
 

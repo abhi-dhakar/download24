@@ -25,8 +25,8 @@ export default async function AdminHogqlPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-xl font-bold tracking-tight text-white">HogQL</h1>
-        <p className="mt-0.5 text-xs text-white/40">
+        <h1 className="font-display text-xl font-bold tracking-tight text-ink">HogQL</h1>
+        <p className="mt-0.5 text-xs text-ink-mute">
           PostHog&apos;s SQL dialect against this project&apos;s tables — <code>events</code>, <code>persons</code>,{' '}
           <code>person_distinct_ids</code>, <code>session_replays</code> and more
         </p>

@@ -3,14 +3,17 @@
  *
  * • `DownloadingScene` — the ambient "it is running" artwork on step 3. It is
  *   deliberately *indeterminate*: no percentage, no byte counter, nothing that
- *   pretends to know how far along the transfer is. A source disc keeps a
- *   rotating arc, a dashed channel flows downwards, a file chip falls into the
- *   browser's download shelf and the landing point ripples — so a visitor can
- *   tell at a glance that the download is alive and simply has to wait.
+ *   pretends to know how far along the transfer is. A spinning arc, a dashed
+ *   channel and a tumbling file card into a tray say "alive, just wait".
  * • `SuccessScene` — the finished-download artwork: a self-drawing check with
- *   radiating rings and confetti.
+ *   radiating rings, a sticker and confetti.
  * • `LinkMissingArt` — friendly empty state for step 2 when no link was given.
+ *
+ * All three use the brutalist drawing system: flat candy fills, 3.5–4px ink
+ * outlines, hard offset shadows, token colours, CSS-class motion only.
  */
+
+const INK = 'var(--color-line)'
 
 export function DownloadingScene({ className = '' }: { className?: string }) {
   return (
@@ -21,188 +24,115 @@ export function DownloadingScene({ className = '' }: { className?: string }) {
       role="img"
       aria-label="Download in progress — the file is on its way to this device"
     >
-      <defs>
-        <linearGradient id="downloading-art-accent" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent-soft)" />
-          <stop offset="100%" stopColor="var(--color-accent-deep)" />
-        </linearGradient>
-      </defs>
-
       {/* ------------------------------------------------------------ source */}
-      <g transform="translate(120 30)">
+      <g transform="translate(120 34)">
+        <circle r="30" fill="var(--color-sun)" stroke={INK} strokeWidth="4" />
         {/* indeterminate arc — "still working", never a percentage */}
-        <circle
-          r="29"
-          stroke="url(#downloading-art-accent)"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeDasharray="30 152"
-        >
+        <circle r="18" stroke="#101010" strokeWidth="5" strokeLinecap="round" strokeDasharray="30 84">
           <animateTransform
             attributeName="transform"
+            attributeType="XML"
             type="rotate"
-            from="0"
-            to="360"
-            dur="1.7s"
+            from="0 0 0"
+            to="360 0 0"
+            dur="1.6s"
             repeatCount="indefinite"
           />
         </circle>
-        <circle
-          r="22"
-          fill="var(--color-ink-850)"
-          stroke="var(--color-line-strong)"
-          strokeWidth="1.5"
-        />
-        {/* cloud glyph: where the bytes come from */}
-        <path
-          d="M-9 5.5h18a5.5 5.5 0 0 0 .5-11 8 8 0 0 0-15.3 1.4A5 5 0 0 0-9 5.5Z"
-          fill="url(#downloading-art-accent)"
-          opacity="0.95"
-        />
-        {/* down arrow inside the cloud */}
-        <path
-          d="M0 -3.5v9m0 0-3.4-3.4M0 5.5l3.4-3.4"
-          stroke="var(--color-ink-950)"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path d="M0 -8v18M-8 4l8 8 8-8" stroke="#101010" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
       </g>
 
-      {/* --------------------------------------------- channel + falling file */}
+      {/* ----------------------------------------------------------- channel */}
       <path
-        d="M120 62v34"
-        stroke="var(--color-accent)"
-        strokeWidth="2.4"
+        d="M120 72v34"
+        stroke={INK}
+        strokeWidth="4"
         strokeLinecap="round"
-        strokeDasharray="6 8"
+        strokeDasharray="10 10"
         className="animate-flow-dash"
       />
-      <g transform="translate(120 64)" className="animate-file-drop">
-        <rect x="-9" y="0" width="18" height="22" rx="3.5" fill="url(#downloading-art-accent)" />
+
+      {/* tumbling file card */}
+      <g transform="translate(120 122)" className="animate-file-drop">
+        <rect x="-24" y="-20" width="48" height="40" rx="9" fill="var(--color-aqua)" stroke={INK} strokeWidth="3.5" />
+        <path d="M0 -10v14M-7 0l7 7 7-7" stroke="#101010" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+
+      {/* --------------------------------------------------------- the tray */}
+      <g>
         <path
-          d="M-4.5 7h9M-4.5 12h9M-4.5 17h5"
-          stroke="#fff"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          opacity="0.9"
+          d="M70 120h100v10a16 16 0 0 1-16 16H86a16 16 0 0 1-16-16v-10Z"
+          fill="var(--color-grape)"
+          stroke={INK}
+          strokeWidth="4"
         />
-      </g>
-
-      {/* landing ripples where the file arrives */}
-      <g transform="translate(120 110)">
-        <circle r="9" stroke="var(--color-accent-soft)" strokeWidth="1.6" fill="none" opacity="0.5">
-          <animate attributeName="r" values="6;20;6" dur="2.4s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.5;0;0.5" dur="2.4s" repeatCount="indefinite" />
-        </circle>
-        <circle r="9" stroke="var(--color-accent-soft)" strokeWidth="1.6" fill="none" opacity="0.3">
-          <animate attributeName="r" values="6;20;6" dur="2.4s" begin="1.2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.3;0;0.3" dur="2.4s" begin="1.2s" repeatCount="indefinite" />
+        {/* landing ripples */}
+        <circle cx="120" cy="126" r="26" fill="none" stroke="var(--color-brand)" strokeWidth="3">
+          <animate attributeName="r" values="10;34;10" dur="2.4s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.6;0;0.6" dur="2.4s" repeatCount="indefinite" />
         </circle>
       </g>
 
-      {/* ------------------------------------------ the browser's download shelf */}
-      <g transform="translate(120 118)">
-        <rect
-          x="-58"
-          y="0"
-          width="116"
-          height="28"
-          rx="9"
-          fill="var(--color-ink-850)"
-          stroke="var(--color-line-strong)"
-          strokeWidth="1.5"
-        />
-        <rect x="-46" y="8" width="54" height="4.5" rx="2.25" fill="var(--color-ink-700)" />
-        <rect x="-46" y="17" width="34" height="4.5" rx="2.25" fill="var(--color-ink-700)" />
-        <circle cx="42" cy="14" r="9" fill="var(--color-accent)" opacity="0.16" />
-        <path
-          d="M42 9.5v7m0 0-3-3m3 3 3-3"
-          stroke="var(--color-accent)"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+      {/* --------------------------------------------------------- stickers */}
+      <g className="animate-bob">
+        <rect x="10" y="26" width="62" height="30" rx="10" fill="var(--color-lime)" stroke={INK} strokeWidth="3.5" />
+        <text x="41" y="46" textAnchor="middle" fontSize="12" fontFamily="var(--font-mono)" fontWeight="700" fill="#101010">
+          MP4
+        </text>
       </g>
-
-      {/* ambient sparkles so the scene never looks frozen */}
-      <circle cx="46" cy="46" r="3" fill="var(--color-accent-soft)" className="animate-pulse-soft" />
-      <circle
-        cx="196"
-        cy="62"
-        r="2.6"
-        fill="var(--color-cyan-glow)"
-        className="animate-pulse-soft"
-        style={{ animationDelay: '0.9s' }}
-      />
-      <circle
-        cx="60"
-        cy="96"
-        r="2.4"
-        fill="var(--color-accent)"
-        className="animate-pulse-soft"
-        style={{ animationDelay: '1.5s' }}
-      />
+      <g className="animate-bob-slow">
+        <rect x="168" y="20" width="62" height="30" rx="10" fill="var(--color-punch)" stroke={INK} strokeWidth="3.5" />
+        <text x="199" y="40" textAnchor="middle" fontSize="12" fontFamily="var(--font-mono)" fontWeight="700" fill="#101010">
+          4K
+        </text>
+      </g>
     </svg>
   )
 }
 
-/** Big celebratory check used on the success state of step 3. */
 export function SuccessScene({ className = '' }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 200 160"
       className={`h-auto w-full ${className}`}
       fill="none"
-      aria-hidden="true"
-      focusable="false"
+      role="img"
+      aria-label="Download finished — the file is saved"
     >
-      <defs>
-        <linearGradient id="success-art-accent" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent-soft)" />
-          <stop offset="100%" stopColor="var(--color-accent-deep)" />
-        </linearGradient>
-      </defs>
-
-      {/* radiating pulse rings */}
-      <circle cx="100" cy="76" r="40" stroke="var(--color-ok)" strokeWidth="2" fill="none" opacity="0.5">
-        <animate attributeName="r" values="40;70;40" dur="2.6s" repeatCount="indefinite" />
+      {/* radiating rings */}
+      <circle cx="100" cy="76" r="40" fill="none" stroke="var(--color-ok)" strokeWidth="3">
+        <animate attributeName="r" values="40;64;40" dur="2.6s" repeatCount="indefinite" />
         <animate attributeName="opacity" values="0.5;0;0.5" dur="2.6s" repeatCount="indefinite" />
       </circle>
-      <circle cx="100" cy="76" r="40" stroke="var(--color-ok)" strokeWidth="2" fill="none" opacity="0.3">
-        <animate attributeName="r" values="40;70;40" dur="2.6s" begin="1.3s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.3;0;0.3" dur="2.6s" begin="1.3s" repeatCount="indefinite" />
+      <circle cx="100" cy="76" r="40" fill="none" stroke="var(--color-brand)" strokeWidth="3">
+        <animate attributeName="r" values="40;64;40" dur="2.6s" begin="1.3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.35;0;0.35" dur="2.6s" begin="1.3s" repeatCount="indefinite" />
       </circle>
 
-      {/* disc + check */}
-      <circle cx="100" cy="76" r="40" fill="var(--color-ok)" opacity="0.14" />
-      <circle cx="100" cy="76" r="40" stroke="var(--color-ok)" strokeWidth="3.5" fill="none" />
-      <path
-        d="M84 78.5l11 11 21-24"
-        stroke="var(--color-ok)"
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray="60"
-        className="animate-draw-check"
-      />
+      {/* badge */}
+      <g transform="rotate(-6 100 76)">
+        <circle cx="106" cy="82" r="40" fill={INK} />
+        <circle cx="100" cy="76" r="40" fill="var(--color-lime)" stroke={INK} strokeWidth="4" />
+        <path
+          d="M80 77l14 14 26-30"
+          stroke="#101010"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="60"
+          className="animate-draw-check"
+        />
+      </g>
 
       {/* confetti */}
-      <g strokeLinecap="round" strokeWidth="2.6">
-        <path d="M40 34v10M35 39h10" stroke="var(--color-accent-soft)" className="animate-bob" />
-        <path d="M158 30v9M153.5 34.5h9" stroke="var(--color-cyan-glow)" className="animate-bob-slow" style={{ animationDelay: '0.5s' }} />
-        <path d="M168 92v8M164 96h8" stroke="var(--color-accent-soft)" className="animate-bob" style={{ animationDelay: '1s' }} />
-        <path d="M32 96v8M28 100h8" stroke="var(--color-warn)" className="animate-bob-slow" style={{ animationDelay: '1.4s' }} />
+      <g stroke={INK} strokeWidth="3.5" strokeLinecap="round">
+        <path d="M34 26v12M28 32h12" className="animate-bob" />
+        <path d="M162 22v10M157 27h10" className="animate-bob-slow" style={{ animationDelay: '0.5s' }} />
+        <path d="M172 102v10M167 107h10" className="animate-bob" style={{ animationDelay: '1s' }} />
       </g>
-      <circle cx="58" cy="118" r="3.5" fill="var(--color-ok)" className="animate-pulse-soft" />
-      <circle cx="144" cy="120" r="3" fill="var(--color-accent-soft)" className="animate-pulse-soft" style={{ animationDelay: '0.7s' }} />
-      <circle cx="100" cy="22" r="3" fill="var(--color-cyan-glow)" className="animate-pulse-soft" style={{ animationDelay: '1.1s' }} />
-
-      {/* little file with the accent gradient flying out of the disc */}
-      <g className="animate-bob" style={{ animationDelay: '0.3s' }}>
-        <rect x="126" y="106" width="30" height="36" rx="5" fill="url(#success-art-accent)" opacity="0.92" />
-        <path d="M133 116h16M133 123h16M133 130h9" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity="0.85" />
-      </g>
+      <circle cx="52" cy="124" r="7" fill="var(--color-punch)" stroke={INK} strokeWidth="3" className="animate-pulse-soft" />
+      <circle cx="150" cy="132" r="6" fill="var(--color-aqua)" stroke={INK} strokeWidth="3" className="animate-pulse-soft" style={{ animationDelay: '0.7s' }} />
+      <circle cx="100" cy="16" r="6" fill="var(--color-sun)" stroke={INK} strokeWidth="3" className="animate-pulse-soft" style={{ animationDelay: '1.1s' }} />
     </svg>
   )
 }
@@ -217,46 +147,37 @@ export function LinkMissingArt({ className = '' }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
-      <defs>
-        <linearGradient id="missing-art-accent" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent-soft)" />
-          <stop offset="100%" stopColor="var(--color-accent-deep)" />
-        </linearGradient>
-      </defs>
-
-      {/* dashed input bar */}
+      {/* dashed empty input bar */}
       <rect
-        x="22"
+        x="18"
         y="52"
-        width="156"
-        height="40"
-        rx="20"
-        fill="var(--color-ink-850)"
-        stroke="var(--color-line-strong)"
-        strokeWidth="1.5"
-        strokeDasharray="7 7"
+        width="164"
+        height="48"
+        rx="16"
+        fill="var(--color-surface-2)"
+        stroke={INK}
+        strokeWidth="3.5"
+        strokeDasharray="10 10"
       />
-      {/* link chain inside the bar */}
       <path
-        d="M64 72h14m-14-6.5v13m14-13v13m7-6.5h6a6.5 6.5 0 0 1 0 13h-3"
-        stroke="var(--color-accent-soft)"
-        strokeWidth="2.6"
+        d="M60 76h12m-12-6v12m12-12v12m5-6h5a6 6 0 0 1 0 12h-3"
+        stroke="var(--color-brand)"
+        strokeWidth="4"
         strokeLinecap="round"
         fill="none"
       />
-      <rect x="106" y="63" width="52" height="7" rx="3.5" fill="var(--color-ink-700)" />
+      <rect x="100" y="68" width="50" height="9" rx="4.5" fill={INK} opacity="0.35" />
 
       {/* magnifier hovering above */}
       <g className="animate-drift">
-        <circle cx="122" cy="24" r="14" fill="var(--color-ink-850)" stroke="var(--color-accent)" strokeWidth="2.6" />
-        <path d="M132 34l9 9" stroke="var(--color-accent)" strokeWidth="3.4" strokeLinecap="round" />
-        <path d="M117 24a5 5 0 0 1 5-5" stroke="var(--color-accent-soft)" strokeWidth="2.2" strokeLinecap="round" />
+        <circle cx="122" cy="24" r="15" fill="var(--color-sun)" stroke={INK} strokeWidth="4" />
+        <path d="M133 35l10 10" stroke={INK} strokeWidth="6" strokeLinecap="round" />
       </g>
 
-      {/* sparkles */}
-      <path d="M36 20v10M31 25h10" stroke="var(--color-accent-soft)" strokeWidth="2.4" strokeLinecap="round" className="animate-pulse-soft" />
-      <path d="M172 96v8M168 100h8" stroke="var(--color-cyan-glow)" strokeWidth="2.4" strokeLinecap="round" className="animate-pulse-soft" style={{ animationDelay: '0.8s' }} />
-      <circle cx="30" cy="110" r="3" fill="var(--color-accent)" className="animate-pulse-soft" style={{ animationDelay: '1.3s' }} />
+      {/* doodles */}
+      <path d="M34 22v12M28 28h12" stroke={INK} strokeWidth="3.5" strokeLinecap="round" className="animate-pulse-soft" />
+      <circle cx="30" cy="118" r="7" fill="var(--color-punch)" stroke={INK} strokeWidth="3" className="animate-pulse-soft" style={{ animationDelay: '0.8s' }} />
+      <circle cx="172" cy="112" r="6" fill="var(--color-aqua)" stroke={INK} strokeWidth="3" className="animate-pulse-soft" style={{ animationDelay: '1.3s' }} />
     </svg>
   )
 }

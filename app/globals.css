@@ -1,64 +1,112 @@
 @import 'tailwindcss';
 
+/* ========================================================================== */
+/*  download24 · Playful Neo-Brutalism design system                          */
+/* ========================================================================== */
 /*
- * Design tokens (Tailwind v4 reads these straight out of `@theme`, so
- * `bg-ink-900`, `text-accent` and `animate-float` all exist as real utilities).
+ * The visual language, in short:
+ *   · cream "paper" (light) / midnight ink (dark) backgrounds with a faint dot grid
+ *   · 3px solid black (or white, in dark mode) borders on EVERYTHING
+ *   · hard, un-blurred offset shadows — the "sticker plate" look
+ *   · saturated candy pops (sun, punch, lime, grape, aqua, tang) as fills
+ *   · chunky Archivo Black headlines, Space Grotesk body, Space Mono labels
+ *   · playful tilts, marquee bands, stickers and press-down interactions
+ *
+ * Everything is expressed as semantic tokens here so components never hard-code
+ * a colour: `bg-paper`, `text-ink`, `border-line`, `shadow-hard`, …
+ *
+ * Dark mode is the default (`html.dark`, set by the inline script in
+ * app/layout.tsx); the cream paper theme is `html.light`. Because Tailwind v4
+ * builds every utility from these variables, remapping them under
+ * `html.light` re-themes the whole site — including opacity modifiers, which
+ * are compiled to `color-mix()` against the same variable.
  */
+
 @theme {
-  --font-sans:
-    var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  --font-display: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* ---------------------------------------------------------------- fonts */
+  --font-display: var(--font-archivo), 'Archivo Black', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: var(--font-mono-space), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --color-ink-950: #05070f;
-  --color-ink-900: #080c18;
-  --color-ink-850: #0b1020;
-  --color-ink-800: #101728;
-  --color-ink-700: #1a2338;
-  --color-line: rgb(255 255 255 / 0.09);
-  --color-line-strong: rgb(255 255 255 / 0.16);
+  /* ------------------------------------------------- constant candy pops */
+  /* These stay the same in both themes: they are fills, always paired with a
+     hard border, so they never rely on the background behind them. */
+  --color-brand: #2f5bff;
+  --color-sun: #ffd23f;
+  --color-punch: #ff5ca8;
+  --color-grape: #6f4cf8;
+  --color-lime: #b9f24a;
+  --color-tang: #ff8a3d;
+  --color-aqua: #35d6e8;
+  --color-ok: #12b76a;
+  --color-warn: #ff9f1c;
+  --color-danger: #ff4d5e;
 
-  --color-accent: #0284c7;
-  --color-accent-soft: #38bdf8;
-  --color-accent-deep: #2563eb;
-  --color-cyan-glow: #06b6d4;
-  --color-ok: #10b981;
-  --color-warn: #f59e0b;
-  --color-danger: #ef4444;
+  /* ---------------------------------------------------- semantic: dark UI */
+  --color-paper: #0d0d14;
+  --color-paper-2: #14141d;
+  --color-surface: #171722;
+  --color-surface-2: #20202d;
+  --color-ink: #ffffff;
+  --color-ink-soft: #c6c6d6;
+  --color-ink-mute: #8d8da3;
+  --color-line: #ffffff;
+  --color-line-soft: rgb(255 255 255 / 0.24);
+  --color-shadow: #ffffff;
 
-  --shadow-lift: 0 24px 60px -28px rgb(0 0 0 / 0.85);
-  --shadow-glow: 0 0 0 1px rgb(2 132 199 / 0.35), 0 18px 55px -20px rgb(37 99 235 / 0.45);
+  /* Text-safe variants of the pops (fills use the raw colours above). */
+  --color-brand-ink: #93a9ff;
+  --color-ok-ink: #4ade80;
+  --color-warn-ink: #ffc46b;
+  --color-danger-ink: #ff8f99;
 
-  --radius-card: 1.25rem;
+  /* ------------------------------------------------------------- shapes */
+  --radius-card: 1.35rem;
+  --radius-btn: 0.95rem;
+  --radius-panel: 1.75rem;
+  --radius-pill: 999px;
 
+  --shadow-hard-xs: 3px 3px 0 0 var(--color-shadow);
+  --shadow-hard-sm: 4px 4px 0 0 var(--color-shadow);
+  --shadow-hard: 7px 7px 0 0 var(--color-shadow);
+  --shadow-hard-lg: 11px 11px 0 0 var(--color-shadow);
+  --shadow-hard-xl: 18px 18px 0 0 var(--color-shadow);
+
+  /* --------------------------------------------------------- animations */
   --animate-float: float 9s ease-in-out infinite;
-  --animate-ring: ring 1.1s linear infinite;
-  --animate-rise: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  --animate-sheen: sheen 2.6s ease-in-out infinite;
-  --animate-pulse-soft: pulse-soft 2.8s ease-in-out infinite;
-
-  /*
-   * Illustration motion (components/illustrations/*). Every animation is
-   * translate/opacity/stroke-dashoffset only, so SVG elements never depend on
-   * `transform-box` / `transform-origin` resolution — rotations inside the
-   * illustrations use SMIL `<animateTransform>` with explicit centres instead.
-   */
   --animate-bob: bob 6s ease-in-out infinite;
   --animate-bob-slow: bob 7.5s ease-in-out infinite;
   --animate-drift: drift 9s ease-in-out infinite;
+  --animate-rise: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop-in: pop-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-sheen: sheen 2.6s ease-in-out infinite;
+  --animate-pulse-soft: pulse-soft 2.2s ease-in-out infinite;
+  --animate-wiggle: wiggle 0.5s ease-in-out;
+  --animate-spin-slow: spin 9s linear infinite;
   --animate-draw-check: draw-check 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
   --animate-flow-dash: flow-dash 1.1s linear infinite;
   --animate-file-drop: file-drop 2.4s ease-in infinite;
-  --animate-fade-in: fade-in 0.5s ease-out both;
-  --animate-pop-in: pop-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-marquee: marquee 30s linear infinite;
+  --animate-marquee-slow: marquee 55s linear infinite;
 
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -14px, 0);
+    }
+  }
   @keyframes bob {
     0%,
     100% {
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-9px);
+      transform: translateY(-8px);
     }
   }
   @keyframes drift {
@@ -67,7 +115,70 @@
       transform: translate3d(0, 0, 0);
     }
     50% {
-      transform: translate3d(7px, -13px, 0);
+      transform: translate3d(6px, -12px, 0);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 12px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  @keyframes pop-in {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.94) rotate(-1deg);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1) rotate(0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes sheen {
+    0% {
+      transform: translateX(-130%);
+    }
+    60%,
+    100% {
+      transform: translateX(260%);
+    }
+  }
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 0.45;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes wiggle {
+    0%,
+    100% {
+      transform: rotate(-1.6deg);
+    }
+    50% {
+      transform: rotate(1.6deg);
+    }
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
     }
   }
   @keyframes draw-check {
@@ -88,9 +199,7 @@
       transform: translateY(0);
       opacity: 0;
     }
-    16% {
-      opacity: 1;
-    }
+    16%,
     78% {
       opacity: 1;
     }
@@ -99,108 +208,43 @@
       opacity: 0;
     }
   }
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  @keyframes pop-in {
-    0% {
-      opacity: 0;
-      transform: translateY(10px) scale(0.92);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  @keyframes float {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
-      transform: translate3d(0, -18px, 0) scale(1.03);
-    }
-  }
-  @keyframes ring {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 10px, 0);
-    }
-    to {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
-  }
-  @keyframes sheen {
-    0% {
-      transform: translateX(-120%);
-    }
-    55%,
-    100% {
-      transform: translateX(240%);
-    }
-  }
-  @keyframes pulse-soft {
-    0%,
-    100% {
-      opacity: 0.55;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
 }
 
 /* -------------------------------------------------------------------------- */
-/* Light theme palette.                                                       */
+/* Cream paper theme (`html.light`)                                           */
 /* -------------------------------------------------------------------------- */
-/*
- * Tailwind v4 builds every color utility from the `--color-*` variables below
- * (opacity modifiers use `color-mix()` against the same var), so remapping the
- * palette here automatically fixes EVERY variant — `bg-ink-950/80`,
- * `border-line/60`, `ring-line-strong`, `divide-line`, `bg-ok/10`, … — without
- * enumerating each one. This rule is intentionally unlayered so it always wins
- * over the `@theme` defaults.
- */
 html.light {
-  --color-ink-950: #ffffff;
-  --color-ink-900: #f1f5f9;
-  --color-ink-850: #e9eef4;
-  --color-ink-800: #e2e8f0;
-  --color-ink-700: #cbd5e1;
-  --color-line: rgb(15 23 42 / 0.09);
-  --color-line-strong: rgb(15 23 42 / 0.18);
+  --color-paper: #fff9ec;
+  --color-paper-2: #fff3d4;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f1de;
+  --color-ink: #101010;
+  --color-ink-soft: #3d3d3d;
+  --color-ink-mute: #6c6c6c;
+  --color-line: #101010;
+  --color-line-soft: rgb(16 16 16 / 0.2);
+  --color-shadow: #101010;
 
-  /* Bright-on-dark accents become deeper so text stays legible on white. */
-  --color-accent-soft: #0284c7;
-  --color-cyan-glow: #0e7490;
-  --color-ok: #047857;
-  --color-warn: #92400e;
-  --color-danger: #dc2626;
-
-  --shadow-lift: 0 24px 50px -30px rgb(15 23 42 / 0.25);
-  --shadow-glow:
-    0 0 0 1px rgb(2 132 199 / 0.25), 0 14px 40px -18px rgb(37 99 235 / 0.35);
+  --color-brand: #2f5bff;
+  --color-brand-ink: #1f3fd8;
+  --color-ok-ink: #04793f;
+  --color-warn-ink: #9a5b00;
+  --color-danger-ink: #cf1f2f;
 }
+
+/* ========================================================================== */
+/* Base                                                                       */
+/* ========================================================================== */
 
 @layer base {
   html {
     color-scheme: dark;
     scroll-behavior: smooth;
     /* Sticky header height so #anchors never land underneath it. */
-    scroll-padding-top: 6rem;
+    scroll-padding-top: 7rem;
     -webkit-text-size-adjust: 100%;
+    /* Archivo Black has a single weight: never fake a bolder one. */
+    font-synthesis-weight: none;
   }
 
   html.light {
@@ -208,208 +252,30 @@ html.light {
   }
 
   body {
-    background-color: var(--color-ink-950);
-    color: rgb(255 255 255 / 0.92);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
     font-family: var(--font-sans);
-    /* Painted by the browser before CSS applies, so first paint has no flash. */
-    text-rendering: optimizeSpeed;
+    font-size: 15px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    text-rendering: optimizeSpeed;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  /* ------------------------------------------------------------------------ */
-  /* Global Light Theme Overrides (`!important` beats the utilities layer)    */
-  /* ------------------------------------------------------------------------ */
-  html.light body {
-    background-color: #f8fafc !important;
-    color: #1e293b;
-  }
-
-  html.light header {
-    background-color: rgba(255, 255, 255, 0.88) !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-  }
-
-  html.light footer {
-    background-color: #ffffff !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-  }
-
-  /* Text color mappings */
-  html.light .text-white {
-    color: #0f172a !important;
-  }
-  html.light .text-white\/95,
-  html.light .text-white\/92,
-  html.light .text-white\/90,
-  html.light .text-white\/85,
-  html.light .text-white\/80 {
-    color: #1e293b !important;
-  }
-  html.light .text-white\/75,
-  html.light .text-white\/70,
-  html.light .text-white\/65,
-  html.light .text-white\/60,
-  html.light .text-white\/55,
-  html.light .text-white\/50 {
-    color: #475569 !important;
-  }
-  html.light .text-white\/45,
-  html.light .text-white\/40,
-  html.light .text-white\/35,
-  html.light .text-white\/30,
-  html.light .text-white\/25 {
-    color: #64748b !important;
-  }
-
-  /*
-   * Exceptions: white text on surfaces that stay dark in light mode.
-   * - `[class~="from-accent-soft"]` matches the solid accent-gradient buttons
-   *   (exact token, so the faint `from-accent-soft/75` form wrapper is excluded
-   *   and the input text inside it still turns dark).
-   * - `.bg-black/75` is the video-duration badge over thumbnails.
-   */
-  html.light [class~='from-accent-soft'].text-white,
-  html.light [class~='from-accent-soft'] .text-white,
-  html.light .bg-black\/75.text-white {
-    color: #fff !important;
-  }
-
-  /* Hover / group-hover text states in light mode */
-  html.light .hover\:text-white:hover {
-    color: #0f172a !important;
-  }
-  html.light .hover\:text-white\/70:hover {
-    color: #334155 !important;
-  }
-  html.light .hover\:text-white\/80:hover {
-    color: #1e293b !important;
-  }
-  html.light .group:hover .group-hover\:text-white {
-    color: #0f172a !important;
-  }
-
-  /* Form inputs in light mode */
-  html.light input {
-    color: #0f172a !important;
-  }
-  html.light input::placeholder {
-    color: #94a3b8 !important;
-  }
-
-  /* White-on-dark borders / rings / underlines become slate in light mode */
-  html.light .border-white\/10 {
-    border-color: rgb(15 23 42 / 0.1) !important;
-  }
-  html.light .ring-white\/15 {
-    --tw-ring-color: rgb(15 23 42 / 0.15) !important;
-  }
-  html.light .decoration-white\/20,
-  html.light .decoration-white\/25 {
-    text-decoration-color: rgb(15 23 42 / 0.25) !important;
-  }
-
-  /* Glass/translucent card backgrounds in light mode */
-  html.light .bg-white\/\[0\.01\],
-  html.light .bg-white\/\[0\.02\],
-  html.light .bg-white\/\[0\.03\],
-  html.light .bg-white\/\[0\.04\],
-  html.light .bg-white\/\[0\.05\],
-  html.light .bg-white\/\[0\.06\],
-  html.light .bg-white\/\[0\.08\],
-  html.light .bg-white\/5,
-  html.light .bg-white\/8,
-  html.light .bg-white\/10,
-  html.light .bg-white\/12,
-  html.light .bg-white\/15 {
-    background-color: #ffffff !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-  }
-
-  html.light .hover\:bg-white\/5:hover,
-  html.light .hover\:bg-white\/\[0\.04\]:hover,
-  html.light .hover\:bg-white\/\[0\.05\]:hover,
-  html.light .hover\:bg-white\/\[0\.06\]:hover,
-  html.light .hover\:bg-white\/\[0\.08\]:hover,
-  html.light .hover\:bg-white\/10:hover,
-  html.light .hover\:bg-white\/12:hover,
-  html.light .hover\:bg-white\/15:hover {
-    background-color: #f1f5f9 !important;
-  }
-
-  /* Open FAQ/details panels stay clean white cards in light mode */
-  html.light details[open] {
-    background-color: #ffffff !important;
-  }
-
-  /* Glass result / loading panels are near-invisible white on light gray */
-  html.light .glass-card {
-    background-color: #ffffff !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-  }
-
-  /* Gradient headline text needs deeper blues for contrast on white */
-  html.light .text-gradient {
-    background-image: linear-gradient(
-      100deg,
-      #0284c7 0%,
-      #0369a1 45%,
-      #1d4ed8 78%
-    ) !important;
-  }
-
-  /*
-   * Platform landing theming. Pages expose `--platform-primary` (dark mode),
-   * `--platform-on-light` (light mode) and `--platform-glow` (rgb triplet),
-   * so brand hues survive in both themes without any client JavaScript.
-   */
-  html.light .platform-highlight {
-    color: var(--platform-on-light, var(--platform-primary)) !important;
-    text-shadow: none !important;
-  }
-  html.light .platform-tint-text {
-    color: var(--platform-on-light, var(--platform-primary)) !important;
-  }
-  html.light .platform-pill {
-    color: #0f172a !important;
-  }
-  html.light .platform-hero-glow {
-    opacity: 0.16 !important;
-  }
-
-  /* Table styles in light mode */
-  html.light thead tr {
-    background-color: #f1f5f9 !important;
-  }
-
-  /* Aurora and ambient glow adjustments for light mode */
-  html.light .hero-aurora {
-    opacity: 0.18 !important;
-    filter: blur(28px) !important;
-  }
-  html.light .grid-lines {
-    background-image:
-      linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px) !important;
-    mask-image: radial-gradient(72% 58% at 50% 24%, #000 20%, transparent 80%) !important;
-  }
-
-  /* Clean shadows for light mode cards */
-  html.light .rounded-\(--radius-card\) {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-  }
-
-  /* Scrollbars in light mode */
-  html.light ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.18);
+  /* Faint dot-grid "paper" texture behind everything. */
+  .nb-page {
+    background-image: radial-gradient(
+      color-mix(in srgb, var(--color-ink) 12%, transparent) 1.15px,
+      transparent 1.15px
+    );
+    background-size: 22px 22px;
+    background-position: -1px -1px;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.02em;
     text-wrap: balance;
   }
 
@@ -418,13 +284,14 @@ html.light {
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent-soft);
+    outline: 3px solid var(--color-brand);
     outline-offset: 3px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
   ::selection {
-    background: rgb(2 132 199 / 0.35);
+    background: var(--color-sun);
+    color: #101010;
   }
 
   /* Keep the page width identical with or without a scrollbar (no CLS). */
@@ -443,24 +310,49 @@ html.light {
   }
 
   input::placeholder {
-    color: rgb(255 255 255 / 0.38);
+    color: var(--color-ink-mute);
+    opacity: 1;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+  }
+
+  code {
+    background: var(--color-surface-2);
+    border: 2px solid var(--color-line-soft);
+    border-radius: 7px;
+    padding: 0.1em 0.4em;
+    font-size: 0.86em;
+  }
+
+  pre code {
+    background: none;
+    border: 0;
+    padding: 0;
   }
 
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgb(255 255 255 / 0.14);
+    background: var(--color-ink);
+    border: 3px solid var(--color-paper);
     border-radius: 999px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--color-surface-2);
   }
 
+  summary {
+    cursor: pointer;
+  }
   details > summary {
     list-style: none;
-    cursor: pointer;
   }
   details > summary::-webkit-details-marker {
     display: none;
@@ -471,25 +363,601 @@ html.light {
   details[open] .faq-panel {
     animation: var(--animate-rise);
   }
+
+  /* Tables keep the brutalist grid when they are not fully custom-styled. */
+  table {
+    border-collapse: collapse;
+  }
 }
 
-@utility text-gradient {
-  background-image: linear-gradient(
-    100deg,
-    var(--color-accent-soft) 0%,
-    var(--color-accent) 42%,
-    var(--color-accent-deep) 78%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* ========================================================================== */
+/* Components                                                                 */
+/* ========================================================================== */
+
+@layer components {
+  /* ------------------------------------------------------------- surfaces */
+
+  .nb-card {
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-hard);
+  }
+
+  .nb-card-flat {
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+
+  .nb-card-sm {
+    background-color: var(--color-surface);
+    border: 2.5px solid var(--color-line);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-hard-sm);
+  }
+
+  .nb-inset {
+    background-color: var(--color-surface-2);
+    border: 2.5px solid var(--color-line);
+    border-radius: 1rem;
+  }
+
+  .nb-panel {
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-line);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-hard-lg);
+  }
+
+  /* Chunky full-width band used for stats / CTA / footer rules. */
+  .nb-band {
+    border-top: 3px solid var(--color-line);
+    border-bottom: 3px solid var(--color-line);
+    background-color: var(--color-surface-2);
+  }
+
+  /* --------------------------------------------------------------- type */
+
+  .nb-h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 5.2vw, 3.9rem);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+  }
+
+  .nb-h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.4vw, 2.5rem);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+
+  .nb-h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+  }
+
+  /* Mono eyebrow above a heading, with its little candy square. */
+  .nb-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
+  }
+  .nb-kicker::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    flex: none;
+    background: var(--color-sun);
+    border: 2px solid var(--color-line);
+    border-radius: 3px;
+  }
+
+  .nb-lead {
+    font-size: clamp(0.95rem, 1.1vw, 1.075rem);
+    line-height: 1.65;
+    color: var(--color-ink-soft);
+  }
+
+  /* Highlighted marker block behind inline words (works across line breaks). */
+  .nb-mark {
+    background-color: var(--color-sun);
+    color: #101010;
+    padding: 0.02em 0.22em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    border-radius: 5px;
+    box-shadow: 3px 3px 0 0 var(--color-line);
+  }
+
+  /* Same idea, different flavour — used on the hero and CTA headlines. */
+  .nb-mark-punch {
+    background-color: var(--color-punch);
+    color: #101010;
+  }
+  .nb-mark-lime {
+    background-color: var(--color-lime);
+    color: #101010;
+  }
+  .nb-mark-aqua {
+    background-color: var(--color-aqua);
+    color: #101010;
+  }
+
+  .nb-underline {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 4px;
+  }
+
+  .nb-link {
+    color: var(--color-brand-ink);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 2.5px;
+    text-underline-offset: 3px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .nb-link:hover {
+    background-color: var(--color-sun);
+    color: #101010;
+    text-decoration-color: var(--color-line);
+  }
+
+  /* -------------------------------------------------------------- press */
+  /*
+   * The signature interaction: hover nudges the element INTO its own hard
+   * shadow, active flattens the shadow completely. `--nb-sh` lets each
+   * component keep its own shadow size while sharing the motion.
+   */
+  .nb-press {
+    --nb-sh: 7px;
+    box-shadow: var(--nb-sh) var(--nb-sh) 0 0 var(--color-shadow);
+    transition:
+      transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform;
+  }
+  .nb-press:hover {
+    transform: translate(2.5px, 2.5px);
+    box-shadow: calc(var(--nb-sh) - 2.5px) calc(var(--nb-sh) - 2.5px) 0 0 var(--color-shadow);
+  }
+  .nb-press:active {
+    transform: translate(var(--nb-sh), var(--nb-sh));
+    box-shadow: 0 0 0 0 var(--color-shadow);
+  }
+  .nb-press-xs {
+    --nb-sh: 3px;
+  }
+  .nb-press-sm {
+    --nb-sh: 4px;
+  }
+  .nb-press-lg {
+    --nb-sh: 11px;
+  }
+  .nb-press-xl {
+    --nb-sh: 18px;
+  }
+  /* Cards: a gentler lift that keeps the plate look. */
+  .nb-press-card {
+    --nb-sh: 7px;
+    transition:
+      transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.15s ease;
+  }
+  .nb-press-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 11px 11px 0 0 var(--color-shadow);
+  }
+
+  /* ------------------------------------------------------------- buttons */
+
+  .nb-btn {
+    --nb-sh: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.72rem 1.35rem;
+    border: 3px solid var(--color-line);
+    border-radius: var(--radius-btn);
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: var(--nb-sh) var(--nb-sh) 0 0 var(--color-shadow);
+    transition:
+      transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.12s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .nb-btn:hover {
+    transform: translate(2.5px, 2.5px);
+    box-shadow: calc(var(--nb-sh) - 2.5px) calc(var(--nb-sh) - 2.5px) 0 0 var(--color-shadow);
+  }
+  .nb-btn:active {
+    transform: translate(var(--nb-sh), var(--nb-sh));
+    box-shadow: 0 0 0 0 var(--color-shadow);
+  }
+  .nb-btn[disabled],
+  .nb-btn[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--nb-sh) var(--nb-sh) 0 0 var(--color-shadow);
+  }
+
+  .nb-btn-sm {
+    --nb-sh: 3px;
+    padding: 0.45rem 0.85rem;
+    border-width: 2.5px;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.35rem;
+  }
+  .nb-btn-lg {
+    --nb-sh: 8px;
+    padding: 1rem 2rem;
+    font-size: 1.05rem;
+  }
+  .nb-btn-block {
+    width: 100%;
+  }
+
+  .nb-btn-brand {
+    background-color: var(--color-brand);
+    color: #ffffff;
+  }
+  .nb-btn-sun {
+    background-color: var(--color-sun);
+    color: #101010;
+  }
+  .nb-btn-punch {
+    background-color: var(--color-punch);
+    color: #101010;
+  }
+  .nb-btn-lime {
+    background-color: var(--color-lime);
+    color: #101010;
+  }
+  .nb-btn-ink {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .nb-btn-ok {
+    background-color: var(--color-ok);
+    color: #ffffff;
+  }
+  .nb-btn-danger {
+    background-color: var(--color-danger);
+    color: #ffffff;
+  }
+  .nb-btn-ghost {
+    background-color: transparent;
+    color: var(--color-ink);
+  }
+  .nb-btn-ghost:hover {
+    background-color: var(--color-surface-2);
+  }
+
+  /* --------------------------------------------------------------- chips */
+
+  .nb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.7rem;
+    border: 2.5px solid var(--color-line);
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .nb-chip-sm {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.62rem;
+    border-width: 2px;
+  }
+
+  .nb-chip-sun {
+    background-color: var(--color-sun);
+    color: #101010;
+  }
+  .nb-chip-punch {
+    background-color: var(--color-punch);
+    color: #101010;
+  }
+  .nb-chip-lime {
+    background-color: var(--color-lime);
+    color: #101010;
+  }
+  .nb-chip-grape {
+    background-color: var(--color-grape);
+    color: #ffffff;
+  }
+  .nb-chip-aqua {
+    background-color: var(--color-aqua);
+    color: #101010;
+  }
+  .nb-chip-tang {
+    background-color: var(--color-tang);
+    color: #101010;
+  }
+  .nb-chip-brand {
+    background-color: var(--color-brand);
+    color: #ffffff;
+  }
+  .nb-chip-ink {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .nb-chip-soft {
+    background-color: var(--color-surface-2);
+    color: var(--color-ink-soft);
+    border-color: var(--color-line-soft);
+  }
+
+  /* Rotated sticker — the playful bit of tape on a card. */
+  .nb-sticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border: 2.5px solid var(--color-line);
+    border-radius: 0.6rem;
+    background-color: var(--color-sun);
+    color: #101010;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-hard-xs);
+  }
+
+  /* --------------------------------------------------------------- forms */
+
+  .nb-input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.95rem 1.1rem;
+    border: 3px solid var(--color-line);
+    border-radius: var(--radius-btn);
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    box-shadow: var(--shadow-hard-xs);
+    transition: box-shadow 0.15s ease;
+  }
+  .nb-input::placeholder {
+    color: var(--color-ink-mute);
+  }
+  .nb-input:focus {
+    outline: none;
+    box-shadow: var(--shadow-hard-sm);
+  }
+  .nb-input:focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  .nb-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-mute);
+  }
+
+  /* ------------------------------------------------------------ patterns */
+
+  /* Big blueprint grid (hero backdrops). */
+  .nb-grid-lines {
+    background-image:
+      linear-gradient(var(--color-line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-line-soft) 1px, transparent 1px);
+    background-size: 46px 46px;
+  }
+
+  /* Halftone dots for coloured bands. */
+  .nb-halftone {
+    background-image: radial-gradient(currentColor 1.4px, transparent 1.4px);
+    background-size: 12px 12px;
+  }
+
+  /* Hazard / candy diagonal stripes. */
+  .nb-stripes {
+    background-image: repeating-linear-gradient(
+      45deg,
+      currentColor 0 8px,
+      transparent 8px 20px
+    );
+  }
+
+  /*
+   * Tilts use the independent `rotate:` property (not `transform: rotate(…)`)
+   * so they COMPOSE with the transform-based press/hover motion instead of being
+   * overwritten by it — a tilted card keeps its angle while it lifts.
+   */
+  .nb-tilt-l {
+    rotate: -1.6deg;
+  }
+  .nb-tilt-r {
+    rotate: 1.6deg;
+  }
+
+  /* The marker "swipe" used behind hero art. */
+  .nb-swipe {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(38% 44% at 22% 26%, color-mix(in srgb, var(--color-sun) 55%, transparent), transparent 70%),
+      radial-gradient(34% 40% at 80% 22%, color-mix(in srgb, var(--color-punch) 45%, transparent), transparent 70%),
+      radial-gradient(36% 40% at 54% 78%, color-mix(in srgb, var(--color-aqua) 40%, transparent), transparent 72%);
+  }
+
+  /* ------------------------------------------------------------ marquee */
+
+  .nb-marquee {
+    display: flex;
+    overflow: hidden;
+    user-select: none;
+    gap: 0;
+  }
+  .nb-marquee-track {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 1.75rem;
+    padding-right: 1.75rem;
+    min-width: 100%;
+    animation: var(--animate-marquee);
+  }
+  .nb-marquee:hover .nb-marquee-track {
+    animation-play-state: paused;
+  }
+
+  /* ---------------------------------------------------------------- misc */
+
+  /* Indeterminate sweep used while bytes are moving. */
+  .nb-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .nb-sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 30%;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-ink) 22%, transparent), transparent);
+    transform: translateX(-130%);
+    animation: var(--animate-sheen);
+  }
+
+  /* Skeleton block. */
+  .nb-skeleton {
+    background-color: var(--color-surface-2);
+    border: 2px solid var(--color-line-soft);
+    border-radius: 0.75rem;
+    animation: var(--animate-pulse-soft);
+  }
+
+  /* Dotted "cut here" divider. */
+  .nb-divider {
+    height: 3px;
+    border: 0;
+    background-image: linear-gradient(90deg, var(--color-line) 0 14px, transparent 14px 26px);
+    background-size: 26px 3px;
+    opacity: 0.5;
+  }
+
+  /* Inline "still taped on" label row used by the download pages. */
+  .nb-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Platform chips + brand theming                                          */
+  /* ---------------------------------------------------------------------- */
+  /*
+   * Every chip in components/PlatformBar.tsx sets `--chip-brand` inline to the
+   * network's own accent, so hover states tint themselves with the real brand
+   * colour instead of a hard-coded palette entry — while the resting state
+   * stays monochrome ink, and the active chip stays legible for ANY brand hue
+   * (X's near-white `#e7e9ea`, TikTok's pale cyan, YouTube's red …).
+   */
+  .platform-chip {
+    --chip-brand: var(--color-brand);
+    background-color: var(--color-surface);
+    border: 2.5px solid var(--color-line);
+    color: var(--color-ink);
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .platform-chip:hover,
+  .platform-chip:focus-visible {
+    border-color: var(--chip-brand);
+    box-shadow: 4px 4px 0 0 var(--chip-brand);
+    transform: translate(-1px, -1px);
+  }
+  .platform-chip-active,
+  .platform-chip[data-active='true'] {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+    /* Brand hue as a solid underline inside the inverted chip. */
+    box-shadow: inset 0 -7px 0 0 var(--chip-brand), 3px 3px 0 0 var(--color-shadow);
+  }
+
+  /*
+   * Platform pages (app/[slug]/page.tsx) set `--platform-primary`,
+   * `--platform-on-light` and `--platform-glow` inline per network.
+   */
+  .platform-highlight {
+    color: var(--platform-primary);
+    text-shadow: 4px 4px 0 var(--color-shadow);
+  }
+
+  .platform-tint-text {
+    color: var(--platform-primary);
+  }
+
+  .platform-pill {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+  }
+
+  html.light .platform-highlight {
+    color: var(--platform-on-light, var(--platform-primary));
+  }
+
+  html.light .platform-tint-text {
+    color: var(--platform-on-light, var(--platform-primary));
+  }
+
+  /* The brand slab is a flat shape now; keep it from glaring on cream paper. */
+  html.light .platform-hero-glow {
+    opacity: 0.85;
+  }
 }
 
-@utility glass-card {
-  background-color: rgb(255 255 255 / 0.035);
-  border: 1px solid var(--color-line);
-  backdrop-filter: blur(6px);
-}
+/* ========================================================================== */
+/* Utilities                                                                  */
+/* ========================================================================== */
 
 /* Fixed-height result slot: the panel growing is the single biggest CLS risk. */
 @utility result-slot {
@@ -501,112 +969,66 @@ html.light {
   }
 }
 
-@layer components {
-  .hero-aurora {
-    position: absolute;
-    inset: -20% -10% auto -10%;
-    height: 46rem;
-    pointer-events: none;
-    background:
-      radial-gradient(40% 40% at 22% 26%, rgb(2 132 199 / 0.32), transparent 70%),
-      radial-gradient(36% 36% at 78% 18%, rgb(6 182 212 / 0.28), transparent 70%),
-      radial-gradient(30% 30% at 52% 62%, rgb(37 99 235 / 0.22), transparent 70%);
-    filter: blur(18px);
+/* Prose wrapper for the legal pages: brutalist headings, readable body. */
+@utility nb-prose {
+  color: var(--color-ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.7;
+
+  & h2 {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+    margin-top: 0.25rem;
   }
 
-  .grid-lines {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
-    background-size: 64px 64px;
-    mask-image: radial-gradient(72% 58% at 50% 24%, #000 20%, transparent 78%);
+  & h3 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    color: var(--color-ink);
+    margin-top: 0.75rem;
   }
 
-  .sheen::after {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 28%;
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16), transparent);
-    transform: translateX(-120%);
-    animation: var(--animate-sheen);
+  & ul,
+  & ol {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-left: 1.35rem;
   }
-
-  /*
-   * Platform landing theming (dark-mode defaults; `html.light` overrides live
-   * in the light-theme block above). The page sets `--platform-primary`,
-   * `--platform-on-light` and `--platform-glow` inline per platform.
-   */
-  .platform-highlight {
-    color: var(--platform-primary);
-    text-shadow: 0 0 35px rgba(var(--platform-glow), 0.45);
+  & ul {
+    list-style: square;
   }
-
-  .platform-tint-text {
-    color: var(--platform-primary);
+  & ol {
+    list-style: decimal;
   }
-
-  .platform-pill {
-    color: #fff;
+  & li::marker {
+    color: var(--color-brand-ink);
+    font-weight: 700;
   }
-
-  /*
-   * Chips inside the "Works with" strip under the navbar
-   * (components/PlatformBar.tsx). Every chip sets `--chip-brand` inline to the
-   * network's accent, so the hover/focus tint, ring and glow always match the
-   * real brand colour instead of a hard-coded palette entry.
-   *
-   * The surface is painted here rather than with `bg-white/[0.03]` utilities on
-   * purpose: those utilities are force-overridden in `html.light`, which would
-   * otherwise beat these hover states (important declarations reverse layer
-   * order, and the light palette lives in `@layer base`).
-   */
-  .platform-chip {
-    --chip-brand: var(--color-accent);
-    border: 1px solid var(--color-line);
-    background-color: rgb(255 255 255 / 0.03);
-    transition:
-      border-color 0.2s ease,
-      background-color 0.2s ease,
-      box-shadow 0.2s ease,
-      transform 0.2s ease;
+  & strong {
+    color: var(--color-ink);
+    font-weight: 700;
   }
-  html.light .platform-chip {
-    background-color: #ffffff;
-    border-color: rgb(15 23 42 / 0.1);
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+  & a {
+    color: var(--color-brand-ink);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 2.5px;
+    text-underline-offset: 3px;
   }
-  .platform-chip:hover,
-  .platform-chip:focus-visible {
-    border-color: color-mix(in srgb, var(--chip-brand) 55%, transparent);
-    background-color: color-mix(in srgb, var(--chip-brand) 14%, transparent);
-    box-shadow: 0 8px 22px -14px color-mix(in srgb, var(--chip-brand) 95%, transparent);
-  }
-  /*
-   * On white the *fill* has to stay pale, so the brand hue is expressed
-   * through the border/glow — mixed towards slate, which also rescues very
-   * light accents (X's `#e7e9ea`) from becoming invisible.
-   */
-  html.light .platform-chip:hover,
-  html.light .platform-chip:focus-visible {
-    background-color: color-mix(in srgb, var(--chip-brand) 12%, #ffffff);
-    border-color: color-mix(in srgb, var(--chip-brand) 60%, #0f172a);
-    box-shadow: 0 6px 16px -12px color-mix(in srgb, var(--chip-brand) 70%, #0f172a);
-  }
-  .platform-chip[data-active='true'] {
-    border-color: color-mix(in srgb, var(--chip-brand) 60%, transparent);
-    background-color: color-mix(in srgb, var(--chip-brand) 18%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-brand) 20%, transparent);
-  }
-  html.light .platform-chip[data-active='true'] {
-    background-color: color-mix(in srgb, var(--chip-brand) 14%, #ffffff);
-    border-color: color-mix(in srgb, var(--chip-brand) 60%, #0f172a);
-    box-shadow: none;
+  & a:hover {
+    background-color: var(--color-sun);
+    color: #101010;
   }
 }
+
+/* ========================================================================== */
+/* Motion preferences                                                         */
+/* ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -617,7 +1039,15 @@ html.light {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .sheen::after {
-    display: none;
+  .nb-press:hover,
+  .nb-press-card:hover,
+  .nb-btn:hover,
+  .nb-press:active,
+  .nb-btn:active {
+    transform: none;
+  }
+  .nb-sheen::after,
+  .nb-marquee-track {
+    animation: none;
   }
 }

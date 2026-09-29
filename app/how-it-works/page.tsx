@@ -5,6 +5,7 @@ import { ArrowDownToLine, MonitorSmartphone, Smartphone, Tv } from 'lucide-react
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { StepArt } from '@/components/illustrations/StepArt'
+import { CtaPlate, PageHero, SectionHeading } from '@/components/ui/PageBlocks'
 import { HOW_TO_STEPS, breadcrumbSchema, howToSchema, serializeJsonLd } from '@/lib/seo'
 import { canonicalOrigin } from '@/lib/site'
 
@@ -97,47 +98,62 @@ export default function HowItWorksPage() {
       />
       <Header />
       <main id="main" className="flex-1">
-        {/* ---------------------------------------------------------- hero */}
-        <section className="relative isolate overflow-hidden pt-12 pb-4 sm:pt-16">
-          <div aria-hidden="true" className="hero-aurora animate-float opacity-25" />
-          <div className="relative mx-auto w-full max-w-3xl px-4 text-center sm:px-6">
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-              How it works
-            </p>
-            <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-              From link to file in <span className="text-gradient">four steps</span>
-            </h1>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/60 sm:text-base">
-              Works the same on Android, iPhone, Windows, macOS and Linux — whether you copied the
-              link from an app share-sheet or a desktop URL bar.
-            </p>
-          </div>
-        </section>
+        <PageHero
+          kicker="How it works"
+          title={
+            <>
+              From link to file in <span className="nb-mark nb-mark-lime">four steps</span>
+            </>
+          }
+          lead="Works the same on Android, iPhone, Windows, macOS and Linux — whether you copied the link from an app share-sheet or a desktop URL bar."
+          tone="bg-aqua text-[#101010]"
+        >
+          <Link href="/#downloader" className="nb-btn nb-btn-brand nb-btn-lg">
+            <ArrowDownToLine className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden="true" />
+            Paste a link
+          </Link>
+        </PageHero>
 
         {/* --------------------------------------------- the three pages */}
-        <section aria-label="The three-page flow" className="mx-auto w-full max-w-6xl px-4 pt-10 sm:px-6">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {FLOW_PAGES.map((page) => (
-              <article
+        <section aria-label="The three-page flow" className="mx-auto w-full max-w-6xl px-4 pt-14 sm:px-6">
+          <ul className="grid gap-5 sm:grid-cols-3">
+            {FLOW_PAGES.map((page, index) => (
+              <li
                 key={page.step}
-                className="relative overflow-hidden rounded-(--radius-card) border border-line bg-white/[0.02] p-5"
+                className={`nb-card nb-press-card flex h-full flex-col overflow-hidden ${
+                  index % 2 === 0 ? 'nb-tilt-l' : 'nb-tilt-r'
+                }`}
               >
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-accent-soft via-accent to-accent-deep font-display text-sm font-bold text-white shadow-glow">
-                  {page.step}
+                <span
+                  aria-hidden="true"
+                  className={`${['bg-sun', 'bg-punch', 'bg-lime'][index % 3]} flex items-center justify-between border-b-[3px] border-line px-4 py-2 font-mono text-[10px] font-bold tracking-[0.16em] text-[#101010] uppercase`}
+                >
+                  <span>Page {page.step} of 3</span>
+                  <span>★</span>
                 </span>
-                <h2 className="mt-3 text-sm font-semibold text-white sm:text-base">{page.title}</h2>
-                <p className="mt-1 text-xs leading-relaxed text-white/55">{page.body}</p>
-                <p className="mt-3 inline-flex rounded-md bg-ink-800 px-2 py-1 font-mono text-[10px] text-white/50 ring-1 ring-inset ring-line">
-                  {page.hint}
-                </p>
-              </article>
+                <div className="flex flex-1 flex-col p-5">
+                  <span
+                    aria-hidden="true"
+                    className={`grid h-11 w-11 place-items-center rounded-btn border-[3px] border-line font-display text-base text-[#101010] ${
+                      ['bg-sun', 'bg-punch', 'bg-lime'][index % 3]
+                    }`}
+                  >
+                    {page.step}
+                  </span>
+                  <h2 className="mt-4 font-display text-sm uppercase">{page.title}</h2>
+                  <p className="mt-2 flex-1 text-[13px] leading-relaxed text-ink-soft">{page.body}</p>
+                  <p className="mt-3">
+                    <span className="nb-chip nb-chip-sm nb-chip-soft">{page.hint}</span>
+                  </p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
 
         {/* ------------------------------------------------------ the steps */}
-        <section aria-label="Detailed steps" className="mx-auto w-full max-w-5xl px-4 pt-14 sm:px-6">
-          <ol className="relative flex flex-col gap-6">
+        <section aria-label="Detailed steps" className="mx-auto w-full max-w-5xl px-4 pt-16 sm:px-6">
+          <ol className="flex flex-col gap-7">
             {HOW_TO_STEPS.map((step, index) => {
               const number = index + 1
               const variant = (['copy', 'paste', 'quality', 'save'] as const)[index]
@@ -146,25 +162,31 @@ export default function HowItWorksPage() {
                 <li
                   key={step.title}
                   id={`step-${number}`}
-                  className="grid items-center gap-6 rounded-(--radius-card) border border-line bg-white/[0.02] p-5 sm:p-7 lg:grid-cols-[0.9fr_1.1fr]"
+                  className="nb-card nb-press-card grid items-center gap-7 overflow-hidden p-5 sm:p-7 lg:grid-cols-[0.85fr_1.15fr]"
                 >
-                  <div className={artFirst ? 'lg:order-2' : ''}>
-                    <div className="mx-auto w-full max-w-[300px]">
+                  <div className={`${artFirst ? 'lg:order-2' : ''} mx-auto w-full max-w-[300px]`}>
+                    <span
+                      className={`block rounded-2xl border-[3px] border-line p-3 ${
+                        ['bg-sun', 'bg-punch', 'bg-lime', 'bg-aqua'][index % 4]
+                      }`}
+                    >
                       <StepArt variant={variant} />
-                    </div>
+                    </span>
                   </div>
                   <div className={artFirst ? 'lg:order-1' : ''}>
                     <span
                       aria-hidden="true"
-                      className="inline-grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-accent-soft via-accent to-accent-deep font-display text-sm font-bold text-white"
+                      className={`inline-grid h-10 w-10 place-items-center rounded-btn border-[3px] border-line font-display text-base text-[#101010] ${
+                        ['bg-sun', 'bg-punch', 'bg-lime', 'bg-aqua'][index % 4]
+                      }`}
                     >
                       {number}
                     </span>
-                    <h2 className="mt-3 font-display text-lg font-bold text-white sm:text-xl">
+                    <h2 className="nb-h3 mt-3">
                       <span className="sr-only">Step {number}: </span>
                       {step.title}
                     </h2>
-                    <p className="mt-2 text-sm leading-relaxed text-white/60">{step.description}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-ink-soft">{step.description}</p>
                   </div>
                 </li>
               )
@@ -173,51 +195,44 @@ export default function HowItWorksPage() {
         </section>
 
         {/* --------------------------------------------------- device tips */}
-        <section aria-labelledby="device-tips-heading" className="mx-auto w-full max-w-6xl px-4 pt-14 sm:px-6">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-              Per-device tips
-            </p>
-            <h2 id="device-tips-heading" className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">
-              Where the file ends up
-            </h2>
-          </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            {DEVICE_TIPS.map((tip) => (
-              <article
-                key={tip.title}
-                className="rounded-(--radius-card) border border-line bg-white/[0.02] p-5"
-              >
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent ring-1 ring-inset ring-accent/25">
-                  <tip.icon className="h-5 w-5" aria-hidden="true" />
+        <section aria-labelledby="device-tips-heading" className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6">
+          <SectionHeading
+            headingId="device-tips-heading"
+            kicker="Per-device tips"
+            title={
+              <>
+                Where the <span className="nb-mark">file</span> ends up
+              </>
+            }
+            lead="The flow never changes — only the folder it lands in does."
+          />
+          <div className="mt-8 grid gap-5 sm:grid-cols-3">
+            {DEVICE_TIPS.map((tip, index) => (
+              <article key={tip.title} className="nb-card nb-press-card flex h-full flex-col p-5">
+                <span
+                  className={`grid h-11 w-11 place-items-center rounded-btn border-[3px] border-line ${
+                    ['bg-sun', 'bg-aqua', 'bg-punch'][index % 3]
+                  }`}
+                >
+                  <tip.icon className="h-5 w-5 text-[#101010]" aria-hidden="true" />
                 </span>
-                <h3 className="mt-3 text-sm font-semibold text-white">{tip.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-white/60">{tip.body}</p>
+                <h3 className="mt-4 font-display text-sm uppercase">{tip.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{tip.body}</p>
               </article>
             ))}
           </div>
         </section>
 
         {/* ----------------------------------------------------------- CTA */}
-        <section aria-labelledby="howto-cta" className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
-          <div className="relative overflow-hidden rounded-[1.6rem] border border-line bg-gradient-to-br from-accent/[0.15] via-transparent to-cyan-glow/[0.10] p-6 text-center sm:p-10">
-            <div aria-hidden="true" className="hero-aurora animate-float opacity-30" />
-            <div className="relative">
-              <h2 id="howto-cta" className="font-display text-2xl font-bold text-white">
-                Ready to try step one?
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
-                It really is just a copy-paste. Your file is about thirty seconds away.
-              </p>
-              <Link
-                href="/"
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-6 py-3 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
-              >
-                <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
-                Paste a link
-              </Link>
-            </div>
-          </div>
+        <section aria-labelledby="howto-cta" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+          <CtaPlate
+            headingId="howto-cta"
+            heading="Ready to try step one?"
+            body="It really is just a copy-paste. Your file is about thirty seconds away."
+            cta="Paste a link"
+            tone="bg-lime"
+            icon={<ArrowDownToLine className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden="true" />}
+          />
         </section>
       </main>
       <Footer />

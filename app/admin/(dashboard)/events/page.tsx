@@ -125,16 +125,16 @@ LIMIT ${limit}`
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-xl font-bold tracking-tight text-white">Event explorer</h1>
-        <p className="mt-0.5 text-xs text-white/40">
+        <h1 className="font-display text-xl font-bold tracking-tight text-ink">Event explorer</h1>
+        <p className="mt-0.5 text-xs text-ink-mute">
           Raw events with the full properties payload · newest first · {windowLabel.toLowerCase()}, max {limit} rows
         </p>
       </div>
 
       {/* ------------------------------------------------ filters */}
-      <form method="GET" action="/admin/events" className="grid gap-3 rounded-xl border border-line bg-ink-900/70 p-4 sm:grid-cols-2 lg:grid-cols-6">
+      <form method="GET" action="/admin/events" className="grid gap-3 nb-card p-4 sm:grid-cols-2 lg:grid-cols-6">
         <div className="lg:col-span-2">
-          <label htmlFor="f-event" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-white/40">
+          <label htmlFor="f-event" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-ink-mute">
             Event
           </label>
           <input
@@ -145,7 +145,7 @@ LIMIT ${limit}`
             value={event}
             placeholder="download_completed"
             spellCheck={false}
-            className="w-full rounded-lg border border-line-strong bg-ink-950 px-3 py-2 font-mono text-[12.5px] text-white placeholder:text-white/25 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            className="nb-input py-2 font-mono text-[12.5px]"
           />
           <datalist id="known-events">
             {KNOWN_EVENTS.map((name) => (
@@ -154,7 +154,7 @@ LIMIT ${limit}`
           </datalist>
         </div>
         <div>
-          <label htmlFor="f-person" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-white/40">
+          <label htmlFor="f-person" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-ink-mute">
             Distinct ID
           </label>
           <input
@@ -164,11 +164,11 @@ LIMIT ${limit}`
             value={person}
             placeholder="exact distinct_id"
             spellCheck={false}
-            className="w-full rounded-lg border border-line-strong bg-ink-950 px-3 py-2 font-mono text-[12.5px] text-white placeholder:text-white/25 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            className="nb-input py-2 font-mono text-[12.5px]"
           />
         </div>
         <div>
-          <label htmlFor="f-prop" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-white/40">
+          <label htmlFor="f-prop" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-ink-mute">
             Property
           </label>
           <input
@@ -179,18 +179,18 @@ LIMIT ${limit}`
             placeholder="key:value"
             spellCheck={false}
             title='Substring match on one property, e.g. $geoip_country_code:IN or $current_url:/download'
-            className="w-full rounded-lg border border-line-strong bg-ink-950 px-3 py-2 font-mono text-[12.5px] text-white placeholder:text-white/25 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            className="nb-input py-2 font-mono text-[12.5px]"
           />
         </div>
         <div>
-          <label htmlFor="f-hours" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-white/40">
+          <label htmlFor="f-hours" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-ink-mute">
             Window
           </label>
           <select
             id="f-hours"
             name="hours"
             value={String(hours)}
-            className="w-full rounded-lg border border-line-strong bg-ink-950 px-3 py-2 text-[12.5px] text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            className="nb-input py-2 text-[12.5px]"
           >
             {HOURS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -201,14 +201,14 @@ LIMIT ${limit}`
         </div>
         <div className="flex items-end gap-2">
           <div className="flex-1">
-            <label htmlFor="f-limit" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-white/40">
+            <label htmlFor="f-limit" className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-ink-mute">
               Rows
             </label>
             <select
               id="f-limit"
               name="limit"
               value={limit}
-              className="w-full rounded-lg border border-line-strong bg-ink-950 px-3 py-2 text-[12.5px] text-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="nb-input py-2 text-[12.5px]"
             >
               {LIMIT_OPTIONS.map((value) => (
                 <option key={value} value={value}>
@@ -219,13 +219,13 @@ LIMIT ${limit}`
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-gradient-to-r from-accent-deep via-accent to-accent-soft px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+            className="rounded-lg bg-brand bg-brand px-4 py-2 text-xs font-semibold text-ink transition-opacity hover:opacity-90"
           >
             Filter
           </button>
         </div>
-        <p className="text-[11px] leading-relaxed text-white/35 sm:col-span-2 lg:col-span-6">
-          Leave a field empty to ignore it. <code className="text-white/55">Property</code> takes <code className="text-white/55">key:value</code>{' '}
+        <p className="text-[11px] leading-relaxed text-ink-mute sm:col-span-2 lg:col-span-6">
+          Leave a field empty to ignore it. <code className="text-ink-soft">Property</code> takes <code className="text-ink-soft">key:value</code>{' '}
           (substring) — a bare value searches event name and distinct ID instead.
         </p>
       </form>
@@ -240,7 +240,7 @@ LIMIT ${limit}`
           <div className="overflow-x-auto">
             <table className="w-full min-w-[44rem] text-left text-[12.5px]">
               <thead>
-                <tr className="text-[11px] uppercase tracking-wider text-white/35">
+                <tr className="text-[11px] uppercase tracking-wider text-ink-mute">
                   <th className="pb-2 pr-3 font-medium">Time (UTC)</th>
                   <th className="pb-2 pr-3 font-medium">Event</th>
                   <th className="pb-2 pr-3 font-medium">Distinct ID</th>
@@ -250,14 +250,14 @@ LIMIT ${limit}`
               </thead>
               <tbody>
                 {rows.map((r, index) => (
-                  <tr key={`${String(r[0])}-${index}`} className="border-t border-line/60 align-top odd:bg-ink-900/40 even:bg-ink-900/80">
-                    <td className="whitespace-nowrap py-2 pr-3 tabular-nums text-white/60">{formatTs(r[0])}</td>
-                    <td className="whitespace-nowrap py-2 pr-3 font-mono text-[11.5px] text-accent-soft">{String(r[1])}</td>
-                    <td className="max-w-44 truncate whitespace-nowrap py-2 pr-3 font-mono text-[11px] text-white/50" title={String(r[2] ?? '')}>
+                  <tr key={`${String(r[0])}-${index}`} className="border-t border-line-soft align-top odd:bg-surface even:bg-surface-2">
+                    <td className="whitespace-nowrap py-2 pr-3 tabular-nums text-ink-soft">{formatTs(r[0])}</td>
+                    <td className="whitespace-nowrap py-2 pr-3 font-mono text-[11.5px] text-brand-ink">{String(r[1])}</td>
+                    <td className="max-w-44 truncate whitespace-nowrap py-2 pr-3 font-mono text-[11px] text-ink-soft" title={String(r[2] ?? '')}>
                       {String(r[2])}
                     </td>
-                    <td className="max-w-40 truncate whitespace-nowrap py-2 pr-3 font-mono text-[11px] text-white/40" title={String(r[3] ?? '')}>
-                      {r[3] ? <CellValue value={r[3]} /> : <span className="text-white/25">—</span>}
+                    <td className="max-w-40 truncate whitespace-nowrap py-2 pr-3 font-mono text-[11px] text-ink-mute" title={String(r[3] ?? '')}>
+                      {r[3] ? <CellValue value={r[3]} /> : <span className="text-ink-mute">—</span>}
                     </td>
                     <td className="py-2">
                       <CellValue value={r[4]} />
@@ -268,7 +268,7 @@ LIMIT ${limit}`
             </table>
           </div>
         ) : (
-          <p className="text-sm text-white/35">
+          <p className="text-sm text-ink-mute">
             No events match those filters{error ? '' : ' in the selected window'}.
           </p>
         )}

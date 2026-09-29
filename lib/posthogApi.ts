@@ -117,6 +117,32 @@ async function resolveProjectId(): Promise<number> {
   if (explicit && /^\d+$/.test(explicit)) return Number(explicit)
 
   const base = getApiHost()
+
+  // 1. Try project-scoped @current endpoint (standard for scoped personal API keys)
+  try {
+    const currentRes = await fetch(`${base}/api/projects/@current/`, { headers: authHeaders() })
+    if (currentRes.ok) {
+      const data = (await currentRes.json()) as { id?: number; project_id?: number }
+      const resolvedId = data.project_id ?? data.id
+      if (typeof resolvedId === 'number' && resolvedId > 0) return resolvedId
+    }
+  } catch {
+    /* fallback to subsequent methods */
+  }
+
+  // 2. Try user profile endpoint
+  try {
+    const userRes = await fetch(`${base}/api/users/@me/`, { headers: authHeaders() })
+    if (userRes.ok) {
+      const userData = (await userRes.json()) as { team?: { id?: number; project_id?: number } }
+      const resolvedId = userData.team?.project_id ?? userData.team?.id
+      if (typeof resolvedId === 'number' && resolvedId > 0) return resolvedId
+    }
+  } catch {
+    /* fallback to global list */
+  }
+
+  // 3. Fallback: unscoped organization project listing
   let cursor: string | null = `${base}/api/projects/?limit=100`
   for (let attempt = 0; cursor && attempt < MAX_PROJECT_LIST_PAGES; attempt += 1) {
     const page = await fetch(cursor, { headers: authHeaders() })
@@ -129,7 +155,6 @@ async function resolveProjectId(): Promise<number> {
       const match = body.results.find((project) => project.public_token === POSTHOG_TOKEN)
       if (match) return match.id
     } else if (body.results.length === 1) {
-      // No public token to match against, exactly one project in scope: use it.
       return body.results[0].id
     }
     cursor = body.next ? new URL(body.next, base).toString() : null
@@ -163,25 +188,46 @@ export interface HogqlResult {
 }
 
 interface HogqlResponseShape {
-  results?: {
-    columns?: Array<{ name: string; type?: string } | string>
-    rows?: unknown[][]
-  }
+  results?:
+    | unknown[][]
+    | {
+        columns?: Array<{ name: string; type?: string } | string>
+        rows?: unknown[][]
+      }
+  columns?: Array<{ name: string; type?: string } | string>
   is_cached?: boolean
   query_status?: { id: string; complete: boolean }
 }
 
 const queryCache = new LRUCache<string, HogqlResult>({ max: 200, ttl: QUERY_CACHE_TTL_MS })
 
+function hasResults(data: HogqlResponseShape): boolean {
+  if (Array.isArray(data.results)) return true
+  if (data.results && typeof data.results === 'object' && 'rows' in data.results && Array.isArray(data.results.rows)) {
+    return true
+  }
+  return false
+}
+
 function normalizeResults(body: HogqlResponseShape): { columns: string[]; rows: unknown[][] } {
-  const raw = body.results
-  if (!raw || !Array.isArray(raw.rows)) {
+  let rows: unknown[][] | undefined
+  let rawColumns: Array<{ name: string; type?: string } | string> | undefined
+
+  if (Array.isArray(body.results)) {
+    rows = body.results
+    rawColumns = body.columns
+  } else if (body.results && typeof body.results === 'object' && 'rows' in body.results && Array.isArray(body.results.rows)) {
+    rows = body.results.rows
+    rawColumns = body.results.columns ?? body.columns
+  }
+
+  if (!rows || !Array.isArray(rows)) {
     throw new PosthogApiError('PostHog returned no result rows', 'The query may have run async — try again.')
   }
-  const columns = (raw.columns ?? []).map((column, index) =>
+  const columns = (rawColumns ?? []).map((column, index) =>
     typeof column === 'string' ? column : (column.name ?? `column_${index + 1}`)
   )
-  return { columns, rows: raw.rows }
+  return { columns, rows }
 }
 
 async function posthogQueryOnce(body: Record<string, unknown>): Promise<HogqlResult> {
@@ -208,7 +254,7 @@ async function posthogQueryOnce(body: Record<string, unknown>): Promise<HogqlRes
   if (!res.ok) throw await readApiError(res)
 
   const data = (await res.json()) as HogqlResponseShape
-  if (data.results?.rows) {
+  if (hasResults(data)) {
     return { ...normalizeResults(data), isCached: data.is_cached === true }
   }
   if (data.query_status && !data.query_status.complete) {
@@ -233,7 +279,7 @@ async function pollQuery(queryId: string): Promise<HogqlResult> {
     }
     if (!res.ok) throw await readApiError(res)
     const data = (await res.json()) as HogqlResponseShape
-    if (data.results?.rows) return { ...normalizeResults(data), isCached: data.is_cached === true }
+    if (hasResults(data)) return { ...normalizeResults(data), isCached: data.is_cached === true }
     if (!data.query_status || data.query_status.complete) {
       break // completed but shape changed; fall through to the error below
     }

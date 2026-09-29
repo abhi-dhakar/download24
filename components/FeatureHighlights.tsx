@@ -9,6 +9,9 @@ const ART: Record<FeatureArtVariant, FeatureArtVariant> = {
   layers: 'layers'
 }
 
+/** Candy plate colour per card, so the row reads as a sticker sheet. */
+const PLATE = ['bg-sun text-[#101010]', 'bg-punch text-[#101010]', 'bg-lime text-[#101010]', 'bg-aqua text-[#101010]']
+
 /**
  * Feature highlights: 4K, no registration, fast & free, multi-platform.
  * Each card pairs the marketing copy from `lib/seo.ts` with a `FeatureArt`
@@ -16,26 +19,30 @@ const ART: Record<FeatureArtVariant, FeatureArtVariant> = {
  */
 export function FeatureHighlights() {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {FEATURE_HIGHLIGHTS.map((feature) => {
+    <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {FEATURE_HIGHLIGHTS.map((feature, index) => {
         const variant = ART[feature.icon] ?? 'sparkles'
         return (
           <li
             key={feature.title}
-            className="relative overflow-hidden rounded-(--radius-card) border border-line bg-white/[0.02] p-4 transition-colors hover:border-line-strong"
+            className="nb-card nb-press-card flex h-full flex-col overflow-hidden"
           >
             <span
               aria-hidden="true"
-              className="absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent"
-            />
-            <div className="mx-auto w-full max-w-[190px]">
-              <FeatureArt variant={variant} />
+              className={`${PLATE[index % PLATE.length]} nb-halftone border-b-[3px] border-line bg-blend-normal p-3`}
+            >
+              <span className="mx-auto block w-full max-w-[168px]">
+                <FeatureArt variant={variant} />
+              </span>
+            </span>
+
+            <div className="flex flex-1 flex-col p-4">
+              <h3 className="font-display text-sm uppercase">{feature.title}</h3>
+              <p className="mt-2 flex-1 text-xs leading-relaxed text-ink-soft">{feature.description}</p>
+              <p className="mt-3">
+                <span className="nb-chip nb-chip-sm nb-chip-soft">{feature.keyword}</span>
+              </p>
             </div>
-            <h3 className="mt-2 text-sm font-semibold text-white">{feature.title}</h3>
-            <p className="mt-1.5 text-xs leading-relaxed text-white/55">{feature.description}</p>
-            <p className="mt-3 text-[10px] font-medium tracking-wide text-white/30 uppercase">
-              {feature.keyword}
-            </p>
           </li>
         )
       })}

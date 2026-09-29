@@ -20,8 +20,8 @@ export function AdminNav() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                  active ? 'bg-white/[0.08] text-white' : 'text-white/55 hover:bg-white/[0.05] hover:text-white'
+                className={`rounded-pill border-[2.5px] border-line px-3 py-1 font-mono text-[11px] font-bold tracking-wide uppercase transition-colors ${
+                  active ? 'bg-sun text-[#101010] shadow-hard-xs' : 'bg-surface text-ink hover:bg-surface-2'
                 }`}
                 aria-current={active ? 'page' : undefined}
               >

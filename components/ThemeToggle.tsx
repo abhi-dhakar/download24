@@ -6,6 +6,11 @@ import { Moon, Sun } from 'lucide-react'
 import { EVENTS } from '@/lib/analytics'
 import { track } from '@/lib/analyticsClient'
 
+/**
+ * Theme switch: a chunky square key that flips between the midnight ink theme
+ * (default) and the cream paper theme (`html.light`). The class is applied
+ * straight to `<html>` so the whole token set swaps without a re-render.
+ */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [mounted, setMounted] = useState(false)
@@ -36,23 +41,23 @@ export function ThemeToggle() {
   }
 
   if (!mounted) {
-    return (
-      <div className="h-9 w-9 rounded-xl border border-line bg-white/[0.04]" />
-    )
+    return <div className="h-10 w-10 rounded-btn border-[3px] border-line bg-surface" aria-hidden="true" />
   }
+
+  const nextLabel = theme === 'dark' ? 'light' : 'dark'
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      className="group flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white/[0.04] text-white/70 transition-all duration-200 hover:border-line-strong hover:bg-white/[0.08] hover:text-white active:scale-95"
+      aria-label={`Switch to ${nextLabel} mode`}
+      title={`Switch to ${nextLabel} mode`}
+      className="nb-btn nb-btn-sm h-10 w-10 !px-0"
     >
       {theme === 'dark' ? (
-        <Sun className="h-4 w-4 text-accent transition-transform duration-300 group-hover:rotate-45" />
+        <Sun className="h-4.5 w-4.5 text-sun" aria-hidden="true" />
       ) : (
-        <Moon className="h-4 w-4 text-accent transition-transform duration-300 group-hover:-rotate-12" />
+        <Moon className="h-4.5 w-4.5 text-brand" aria-hidden="true" />
       )}
     </button>
   )

@@ -63,12 +63,13 @@ const TIER_SHORT: Record<DownloadOption['tier'], string> = {
   original: 'FILE'
 }
 
+/** Brutalist chip fills for the option tags (always paired with an ink border). */
 const TAG_STYLE: Record<string, string> = {
-  best: 'bg-accent/20 text-accent-soft ring-accent/30',
-  'no-watermark': 'bg-ok/15 text-ok ring-ok/30',
-  smallest: 'bg-cyan-glow/15 text-cyan-glow ring-cyan-glow/25',
-  hd: 'bg-white/10 text-white/70 ring-white/15',
-  audio: 'bg-white/10 text-white/70 ring-white/15'
+  best: 'bg-sun text-[#101010]',
+  'no-watermark': 'bg-lime text-[#101010]',
+  smallest: 'bg-aqua text-[#101010]',
+  hd: 'bg-surface-2 text-ink-soft',
+  audio: 'bg-punch text-[#101010]'
 }
 
 const TAG_LABEL: Record<string, string> = {
@@ -147,31 +148,29 @@ function OptionRow({
     .join(' · ')
 
   return (
-    <li className="group flex items-center gap-3 rounded-xl border border-line bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-line-strong hover:bg-white/[0.05]">
+    <li className="flex flex-col gap-3 rounded-2xl border-[3px] border-line bg-surface p-3 transition-shadow sm:flex-row sm:items-center">
       <span
         aria-hidden="true"
-        className={`grid h-11 w-14 shrink-0 place-items-center rounded-lg ring-1 ring-inset ${
-          option.kind === 'audio'
-            ? 'bg-accent/10 text-accent-soft ring-accent/25'
-            : 'bg-ink-800 text-[13px] font-semibold text-white/85 ring-line'
+        className={`grid h-12 w-16 shrink-0 place-items-center rounded-xl border-[2.5px] border-line font-display text-[13px] ${
+          option.kind === 'audio' ? 'bg-punch text-[#101010]' : 'bg-sun text-[#101010]'
         }`}
       >
         {option.kind === 'audio' ? <Music className="h-4 w-4" /> : TIER_SHORT[option.tier]}
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="truncate text-sm font-medium text-white/95">{option.label}</span>
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <span className="truncate font-sans text-sm font-bold text-ink">{option.label}</span>
           {option.tags.map((tag) => (
             <span
               key={tag}
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset ${TAG_STYLE[tag] ?? TAG_STYLE.hd}`}
+              className={`nb-chip nb-chip-sm ${TAG_STYLE[tag] ?? TAG_STYLE.hd}`}
             >
               {TAG_LABEL[tag] ?? tag}
             </span>
           ))}
         </span>
-        <span className="mt-0.5 block break-words text-xs leading-5 text-white/50">
+        <span className="mt-1 block font-mono text-[11px] leading-5 break-words text-ink-mute">
           {spec}
           {option.sizeLabel ? (
             <>
@@ -186,53 +185,55 @@ function OptionRow({
         </span>
       </span>
 
-      <button
-        type="button"
-        onClick={copyLink}
-        className="hidden shrink-0 rounded-lg p-2 text-white/45 transition-colors hover:bg-white/5 hover:text-white/80 focus-visible:text-white sm:block"
-        aria-label={`Copy direct download link for ${option.label} of ${meta.title}`}
-        title="Copy download link"
-      >
-        {copied ? <Check className="h-4 w-4 text-ok" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
-      </button>
+      <span className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={copyLink}
+          className="grid h-10 w-10 place-items-center rounded-btn border-[2.5px] border-line bg-surface-2 text-ink transition-colors hover:bg-sun focus-visible:text-ink"
+          aria-label={`Copy direct download link for ${option.label} of ${meta.title}`}
+          title="Copy download link"
+        >
+          {copied ? <Check className="h-4 w-4 text-ok-ink" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+        </button>
 
-      {/* Step 3 navigation — hand the snapshot over, then push. */}
-      <Link
-        href={href}
-        onClick={() => {
-          writePending({
-            sourceUrl: meta.sourceUrl,
-            title: meta.title,
-            thumbnail: meta.thumbnail,
-            thumbnailWidth: meta.thumbnailWidth,
-            thumbnailHeight: meta.thumbnailHeight,
-            platformId: meta.platformId,
-            platformName: meta.platformName,
-            durationLabel: meta.durationLabel
-          })
-          // The conversion event: which preset the visitor actually picked.
-          track(EVENTS.qualitySelected, {
-            platform: meta.platformId,
-            source_host: hostOf(meta.sourceUrl),
-            quality: option.tier,
-            label: option.label,
-            kind: option.kind,
-            ext: option.ext,
-            needs_merge: option.needsMerge,
-            muxed: option.muxed,
-            size_bytes: option.bytes ?? null,
-            size_estimated: Boolean(option.estimated),
-            tags: option.tags,
-            duration_seconds: meta.durationSeconds ?? null,
-            is_playlist: meta.isPlaylist
-          })
-        }}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-3.5 py-2 text-sm font-semibold text-white shadow-glow transition-transform duration-150 hover:-translate-y-px active:translate-y-0"
-        aria-label={`Download ${option.label}${option.ext ? ` as ${option.ext.toUpperCase()}` : ''}: ${meta.title}`}
-      >
-        <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
-        Download
-      </Link>
+        {/* Step 3 navigation — hand the snapshot over, then push. */}
+        <Link
+          href={href}
+          onClick={() => {
+            writePending({
+              sourceUrl: meta.sourceUrl,
+              title: meta.title,
+              thumbnail: meta.thumbnail,
+              thumbnailWidth: meta.thumbnailWidth,
+              thumbnailHeight: meta.thumbnailHeight,
+              platformId: meta.platformId,
+              platformName: meta.platformName,
+              durationLabel: meta.durationLabel
+            })
+            // The conversion event: which preset the visitor actually picked.
+            track(EVENTS.qualitySelected, {
+              platform: meta.platformId,
+              source_host: hostOf(meta.sourceUrl),
+              quality: option.tier,
+              label: option.label,
+              kind: option.kind,
+              ext: option.ext,
+              needs_merge: option.needsMerge,
+              muxed: option.muxed,
+              size_bytes: option.bytes ?? null,
+              size_estimated: Boolean(option.estimated),
+              tags: option.tags,
+              duration_seconds: meta.durationSeconds ?? null,
+              is_playlist: meta.isPlaylist
+            })
+          }}
+          className="nb-btn nb-btn-brand nb-btn-sm"
+          aria-label={`Download ${option.label}${option.ext ? ` as ${option.ext.toUpperCase()}` : ''}: ${meta.title}`}
+        >
+          <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
+          Download
+        </Link>
+      </span>
     </li>
   )
 }
@@ -400,20 +401,17 @@ export function DownloadDetails() {
         <div className="w-56 sm:w-64">
           <LinkMissingArt />
         </div>
-        <div className="space-y-1.5">
-          <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
-            No link to download yet
+        <div className="space-y-2.5">
+          <h1 className="nb-h2">
+            No link to download <span className="nb-mark nb-mark-punch">yet</span>
           </h1>
-          <p className="text-sm leading-relaxed text-white/55">
+          <p className="nb-lead">
             This page reviews the video you paste on the homepage. Head back, copy a link from
             YouTube, Instagram, TikTok, Facebook or X, and press <em>Download</em>.
           </p>
         </div>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        <Link href="/" className="nb-btn nb-btn-brand nb-btn-lg">
+          <ArrowLeft className="h-4.5 w-4.5" aria-hidden="true" />
           Paste a link on the homepage
         </Link>
       </div>
@@ -425,23 +423,27 @@ export function DownloadDetails() {
       <DownloadStepper current={2} />
 
       <header className="mt-8 text-center">
-        <p className="text-xs font-semibold tracking-widest text-accent uppercase">
-          Step 2 of 3 · Choose quality
-        </p>
-        <h1 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">
-          {phase === 'ready' && meta ? 'Your video is ready' : 'Reading your link'}
+        <p className="nb-sticker mx-auto">Step 2 of 3 · Choose quality</p>
+        <h1 className="nb-h2 mt-5">
+          {phase === 'ready' && meta ? (
+            <>
+              Your video is <span className="nb-mark nb-mark-lime">ready</span>
+            </>
+          ) : (
+            'Reading your link'
+          )}
         </h1>
 
         {/* The link being processed, with an inline "change it" control. */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-          <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-white/[0.02] px-3 py-1.5 text-white/60">
-            <Link2 className="h-3.5 w-3.5 shrink-0 text-accent" aria-hidden="true" />
+          <span className="nb-chip nb-chip-sm nb-chip-soft max-w-full">
+            <Link2 className="h-3.5 w-3.5 shrink-0 text-brand-ink" aria-hidden="true" />
             <span className="truncate" data-ph-mask>{url}</span>
           </span>
           <button
             type="button"
             onClick={() => setSwapValue(url)}
-            className="rounded-full px-2.5 py-1.5 font-semibold text-accent transition-colors hover:bg-accent/10"
+            className="font-mono text-[11px] font-bold tracking-wide text-brand-ink uppercase underline decoration-[2.5px] underline-offset-4 hover:text-ink"
           >
             Try a different link
           </button>
@@ -456,12 +458,12 @@ export function DownloadDetails() {
               router.replace(`/download?url=${encodeURIComponent(next)}`)
               setSwapValue('')
             }}
-            className="mx-auto mt-3 flex max-w-xl items-center gap-2 rounded-2xl border border-line bg-white/[0.02] p-1.5"
+            className="nb-card-flat mx-auto mt-4 flex max-w-xl items-center gap-2 p-2"
           >
             <label htmlFor="swap-url" className="sr-only">
               Paste a different video link
             </label>
-            <Search className="ml-2 h-4 w-4 shrink-0 text-white/35" aria-hidden="true" />
+            <Search className="ml-2 h-4 w-4 shrink-0 text-ink-mute" aria-hidden="true" />
             <input
               id="swap-url"
               type="url"
@@ -471,12 +473,9 @@ export function DownloadDetails() {
               placeholder="https://…"
               value={swapValue}
               onChange={(event) => setSwapValue(event.target.value)}
-              className="min-w-0 flex-1 bg-transparent py-2 text-sm text-white placeholder-white/35 outline-none"
+              className="min-w-0 flex-1 bg-transparent py-2 text-sm text-ink outline-none"
             />
-            <button
-              type="submit"
-              className="shrink-0 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/15"
-            >
+            <button type="submit" className="nb-btn nb-btn-brand nb-btn-sm shrink-0">
               Analyze
             </button>
           </form>
@@ -489,36 +488,27 @@ export function DownloadDetails() {
 
         {/* -------------------------------------------------------- error */}
         {phase === 'error' && failure && (
-          <div
-            role="alert"
-            aria-live="assertive"
-            className="rounded-(--radius-card) border border-danger/25 bg-danger/[0.05] p-4 sm:p-5"
-          >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden="true" />
+          <div role="alert" aria-live="assertive" className="nb-card p-4 sm:p-5">
+            <div className="flex flex-wrap items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-btn border-[3px] border-line bg-danger">
+                <AlertTriangle className="h-5 w-5 text-white" aria-hidden="true" />
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-white">{failure.message}</p>
+                <p className="font-display text-sm uppercase">{failure.message}</p>
                 {failure.hint && (
-                  <p className="mt-1 text-xs leading-relaxed text-white/60">{failure.hint}</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">{failure.hint}</p>
                 )}
                 {failure.retryAfter && (
-                  <p className="mt-1 text-xs text-warn">
+                  <p className="mt-1.5 font-mono text-[11px] font-bold text-warn-ink uppercase">
                     Please wait {failure.retryAfter}s before retrying.
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 flex-col gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => void extract(url, { refresh: true })}
-                  className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/15"
-                >
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <button type="button" onClick={() => void extract(url, { refresh: true })} className="nb-btn nb-btn-sm nb-btn-sun">
                   Retry link
                 </button>
-                <Link
-                  href="/"
-                  className="rounded-lg px-3 py-1.5 text-center text-xs text-white/55 transition-colors hover:bg-white/5 hover:text-white"
-                >
+                <Link href="/" className="nb-btn nb-btn-sm">
                   New link
                 </Link>
               </div>
@@ -528,18 +518,17 @@ export function DownloadDetails() {
 
         {/* ------------------------------------------------------- invalid */}
         {phase === 'invalid' && failure && (
-          <div className="rounded-(--radius-card) border border-warn/25 bg-warn/[0.06] p-5 text-center">
-            <AlertTriangle className="mx-auto h-6 w-6 text-warn" aria-hidden="true" />
-            <p className="mt-2 text-sm font-semibold text-white">{failure.message}</p>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-white/55">
+          <div className="nb-card p-6 text-center">
+            <span className="mx-auto grid h-12 w-12 place-items-center rounded-btn border-[3px] border-line bg-warn">
+              <AlertTriangle className="h-6 w-6 text-[#101010]" aria-hidden="true" />
+            </span>
+            <p className="mt-3 font-display text-sm uppercase">{failure.message}</p>
+            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-ink-soft">
               Check the link for typos, or pick one from a supported platform — YouTube, Instagram,
               TikTok, Facebook, X, Vimeo, Dailymotion, Reddit, Twitch and TeraBox share links all work.
             </p>
-            <Link
-              href="/"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-4 py-2 text-sm font-semibold text-white shadow-glow"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <Link href="/" className="nb-btn nb-btn-brand mt-5">
+              <ArrowLeft className="h-4.5 w-4.5" aria-hidden="true" />
               Back to the homepage
             </Link>
           </div>
@@ -548,18 +537,18 @@ export function DownloadDetails() {
         {/* --------------------------------------------------------- ready */}
         {phase === 'ready' && data && meta && (
           <section aria-labelledby="download-details-heading" className="animate-rise">
-            <div className="glass-card rounded-(--radius-card) p-4 shadow-lift sm:p-6">
+            <div className="nb-panel p-4 sm:p-6">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/5 py-1 pr-3 pl-1 text-xs font-medium ring-1 ring-inset ring-line">
-                  <PlatformMark id={meta.platformId} className="h-5 w-5" title={meta.platformName} />
+                <span className="nb-chip nb-chip-sm nb-chip-soft">
+                  <PlatformMark id={meta.platformId} className="h-4 w-4" title={meta.platformName} />
                   {meta.platformName}
                 </span>
                 {data.extractor ? (
-                  <span className="text-[11px] text-white/40">via {data.extractor} extractor</span>
+                  <span className="font-mono text-[11px] text-ink-mute">via {data.extractor} extractor</span>
                 ) : null}
                 {typeof stats?.tookMs === 'number' ? (
                   <span
-                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-white/40"
+                    className="ml-auto inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-ink-mute uppercase"
                     title={stats.cached ? 'Served from the 15 minute in-memory LRU cache' : 'Freshly extracted with yt-dlp'}
                   >
                     <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
@@ -569,7 +558,7 @@ export function DownloadDetails() {
                 <button
                   type="button"
                   onClick={() => void extract(url, { refresh: true })}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+                  className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold text-brand-ink uppercase underline decoration-[2.5px] underline-offset-4 hover:text-ink"
                   aria-label="Re-run the extraction and bypass the cache"
                 >
                   <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
@@ -578,7 +567,7 @@ export function DownloadDetails() {
               </div>
 
               <div className="mt-4 flex flex-col gap-4 sm:flex-row">
-                <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-ink-800 ring-1 ring-inset ring-line sm:w-64">
+                <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-2xl border-[3px] border-line bg-surface-2 sm:w-64">
                   {meta.thumbnail && !thumbFailed ? (
                     // Width/height come from the extractor so the image cannot shift layout.
                     <img
@@ -592,48 +581,48 @@ export function DownloadDetails() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="absolute inset-0 grid place-items-center text-white/25">
+                    <span className="absolute inset-0 grid place-items-center text-ink-mute">
                       <PlatformMark id={meta.platformId} className="h-10 w-10" />
                     </span>
                   )}
                   {meta.durationLabel ? (
-                    <span className="absolute right-2 bottom-2 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-white">
+                    <span className="absolute right-2 bottom-2 rounded-md border-2 border-line bg-ink px-1.5 py-0.5 font-mono text-[11px] font-bold tabular-nums text-paper">
                       {meta.durationLabel}
                     </span>
                   ) : null}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h2 id="download-details-heading" className="text-base font-semibold text-white sm:text-lg">
+                  <h2 id="download-details-heading" className="nb-h3">
                     {meta.title}
                   </h2>
-                  <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-white/55">
+                  <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-ink-soft">
                     {meta.channel || meta.uploader ? (
                       <div className="flex gap-1.5">
-                        <dt className="text-white/40">Channel</dt>
-                        <dd className="font-medium text-white/80">{meta.channel ?? meta.uploader}</dd>
+                        <dt className="text-ink-mute">Channel</dt>
+                        <dd className="font-bold text-ink">{meta.channel ?? meta.uploader}</dd>
                       </div>
                     ) : null}
                     {meta.viewCount ? (
                       <div className="flex gap-1.5">
-                        <dt className="text-white/40">Plays</dt>
-                        <dd className="font-medium text-white/80">{formatViews(meta.viewCount)}</dd>
+                        <dt className="text-ink-mute">Plays</dt>
+                        <dd className="font-bold text-ink">{formatViews(meta.viewCount)}</dd>
                       </div>
                     ) : null}
                     {meta.uploadDateLabel ? (
                       <div className="flex gap-1.5">
-                        <dt className="text-white/40">Published</dt>
-                        <dd className="font-medium text-white/80">{meta.uploadDateLabel}</dd>
+                        <dt className="text-ink-mute">Published</dt>
+                        <dd className="font-bold text-ink">{meta.uploadDateLabel}</dd>
                       </div>
                     ) : null}
                     <div className="flex gap-1.5">
-                      <dt className="text-white/40">Source</dt>
+                      <dt className="text-ink-mute">Source</dt>
                       <dd className="font-medium">
                         <a
                           href={meta.canonicalUrl ?? meta.sourceUrl}
                           target="_blank"
                           rel="nofollow noopener noreferrer ugc"
-                          className="inline-flex max-w-[16rem] items-center gap-1 truncate text-white/80 underline decoration-white/25 underline-offset-2 hover:text-white"
+                          className="nb-link inline-flex max-w-[16rem] items-center gap-1 truncate"
                         >
                           {host}
                         </a>
@@ -641,7 +630,7 @@ export function DownloadDetails() {
                     </div>
                   </dl>
 
-                  <p className="mt-2 text-xs text-white/45">
+                  <p className="mt-3 text-xs leading-relaxed text-ink-mute">
                     {videoOptions.length} video preset{videoOptions.length === 1 ? '' : 's'}
                     {audioOptions.length > 0 ? ` and ${audioOptions.length} audio preset` : ''}
                     {highest ? `, up to ${highest.label}` : ''}. Pick one to continue to the final
@@ -653,7 +642,7 @@ export function DownloadDetails() {
               {meta.warning ? (
                 <p
                   role="status"
-                  className="mt-4 flex items-start gap-2 rounded-xl bg-warn/10 p-3 text-xs text-warn ring-1 ring-inset ring-warn/25"
+                  className="nb-inset mt-4 flex items-start gap-2 border-warn bg-warn/15 p-3 text-xs text-warn-ink"
                 >
                   <ShieldAlert className="mt-px h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{meta.warning}</span>
@@ -662,11 +651,11 @@ export function DownloadDetails() {
 
               <div className="mt-5 grid gap-5 lg:grid-cols-2">
                 <div>
-                  <h3 className="flex items-center gap-2 text-[11px] font-semibold text-white/45 uppercase tracking-wider">
+                  <h3 className="flex items-center gap-2 font-mono text-[11px] font-bold tracking-[0.14em] text-ink-mute uppercase">
                     <Video className="h-3.5 w-3.5" aria-hidden="true" />
                     Video quality
                     {meta.isLiveNow ? (
-                      <span className="rounded-full bg-danger/20 px-2 py-0.5 text-[10px] text-danger">live</span>
+                      <span className="nb-chip nb-chip-sm nb-chip-soft border-danger bg-danger/15 text-danger-ink">live</span>
                     ) : null}
                   </h3>
                   {videoOptions.length > 0 ? (
@@ -676,14 +665,14 @@ export function DownloadDetails() {
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-2 rounded-xl bg-ink-800 p-3 text-xs text-white/55">
+                    <p className="nb-inset mt-2 p-3 text-xs text-ink-soft">
                       This source only exposed an audio stream, so no video preset was offered.
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <h3 className="flex items-center gap-2 text-[11px] font-semibold text-white/45 uppercase tracking-wider">
+                  <h3 className="flex items-center gap-2 font-mono text-[11px] font-bold tracking-[0.14em] text-ink-mute uppercase">
                     <Music className="h-3.5 w-3.5" aria-hidden="true" />
                     Audio
                   </h3>
@@ -694,7 +683,7 @@ export function DownloadDetails() {
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-2 rounded-xl bg-ink-800 p-3 text-xs text-white/55">
+                    <p className="nb-inset mt-2 p-3 text-xs text-ink-soft">
                       MP3 conversion is unavailable for this link — either the platform provides no
                       audio track or the server has no ffmpeg installed.
                     </p>
@@ -703,7 +692,7 @@ export function DownloadDetails() {
               </div>
             </div>
 
-            <p className="mt-4 text-center text-xs text-white/40">
+            <p className="mt-4 text-center font-mono text-[11px] tracking-wide text-ink-mute uppercase">
               Nothing is stored on the server — streams are piped straight to your browser and the
               child process exits the moment your download ends.
             </p>

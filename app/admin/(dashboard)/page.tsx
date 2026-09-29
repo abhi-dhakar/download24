@@ -186,15 +186,15 @@ LIMIT 25`
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h1 className="font-display text-xl font-bold tracking-tight text-white">Overview</h1>
-          <p className="mt-0.5 text-xs text-white/40">
+          <h1 className="font-display text-xl font-bold tracking-tight text-ink">Overview</h1>
+          <p className="mt-0.5 text-xs text-ink-mute">
             Live PostHog data for this project · figures refresh at most every 60 seconds
           </p>
         </div>
       </div>
 
       {allFailed ? (
-        <div role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm leading-relaxed text-danger">
+        <div role="alert" className="rounded-xl border border-danger bg-danger/15 px-4 py-3 text-sm leading-relaxed text-danger-ink">
           Every PostHog query failed this render — the dashboard itself is fine, but the API is not reachable or the credentials were rejected.
           <br />
           <span className="font-mono text-xs">{firstError}</span>
@@ -230,7 +230,7 @@ LIMIT 25`
         <SectionCard title="Activity · 14 days" hint="events per day (UTC)" error={trend.error}>
           <TrendBars points={trendPoints} unit="events" />
           {trend.data ? (
-            <p className="mt-4 text-[11px] text-white/35">
+            <p className="mt-4 text-[11px] text-ink-mute">
               {fmt(trendPoints.reduce((acc, point) => acc + point.value, 0))} events total ·{' '}
               {fmt(trend.data.reduce((acc, r) => acc + num(r[2]), 0))} unique people over 14 days
             </p>
@@ -244,7 +244,7 @@ LIMIT 25`
           {topEvents.data && topEvents.data.length > 0 ? (
             <table className="w-full text-left text-[12.5px]">
               <thead>
-                <tr className="text-[11px] uppercase tracking-wider text-white/35">
+                <tr className="text-[11px] uppercase tracking-wider text-ink-mute">
                   <th className="pb-2 font-medium">Event</th>
                   <th className="pb-2 text-right font-medium">Count</th>
                   <th className="pb-2 text-right font-medium">People</th>
@@ -252,18 +252,18 @@ LIMIT 25`
               </thead>
               <tbody>
                 {topEvents.data.map((r) => (
-                  <tr key={String(r[0])} className="border-t border-line/60">
-                    <td className="max-w-40 truncate py-1.5 font-mono text-[11.5px] text-white/80" title={String(r[0])}>
+                  <tr key={String(r[0])} className="border-t border-line-soft">
+                    <td className="max-w-40 truncate py-1.5 font-mono text-[11.5px] text-ink" title={String(r[0])}>
                       {String(r[0])}
                     </td>
-                    <td className="py-1.5 text-right tabular-nums text-white/70">{fmt(num(r[1]))}</td>
-                    <td className="py-1.5 text-right tabular-nums text-white/50">{fmt(num(r[2]))}</td>
+                    <td className="py-1.5 text-right tabular-nums text-ink-soft">{fmt(num(r[1]))}</td>
+                    <td className="py-1.5 text-right tabular-nums text-ink-soft">{fmt(num(r[2]))}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-sm text-white/35">No events yet.</p>
+            <p className="text-sm text-ink-mute">No events yet.</p>
           )}
         </SectionCard>
 
@@ -272,15 +272,15 @@ LIMIT 25`
             <ol className="space-y-1">
               {topPages.data.map((r) => (
                 <li key={String(r[0])} className="flex items-baseline justify-between gap-3 text-[12.5px]">
-                  <span className="min-w-0 truncate font-mono text-[11.5px] text-white/70" title={String(r[0])}>
+                  <span className="min-w-0 truncate font-mono text-[11.5px] text-ink-soft" title={String(r[0])}>
                     {String(r[0])}
                   </span>
-                  <span className="shrink-0 tabular-nums text-white/50">{fmt(num(r[1]))}</span>
+                  <span className="shrink-0 tabular-nums text-ink-soft">{fmt(num(r[1]))}</span>
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="text-sm text-white/35">No pageviews yet.</p>
+            <p className="text-sm text-ink-mute">No pageviews yet.</p>
           )}
         </SectionCard>
 
@@ -289,17 +289,17 @@ LIMIT 25`
             <ol className="space-y-1">
               {topReferrers.data.map((r) => (
                 <li key={String(r[0])} className="flex items-baseline justify-between gap-3 text-[12.5px]">
-                  <span className="min-w-0 truncate font-mono text-[11.5px] text-white/70" title={String(r[0])}>
+                  <span className="min-w-0 truncate font-mono text-[11.5px] text-ink-soft" title={String(r[0])}>
                     {String(r[0])}
                   </span>
-                  <span className="shrink-0 tabular-nums text-white/50">
+                  <span className="shrink-0 tabular-nums text-ink-soft">
                     {fmt(num(r[1]))} · {fmt(num(r[2]))}p
                   </span>
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="text-sm text-white/35">No referrer data yet.</p>
+            <p className="text-sm text-ink-mute">No referrer data yet.</p>
           )}
         </SectionCard>
       </div>
@@ -310,7 +310,7 @@ LIMIT 25`
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] text-left text-[12.5px]">
               <thead>
-                <tr className="text-[11px] uppercase tracking-wider text-white/35">
+                <tr className="text-[11px] uppercase tracking-wider text-ink-mute">
                   <th className="pb-2 font-medium">Time (UTC)</th>
                   <th className="pb-2 font-medium">Event</th>
                   <th className="pb-2 font-medium">Code</th>
@@ -320,16 +320,16 @@ LIMIT 25`
               </thead>
               <tbody>
                 {recentFailures.data.map((r, index) => (
-                  <tr key={`${String(r[0])}-${index}`} className="border-t border-line/60 align-top">
-                    <td className="whitespace-nowrap py-1.5 pr-3 tabular-nums text-white/60">{formatTs(r[0])}</td>
-                    <td className="whitespace-nowrap py-1.5 pr-3 font-mono text-[11.5px] text-danger/90">{String(r[1])}</td>
+                  <tr key={`${String(r[0])}-${index}`} className="border-t border-line-soft align-top">
+                    <td className="whitespace-nowrap py-1.5 pr-3 tabular-nums text-ink-soft">{formatTs(r[0])}</td>
+                    <td className="whitespace-nowrap py-1.5 pr-3 font-mono text-[11.5px] text-danger-ink/90">{String(r[1])}</td>
                     <td className="whitespace-nowrap py-1.5 pr-3">
                       <CellValue value={r[2]} />
                     </td>
                     <td className="max-w-72 py-1.5 pr-3">
                       <CellValue value={r[3]} />
                     </td>
-                    <td className="max-w-36 truncate whitespace-nowrap py-1.5 font-mono text-[11px] text-white/45" title={String(r[4] ?? '')}>
+                    <td className="max-w-36 truncate whitespace-nowrap py-1.5 font-mono text-[11px] text-ink-mute" title={String(r[4] ?? '')}>
                       {String(r[4])}
                     </td>
                   </tr>
@@ -338,7 +338,7 @@ LIMIT 25`
             </table>
           </div>
         ) : (
-          <p className="text-sm text-white/35">No failures in the last 48 hours. 🎉</p>
+          <p className="text-sm text-ink-mute">No failures in the last 48 hours. 🎉</p>
         )}
       </SectionCard>
     </div>

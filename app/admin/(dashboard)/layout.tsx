@@ -48,15 +48,15 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-50 border-b border-line bg-ink-950/80 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-950/65">
+      <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-xl supports-[backdrop-filter]:bg-paper/80">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-4">
             <Link href="/admin" className="flex shrink-0 items-center gap-2" aria-label="Admin overview">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/30 bg-accent/10">
-                <ShieldCheck className="h-4 w-4 text-accent-soft" aria-hidden />
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand bg-brand/15">
+                <ShieldCheck className="h-4 w-4 text-brand-ink" aria-hidden />
               </span>
-              <span className="hidden font-display text-sm font-bold tracking-tight text-white sm:inline">
-                download24 <span className="text-white/40">admin</span>
+              <span className="hidden font-display text-sm font-bold tracking-tight text-ink sm:inline">
+                download24 <span className="text-ink-mute">admin</span>
               </span>
             </Link>
             <AdminNav />
@@ -67,7 +67,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
               href={project.uiOverviewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group hidden items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs text-white/55 transition-colors hover:border-accent/40 hover:text-white md:inline-flex"
+              className="group hidden items-center gap-1.5 rounded-pill border-[2.5px] border-line bg-surface px-3 py-1.5 font-mono text-[11px] font-bold uppercase text-ink-soft transition-colors hover:border-brand hover:text-ink md:inline-flex"
               title={`Open ${project.name} in the PostHog web UI`}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-ok" aria-hidden />
@@ -82,13 +82,13 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
 
       <footer className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-[11px] text-white/30 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-[11px] text-ink-mute sm:px-6">
           <p>
             Session signed with <code>ADMIN_SECRET</code>, valid 12 h · queries run server-side against{' '}
-            <code className="text-white/45">{project.apiHost}</code>
+            <code className="text-ink-mute">{project.apiHost}</code>
           </p>
           <p>
-            <Link href="/" className="underline-offset-2 hover:text-white/60 hover:underline">
+            <Link href="/" className="underline-offset-2 hover:text-ink-soft hover:underline">
               ← Back to the site
             </Link>
           </p>

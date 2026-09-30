@@ -156,60 +156,67 @@ export default async function PlatformPage({ params }: PageProps) {
         <section
           id="downloader"
           aria-labelledby="downloader-heading"
-          className="relative isolate overflow-hidden border-b-[3px] border-line bg-paper-2 pt-10 pb-14 sm:pt-14 sm:pb-16"
+          className="relative isolate overflow-hidden border-b-[3px] border-line bg-paper-2 pt-12 pb-16 sm:pt-16 sm:pb-20"
         >
-          <div aria-hidden="true" className="nb-grid-lines pointer-events-none absolute inset-0 opacity-60" />
+          <div aria-hidden="true" className="nb-grid-lines pointer-events-none absolute inset-0 opacity-40" />
           {/* The network's own colour, as a solid brutalist slab. */}
           <div
             aria-hidden="true"
-            className="platform-hero-glow pointer-events-none absolute -top-24 -right-24 h-72 w-72 rotate-12 rounded-[2.5rem] border-[3px] border-line"
+            className="platform-hero-glow pointer-events-none absolute -top-24 -right-24 h-72 w-72 rotate-12 rounded-[2.5rem] border-[3px] border-line opacity-80"
             style={{ background: config.theme.heroGradient, backgroundColor: config.theme.primary }}
           />
 
-          <div className="relative mx-auto w-full max-w-3xl px-4 text-center sm:px-6">
-            <div
-              className="platform-pill inline-flex items-center gap-2 rounded-pill border-[3px] border-line px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-[0.12em] uppercase shadow-hard-xs"
-              style={brandVars}
-            >
-              <span className="grid h-4 w-4 place-items-center">
-                <PlatformMark id={platform.id} className="h-4 w-4" />
-              </span>
-              <span>{config.title}</span>
-              <span aria-hidden="true">•</span>
-              <span>Free &amp; fast</span>
-            </div>
+          <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
+            {/* 2-column layout: text on left, downloader box on right (equal 50/50 columns) */}
+            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12">
+              {/* Left column: Text & Information */}
+              <div className="text-center lg:text-left">
+                <div
+                  className="platform-pill inline-flex items-center gap-2 rounded-pill border-[3px] border-line px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-[0.12em] uppercase shadow-hard-xs"
+                  style={brandVars}
+                >
+                  <span className="grid h-4 w-4 place-items-center">
+                    <PlatformMark id={platform.id} className="h-4 w-4" />
+                  </span>
+                  <span>{config.title}</span>
+                  <span aria-hidden="true">•</span>
+                  <span>Free &amp; fast</span>
+                </div>
 
-            <h1 id="downloader-heading" className="nb-h1 mt-6">
-              {config.h1}{' '}
-              <span className="platform-highlight" style={brandVars}>
-                {config.h1Highlight}
-              </span>
-            </h1>
+                <h1 id="downloader-heading" className="nb-h1 mt-2 text-ink">
+                  {config.h1}{' '}
+                  <span className="platform-highlight" style={brandVars}>
+                    {config.h1Highlight}
+                  </span>
+                </h1>
 
-            <p className="nb-lead mx-auto mt-4 max-w-xl">{config.subtitle}</p>
+                <p className="nb-lead mx-auto mt-6 max-w-xl text-ink-soft lg:mx-0">{config.subtitle}</p>
 
-            <div className="mt-8 text-left">
-              <Downloader />
-            </div>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                  <span className="nb-chip nb-chip-sm nb-chip-soft">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-ok-ink" aria-hidden="true" />
+                    Max: {MAX_RES_LABEL[platform.maxResolution]}
+                  </span>
+                  {platform.noWatermark && (
+                    <span className="nb-chip nb-chip-sm nb-chip-lime">
+                      <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                      No watermark
+                    </span>
+                  )}
+                  {platform.supportsMp3 && (
+                    <span className="nb-chip nb-chip-sm nb-chip-punch">
+                      <Music className="h-3.5 w-3.5" aria-hidden="true" />
+                      MP3 audio
+                    </span>
+                  )}
+                  <span className="nb-chip nb-chip-sm nb-chip-soft">No registration</span>
+                </div>
+              </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-              <span className="nb-chip nb-chip-sm nb-chip-soft">
-                <CheckCircle2 className="h-3.5 w-3.5 text-ok-ink" aria-hidden="true" />
-                Max: {MAX_RES_LABEL[platform.maxResolution]}
-              </span>
-              {platform.noWatermark && (
-                <span className="nb-chip nb-chip-sm nb-chip-lime">
-                  <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
-                  No watermark
-                </span>
-              )}
-              {platform.supportsMp3 && (
-                <span className="nb-chip nb-chip-sm nb-chip-punch">
-                  <Music className="h-3.5 w-3.5" aria-hidden="true" />
-                  MP3 audio
-                </span>
-              )}
-              <span className="nb-chip nb-chip-sm nb-chip-soft">No registration</span>
+              {/* Right column: Downloader input box */}
+              <div className="w-full">
+                <Downloader />
+              </div>
             </div>
           </div>
         </section>

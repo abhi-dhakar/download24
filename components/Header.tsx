@@ -11,29 +11,13 @@ import { PlatformMark } from './PlatformMark'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV = [
-  { href: '/downloader', label: 'Downloader' },
+  { href: '/', label: 'Downloader' },
   { href: '/features', label: 'Features' },
   { href: '/how-it-works', label: 'How it works' },
   { href: '/platforms', label: 'Platforms' },
   { href: '/faq', label: 'FAQ' }
 ]
 
-/** Candy ticker that rides above the nav bar on every page. */
-const TICKER = [
-  'Up to 4K Ultra HD',
-  'No watermark',
-  'MP3 audio',
-  'No signup',
-  '15-minute cache',
-  '1,000+ sites'
-]
-
-/**
- * Each marquee track repeats the list twice so it is always wider than the
- * viewport; the animation then translates exactly one track width (`-50%`) and
- * the loop is seamless on any screen.
- */
-const TICKER_TRACK = [...TICKER, ...TICKER]
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -48,30 +32,10 @@ export function Header() {
   }, [mobileOpen])
 
   const isActive = (href: string) =>
-    href === '/downloader' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
+    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <header className="sticky top-0 z-50">
-      {/* ---------------------------------------------------- candy ticker */}
-      <div
-        aria-hidden="true"
-        className="nb-marquee border-b-[3px] border-line bg-sun py-[5px] text-[#101010]"
-      >
-        {[0, 1].map((track) => (
-          <div key={track} className="nb-marquee-track gap-7 pr-7">
-            {TICKER_TRACK.map((item, index) => (
-              <span
-                key={`${item}-${index}`}
-                className="flex shrink-0 items-center gap-2.5 font-mono text-[10px] font-bold tracking-[0.22em] uppercase"
-              >
-                {item}
-                <span aria-hidden="true">★</span>
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
-
       {/* ------------------------------------------------------- nav plate */}
       <div className="border-b-[3px] border-line bg-paper/92 backdrop-blur-md supports-[backdrop-filter]:bg-paper/80">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
@@ -82,7 +46,7 @@ export function Header() {
             className="group flex shrink-0 items-center gap-2.5"
           >
             <Logo className="h-9 w-9 transition-transform duration-150 group-hover:-rotate-6" />
-            <span className="hidden text-ink sm:inline-flex">
+            <span className="inline-flex text-ink">
               <Wordmark />
             </span>
           </Link>

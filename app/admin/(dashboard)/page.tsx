@@ -114,10 +114,10 @@ ORDER BY day`
     ),
     runSection(
       'admin-overview-top-pages',
-      `SELECT coalesce(nullIf(properties.$pathname, ''), splitByString('#', splitByString('?', properties.$current_url)[1])[1]) AS path, count() AS n
+      `SELECT splitByString('#', splitByString('?', properties.$current_url))[1] AS path, count() AS n
 FROM events
 WHERE event = '$pageview'
-  AND (properties.$current_url IS NOT NULL OR properties.$pathname IS NOT NULL)
+  AND properties.$current_url IS NOT NULL
   AND timestamp >= now() - INTERVAL 7 DAY
 GROUP BY path
 ORDER BY n DESC

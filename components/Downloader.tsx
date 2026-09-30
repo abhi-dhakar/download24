@@ -241,8 +241,9 @@ export function Downloader() {
           </span>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-          <div className="relative flex min-w-0 flex-1 items-center">
+        <div className="flex flex-col gap-3">
+          {/* Full-width link input box */}
+          <div className="relative flex w-full items-center">
             <Link2
               className="pointer-events-none absolute left-3.5 h-5 w-5 shrink-0 text-ink-mute"
               aria-hidden="true"
@@ -273,7 +274,7 @@ export function Downloader() {
               }}
               onPaste={onPaste}
               onInvalid={(event) => event.preventDefault()}
-              className="nb-input !py-3.5 pr-11 pl-11 text-[15px] sm:text-base"
+              className="nb-input w-full !py-3.5 pr-11 pl-11 text-[15px] sm:text-base"
             />
 
             {url.length > 0 && (
@@ -289,22 +290,23 @@ export function Downloader() {
             )}
           </div>
 
-          <div className="flex shrink-0 items-stretch gap-3">
+          {/* Action buttons row */}
+          <div className="flex w-full items-stretch gap-3">
             <button
               type="button"
               onClick={pasteFromClipboard}
-              className="nb-btn nb-btn-sun sm:!px-5"
+              className="nb-btn nb-btn-sun px-4 sm:px-6 shrink-0"
               title="Paste link from clipboard"
               aria-label="Paste link from clipboard"
             >
               <ClipboardPaste className="h-4.5 w-4.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Paste</span>
+              <span>Paste</span>
             </button>
 
             <button
               type="submit"
               disabled={navigating}
-              className="nb-btn nb-btn-brand nb-btn-lg flex-1 justify-center sm:flex-none"
+              className="nb-btn nb-btn-brand nb-btn-lg flex-1 justify-center"
             >
               {navigating ? 'Opening…' : 'Download'}
               <ArrowRight className="h-4.5 w-4.5" aria-hidden="true" />

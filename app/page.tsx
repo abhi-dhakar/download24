@@ -7,7 +7,6 @@ import { FaqAccordion } from '@/components/FaqAccordion'
 import { FeatureHighlights } from '@/components/FeatureHighlights'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
-import { HeroIllustration } from '@/components/illustrations/HeroIllustration'
 import { HowToDownload } from '@/components/HowToDownload'
 import { PlatformBar } from '@/components/PlatformBar'
 import { PlatformGrid } from '@/components/PlatformGrid'
@@ -225,85 +224,95 @@ export default function HomePage() {
         <section
           id="downloader"
           aria-labelledby="downloader-heading"
-          className="relative isolate overflow-hidden border-b-[3px] border-line bg-paper-2 pt-10 pb-14 sm:pt-14 sm:pb-20"
+          className="relative isolate overflow-hidden border-b-[3px] border-line bg-paper-2 pt-12 pb-16 sm:pt-16 sm:pb-20"
         >
-          <div aria-hidden="true" className="nb-grid-lines pointer-events-none absolute inset-0 opacity-60" />
-          <div aria-hidden="true" className="nb-swipe animate-float opacity-60" />
+          {/* Subtle clean background textures */}
+          <div aria-hidden="true" className="nb-grid-lines pointer-events-none absolute inset-0 opacity-40" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-radial-[circle_at_center,transparent_20%,var(--color-paper-2)_90%] opacity-80"
+          />
 
-          <div className="relative mx-auto grid w-full max-w-6xl items-start gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
-            {/* -------------------------------------------------- left: copy */}
-            <div className="text-center lg:text-left">
-              <p className="nb-sticker">
-                <Star className="h-3 w-3 fill-current" aria-hidden="true" />
+          <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
+            {/* 2-column layout: text on left, downloader box on right (equal 50/50 columns) */}
+            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12">
+              {/* Left column: Text & Information */}
+              <div className="text-center lg:text-left">
+                <p className="nb-sticker">
+                
                 Free · No signup · No app
               </p>
+                {/* Main heading */}
+                <h1 id="downloader-heading" className="nb-h1 mt-2 text-ink">
+                  Download Videos in{' '}
+                  <span className="relative inline-block">
+                    <span className="nb-mark nb-mark-punch">4K</span>
+                  </span>{' '}
+                  &amp; <span className="nb-mark nb-mark-aqua">MP3</span>
+                  <span className="mt-6 block font-sans text-[clamp(1.05rem,2.1vw,1.35rem)] font-medium tracking-normal text-ink-mute normal-case">
+                    Fast, watermark-free downloads from YouTube, Instagram, Facebook, TikTok, X, &amp; 1,000+ sites
+                  </span>
+                </h1>
 
-              <h1 id="downloader-heading" className="nb-h1 mt-5 text-ink">
-                Download videos in{' '}
-                <span className="relative inline-block">
-                  <span className="nb-mark nb-mark-punch">4K</span>
-                </span>{' '}
-                &amp; <span className="nb-mark nb-mark-aqua">MP3</span>
-                <span className="block text-[clamp(1.1rem,2.2vw,1.7rem)] text-ink-mute">
-                  no watermark, ever
-                </span>
-              </h1>
+                {/* Subtitle */}
+                <p className="nb-lead mx-auto mt-6 max-w-xl text-ink-soft lg:mx-0">
+                  Paste any video link to extract high-bitrate MP4 or MP3 in seconds. No ads, no popups, and no registration required.
+                </p>
 
-              <p className="nb-lead mx-auto mt-5 max-w-xl lg:mx-0">
-                Paste any link from YouTube, Instagram Reels, Facebook, TikTok, X, or a TeraBox share.
-                High speed, no watermarks, and no registration required.
-              </p>
+                {/* Feature highlight chips */}
+                <ul className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                  {[
+                    '100% Free Forever',
+                    'Up to 4K 60fps',
+                    'Clean MP3 Audio',
+                    'No Watermark',
+                    'No Software Required'
+                  ].map((item) => (
+                    <li key={item} className="nb-chip nb-chip-sm nb-chip-soft">
+                      <Check className="h-3 w-3 text-ok-ink" strokeWidth={3.5} aria-hidden="true" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
 
-              <div className="mt-8">
-                <Downloader />
+                <noscript>
+                  <p className="nb-card-flat mx-auto mt-6 max-w-xl bg-surface p-3 text-xs text-ink-soft lg:mx-0">
+                    JavaScript is required for the live extractor. You can use the direct API:{' '}
+                    <code>/api/parse?url=YOUR-LINK</code>
+                  </p>
+                </noscript>
               </div>
 
-              <ul className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                {['No registration', 'No software', 'Server-side ffmpeg'].map((item) => (
-                  <li key={item} className="nb-chip nb-chip-sm nb-chip-soft">
-                    <Check className="h-3 w-3 text-ok-ink" strokeWidth={3.5} aria-hidden="true" />
-                    {item}
-                  </li>
+              {/* Right column: Downloader input box */}
+              <div className="w-full">
+                <Downloader />
+              </div>
+            </div>
+
+            {/* Stats band */}
+            <div className="mt-14 w-full">
+              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                {HERO_STATS.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="nb-card p-4 text-center transition-transform duration-150 hover:-translate-y-0.5"
+                  >
+                    <dt className="sr-only">{stat.label}</dt>
+                    <dd>
+                      <span
+                        className={`inline-block rounded-lg border-[2.5px] border-line px-3 py-0.5 font-display text-lg sm:text-xl ${stat.tone}`}
+                      >
+                        {stat.value}
+                      </span>
+                      <span className="mt-2.5 block font-display text-[11px] tracking-wider text-ink uppercase">
+                        {stat.label}
+                      </span>
+                      <span className="mt-0.5 block font-mono text-[10px] text-ink-mute">{stat.sub}</span>
+                    </dd>
+                  </div>
                 ))}
-              </ul>
-
-              <noscript>
-                <p className="nb-card-flat mx-auto mt-6 max-w-xl bg-surface p-3 text-xs text-ink-soft lg:mx-0">
-                  JavaScript is required for the live extractor. You can use the direct API:{' '}
-                  <code>/api/parse?url=YOUR-LINK</code>
-                </p>
-              </noscript>
+              </dl>
             </div>
-
-            {/* --------------------------------------------- right: artwork */}
-            <div aria-hidden="true" className="mx-auto w-full max-w-[460px] lg:max-w-none">
-              <HeroIllustration />
-            </div>
-          </div>
-
-          {/* --------------------------------------------------- stats band */}
-          <div className="relative mx-auto mt-12 w-full max-w-5xl px-4 sm:px-6">
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {HERO_STATS.map((stat, index) => (
-                <div
-                  key={stat.label}
-                  className={`nb-card nb-press-card p-4 text-center ${index % 2 === 0 ? 'nb-tilt-l' : 'nb-tilt-r'}`}
-                >
-                  <dt className="sr-only">{stat.label}</dt>
-                  <dd>
-                    <span
-                      className={`inline-block rounded-lg border-[3px] border-line px-2.5 py-0.5 font-display text-xl ${stat.tone}`}
-                    >
-                      {stat.value}
-                    </span>
-                    <span className="mt-2.5 block font-display text-[11px] tracking-wide text-ink uppercase">
-                      {stat.label}
-                    </span>
-                    <span className="mt-0.5 block font-mono text-[10px] text-ink-mute">{stat.sub}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
           </div>
         </section>
 

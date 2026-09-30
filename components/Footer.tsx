@@ -7,7 +7,7 @@ import { Logo, Wordmark } from './Logo'
 const YEAR = new Date().getFullYear()
 
 const EXPLORE = [
-  { href: '/downloader', label: 'Downloader' },
+  { href: '/', label: 'Downloader' },
   { href: '/features', label: 'Features' },
   { href: '/how-it-works', label: 'How it works' },
   { href: '/platforms', label: 'Supported platforms' },

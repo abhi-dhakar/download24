@@ -3,11 +3,20 @@
 /**
  * Last-resort error boundary (replaces the root layout when it crashes).
  * Reports the failure to PostHog error tracking, then offers a reload.
+ *
+ * Styled with the same neo-brutalist language as the rest of the site, but
+ * written with inline styles on purpose: this boundary renders when the root
+ * layout is gone, so no Tailwind class or webfont can be relied on.
  */
 
 import { useEffect } from 'react'
 
 import { trackException } from '@/lib/analyticsClient'
+
+const INK = '#101010'
+const PAPER = '#fff9ec'
+const SUN = '#ffd23f'
+const BRAND = '#2f5bff'
 
 export default function GlobalError({
   error,
@@ -28,29 +37,66 @@ export default function GlobalError({
           minHeight: '100dvh',
           display: 'grid',
           placeItems: 'center',
-          background: '#05070f',
-          color: '#fff',
-          fontFamily: 'ui-sans-serif, system-ui, sans-serif'
+          background: PAPER,
+          backgroundImage: `radial-gradient(rgba(16,16,16,0.14) 1.15px, transparent 1.15px)`,
+          backgroundSize: '22px 22px',
+          color: INK,
+          fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+          padding: 20
         }}
       >
-        <main style={{ maxWidth: 480, padding: 24, textAlign: 'center' }}>
-          <p style={{ fontSize: 13, letterSpacing: 2, textTransform: 'uppercase', opacity: 0.6 }}>download24</p>
-          <h1 style={{ fontSize: 24, margin: '12px 0' }}>Something went wrong</h1>
-          <p style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.7 }}>
-            The page hit an unexpected error. It has been reported automatically — reloading usually fixes it.
+        <main
+          style={{
+            maxWidth: 520,
+            width: '100%',
+            padding: 32,
+            textAlign: 'center',
+            background: '#ffffff',
+            border: `3px solid ${INK}`,
+            borderRadius: 22,
+            boxShadow: `11px 11px 0 0 ${INK}`
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '4px 14px',
+              border: `3px solid ${INK}`,
+              borderRadius: 999,
+              background: SUN,
+              fontSize: 12,
+              letterSpacing: 1.5,
+              textTransform: 'uppercase',
+              fontWeight: 800
+            }}
+          >
+            download24
+          </span>
+
+          <h1 style={{ fontSize: 28, lineHeight: 1.05, margin: '18px 0 0', textTransform: 'uppercase' }}>
+            Something went wrong
+          </h1>
+          <p style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.75, margin: '12px 0 0' }}>
+            The page hit an unexpected error. It has been reported automatically — reloading usually fixes
+            it.
           </p>
+
           <button
             type="button"
             onClick={() => reset()}
             style={{
-              marginTop: 20,
-              padding: '10px 18px',
+              marginTop: 24,
+              padding: '12px 22px',
               borderRadius: 12,
-              border: 0,
-              background: '#0ea5e9',
-              color: '#fff',
-              fontWeight: 600,
-              cursor: 'pointer'
+              border: `3px solid ${INK}`,
+              background: BRAND,
+              color: '#ffffff',
+              fontSize: 15,
+              fontWeight: 800,
+              letterSpacing: 0.5,
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              boxShadow: `5px 5px 0 0 ${INK}`
             }}
           >
             Try again

@@ -17,15 +17,13 @@ interface Props {
 }
 
 /**
- * The horizontal "works with" strip rendered directly underneath the navbar.
+ * The horizontal "works with" strip of platform chips.
  *
- * It lists every network in `lib/platforms.ts`, so a new platform shows up in
- * this bar, in the grid and in the API allow-list from the same one-line edit.
- *
- * It is deliberately a Server Component: the strip is pure markup, so it ships
- * zero JavaScript, lands inside the static HTML (crawlable, and no hydration
- * flicker) and cannot shift the layout. Below `xl` it scrolls sideways as a
- * snap strip instead of wrapping, which keeps the bar exactly one row tall.
+ * Neo-brutalist treatment: every chip is a bordered sticker whose hover state
+ * is painted with the network's own brand hue (`--chip-brand`), so the strip
+ * stays monochrome-ink at rest and lights up in brand colours under the
+ * cursor. Still a Server Component — pure markup, zero JavaScript, one row
+ * tall at any width (it scrolls sideways below `xl`).
  */
 export function PlatformBar({
   activePlatformId,
@@ -34,31 +32,31 @@ export function PlatformBar({
   return (
     <nav
       aria-label="Supported platforms"
-      className="relative z-30 border-b border-line bg-ink-950/65 backdrop-blur-xl"
+      className="relative z-30 border-b-[3px] border-line bg-paper-2"
     >
-      <div className="mx-auto flex h-12 w-full max-w-[100rem] items-center gap-3 px-3 sm:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-[100rem] items-center gap-3 px-3 sm:px-6">
         {/* Section label — only when there is room for it (xl+). */}
         <div className="hidden shrink-0 items-center gap-2 xl:flex">
-          <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+          <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-70" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-ok" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full border-2 border-line bg-ok" />
           </span>
-          <span className="text-[11px] font-semibold tracking-wider text-white/45 uppercase">
+          <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-ink-mute uppercase">
             Works with
           </span>
         </div>
 
         {/* The platform chips. */}
-        <ul className="flex flex-1 snap-x snap-mandatory items-center gap-2 overflow-x-auto py-3 [-ms-overflow-style:none] [scrollbar-width:none] max-xl:[mask-image:linear-gradient(to_right,transparent,#000_14px,#000_calc(100%-14px),transparent)] xl:justify-center [&::-webkit-scrollbar]:hidden">
+        <ul className="flex flex-1 snap-x snap-mandatory items-center gap-2 overflow-x-auto py-2 [-ms-overflow-style:none] [scrollbar-width:none] max-xl:[mask-image:linear-gradient(to_right,transparent,#000_14px,#000_calc(100%-14px),transparent)] xl:justify-center [&::-webkit-scrollbar]:hidden">
           {PLATFORMS.map((platform) => {
             const slug = getSlugForPlatformId(platform.id)
             const isActive = platform.id === activePlatformId
-            /** Brand hue the chip glows with on hover/focus (see `.platform-chip`). */
+            /** Brand hue the chip lights up with on hover/focus (see `.platform-chip`). */
             const brandStyle = { '--chip-brand': platform.accent } as CSSProperties
 
             const label = (
               <>
-                <span className="grid h-4 w-4 shrink-0 place-items-center transition-transform duration-200 group-hover:scale-110">
+                <span className="grid h-4 w-4 shrink-0 place-items-center">
                   <PlatformMark id={platform.id} className="h-4 w-4" />
                 </span>
                 <span className="whitespace-nowrap">{platform.displayName}</span>
@@ -72,7 +70,7 @@ export function PlatformBar({
                     aria-current="page"
                     data-active="true"
                     style={brandStyle}
-                    className="platform-chip inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-semibold text-white"
+                    className="platform-chip platform-chip-active inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 font-mono text-[11px] font-bold uppercase"
                   >
                     {label}
                   </span>
@@ -86,7 +84,7 @@ export function PlatformBar({
                   href={slug ? `/${slug}` : '#downloader'}
                   style={brandStyle}
                   title={`${platform.name} downloader · up to ${MAX_RES_LABEL[platform.maxResolution]}`}
-                  className="platform-chip group inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-medium text-white/70 hover:-translate-y-px hover:text-white focus-visible:-translate-y-px"
+                  className="platform-chip inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 font-mono text-[11px] font-bold uppercase"
                 >
                   {label}
                 </Link>
@@ -98,7 +96,7 @@ export function PlatformBar({
         {/* Escape hatch for the ~1,000 other sites the engine can resolve. */}
         <Link
           href={allPlatformsHref}
-          className="hidden shrink-0 items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1.5 text-[12px] font-semibold text-accent transition-colors hover:border-accent/50 hover:bg-accent/15 hover:text-white sm:inline-flex"
+          className="nb-chip nb-chip-sm nb-chip-brand hidden shrink-0 items-center gap-1.5 sm:inline-flex"
         >
           <span>1,000+ more</span>
           <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />

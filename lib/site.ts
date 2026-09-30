@@ -70,7 +70,7 @@ export const SITE = {
   locale: 'en_US',
   language: 'en',
   ogImage: '/opengraph-image',
-  themeColor: '#05070f',
+  themeColor: '#0d0d14',
   organization: {
     name: 'download24',
     url: canonicalOrigin,

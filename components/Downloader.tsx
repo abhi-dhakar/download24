@@ -1,17 +1,29 @@
 'use client'
 
 /**
- * Download24.in — hero extractor input (step 1 of the three-page flow).
+ * download24.in — hero extractor input (step 1 of the three-page flow).
  *
  * The homepage and every dedicated platform page render this box. It handles
  * client-side validation, clipboard integration and local history — then hands
  * over to `/download?url=…` (step 2) which runs the actual extraction and
  * lists the quality options.
+ *
+ * Visually this is the loudest object on the site: a bordered plate with a
+ * hard offset shadow, a fat input, and two chunky action buttons.
  */
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowDownToLine, ClipboardPaste, History, Info, Search, Trash2, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowRight,
+  ClipboardPaste,
+  History,
+  Info,
+  Link2,
+  Trash2,
+  X
+} from 'lucide-react'
 
 import { EVENTS, hostOf } from '@/lib/analytics'
 import { track } from '@/lib/analyticsClient'
@@ -215,16 +227,24 @@ export function Downloader() {
 
   return (
     <div className="w-full">
-      {/* Outer Glow Card Wrapper */}
       <form
         onSubmit={submit}
-        className="group relative rounded-[1.4rem] bg-gradient-to-r from-accent-soft/75 via-accent/50 to-accent-deep/75 p-[1px] shadow-glow transition-shadow focus-within:shadow-[0_0_0_1px_rgba(56,189,248,0.45),0_15px_60px_-15px_rgba(2,132,199,0.4)]"
         aria-labelledby="downloader-heading"
+        className="nb-panel nb-press nb-press-lg p-3 sm:p-4"
       >
-        <div className="flex flex-col gap-1 rounded-[calc(1.4rem-1px)] bg-ink-950/95 p-1.5 sm:flex-row sm:items-center sm:gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2.5">
+          <span className="nb-kicker">Paste your link</span>
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="nb-chip nb-chip-sm nb-chip-lime">4K</span>
+            <span className="nb-chip nb-chip-sm nb-chip-punch">MP3</span>
+            <span className="nb-chip nb-chip-sm nb-chip-soft">No signup</span>
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
           <div className="relative flex min-w-0 flex-1 items-center">
-            <Search
-              className="pointer-events-none absolute left-3.5 h-5 w-5 shrink-0 text-white/30 group-focus-within:text-accent/80 transition-colors"
+            <Link2
+              className="pointer-events-none absolute left-3.5 h-5 w-5 shrink-0 text-ink-mute"
               aria-hidden="true"
             />
             <label htmlFor={inputId} className="sr-only">
@@ -242,7 +262,7 @@ export function Downloader() {
               spellCheck={false}
               aria-describedby={helpId}
               aria-invalid={invalidHint ? true : undefined}
-              placeholder="Paste a YouTube, Instagram, TikTok, X or TeraBox link..."
+              placeholder="https://youtube.com/watch?v=…"
               value={url}
               onChange={(event) => {
                 const next = event.target.value
@@ -253,93 +273,86 @@ export function Downloader() {
               }}
               onPaste={onPaste}
               onInvalid={(event) => event.preventDefault()}
-              className="w-full min-w-0 rounded-xl bg-transparent py-3 pr-24 pl-11 text-[15px] text-white placeholder-white/35 outline-none transition-all sm:py-4 sm:text-base md:pr-28"
+              className="nb-input !py-3.5 pr-11 pl-11 text-[15px] sm:text-base"
             />
 
-            {/* Action buttons embedded in the input bar */}
-            <div className="absolute right-2 flex items-center gap-1">
-              {url.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearInput}
-                  className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/5 hover:text-white/80"
-                  title="Clear field"
-                  aria-label="Clear link input"
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
-              )}
-
+            {url.length > 0 && (
               <button
                 type="button"
-                onClick={pasteFromClipboard}
-                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
-                title="Paste link from clipboard"
-                aria-label="Paste link from clipboard"
+                onClick={clearInput}
+                className="absolute right-2.5 rounded-md border-2 border-line bg-surface-2 p-1 text-ink-mute transition-colors hover:bg-danger hover:text-white"
+                title="Clear field"
+                aria-label="Clear link input"
               >
-                <ClipboardPaste className="h-3.5 w-3.5" aria-hidden="true" />
-                <span className="hidden xs:inline">Paste</span>
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
-            </div>
+            )}
           </div>
 
-          {/* Submit Button — kicks off the three-page flow */}
-          <button
-            type="submit"
-            disabled={navigating}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-3 text-sm font-bold text-white transition-all hover:brightness-[1.08] active:scale-[0.98] disabled:cursor-progress disabled:opacity-85 sm:w-auto sm:shrink-0 shadow-md"
-            aria-keyshortcuts="/"
-          >
-            {navigating ? (
-              <>
-                <svg viewBox="0 0 24 24" className="h-4 w-4 animate-spin" aria-hidden="true" fill="none">
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
-                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-                <span>Opening…</span>
-              </>
-            ) : (
-              <>
-                <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
-                <span>Download</span>
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+          <div className="flex shrink-0 items-stretch gap-3">
+            <button
+              type="button"
+              onClick={pasteFromClipboard}
+              className="nb-btn nb-btn-sun sm:!px-5"
+              title="Paste link from clipboard"
+              aria-label="Paste link from clipboard"
+            >
+              <ClipboardPaste className="h-4.5 w-4.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Paste</span>
+            </button>
 
-      {/* Auxiliary Metadata Row */}
-      <div className="mt-2.5 flex flex-col gap-1.5 px-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <p id={helpId} className="text-white/45" role={invalidHint ? 'alert' : undefined}>
+            <button
+              type="submit"
+              disabled={navigating}
+              className="nb-btn nb-btn-brand nb-btn-lg flex-1 justify-center sm:flex-none"
+            >
+              {navigating ? 'Opening…' : 'Download'}
+              <ArrowRight className="h-4.5 w-4.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
+        {/* ------------------------------------------------------- help line */}
+        <div
+          id={helpId}
+          className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 font-mono text-[11px] leading-relaxed text-ink-mute"
+        >
           {invalidHint ? (
-            <span className="inline-flex items-center gap-1.5 text-danger font-medium">
+            <span className="flex items-center gap-1.5 font-bold text-danger-ink" role="alert">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {invalidHint}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5">
-              <Info className="h-3.5 w-3.5 shrink-0 text-white/30" aria-hidden="true" />
-              HD MP4, Audio MP3, and 4K Ultra HD supported • Press <kbd className="rounded bg-white/10 px-1 font-mono text-[10px]">/</kbd> to focus
+            <span className="flex flex-wrap items-center gap-1.5">
+              <Info className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              HD MP4, MP3 audio and 4K Ultra HD • press
+              <kbd className="rounded-md border-2 border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] font-bold">
+                /
+              </kbd>
+              to focus
             </span>
           )}
-        </p>
-        {notice && (
-          <p className="text-warn font-medium sm:text-right" role="status">
-            {notice}
-          </p>
-        )}
-      </div>
+          {notice && (
+            <span className="font-bold text-warn-ink" role="status">
+              {notice}
+            </span>
+          )}
+        </div>
+      </form>
 
-      {/* History panel */}
+      {/* ------------------------------------------------------ recent links */}
       {recent.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white/[0.01] p-2.5 text-xs">
-          <span className="inline-flex items-center gap-1 text-white/40">
-            <History className="h-3.5 w-3.5 text-white/30" aria-hidden="true" />
-            Recently Saved:
+        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold tracking-[0.14em] text-ink-mute uppercase">
+            <History className="h-3.5 w-3.5" aria-hidden="true" />
+            Recent
           </span>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {recent.map((entry) => (
-              <span key={entry} className="inline-flex items-center rounded-lg bg-white/[0.04] p-0.5 pr-2 pl-2 border border-line hover:bg-white/[0.08] transition-colors">
+              <span
+                key={entry}
+                className="inline-flex items-center gap-1 rounded-pill border-[2.5px] border-line bg-surface py-0.5 pr-1.5 pl-3"
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -347,7 +360,7 @@ export function Downloader() {
                     track(EVENTS.recentLinkReused, { source_host: hostOf(entry) })
                     goToStepTwo(entry, 'recent')
                   }}
-                  className="max-w-[12rem] truncate text-white/70 hover:text-white"
+                  className="max-w-[12rem] truncate font-mono text-[11px] font-bold text-ink-soft hover:text-ink"
                   title={entry}
                 >
                   {entry.replace(/^https?:\/\//, '').replace(/^www\./, '')}
@@ -359,8 +372,8 @@ export function Downloader() {
                     setRecent(next)
                     writeRecent(next)
                   }}
-                  className="ml-1.5 rounded-md p-0.5 text-white/30 hover:bg-white/10 hover:text-danger"
-                  aria-label={`Remove history entry`}
+                  className="rounded-full border-2 border-transparent p-0.5 text-ink-mute hover:border-line hover:text-danger-ink"
+                  aria-label="Remove history entry"
                 >
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
@@ -374,10 +387,10 @@ export function Downloader() {
               setRecent([])
               writeRecent([])
             }}
-            className="ml-auto inline-flex items-center gap-1 text-white/35 hover:text-white/70"
+            className="ml-auto flex items-center gap-1 font-mono text-[11px] font-bold text-ink-mute uppercase underline decoration-2 underline-offset-4 hover:text-ink"
           >
             <Trash2 className="h-3 w-3" aria-hidden="true" />
-            Clear History
+            Clear
           </button>
         </div>
       )}

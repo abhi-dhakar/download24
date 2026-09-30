@@ -33,7 +33,7 @@ interface Props {
 
 export function PlatformMark({ id, className = 'h-6 w-6', branded = true, title }: Props) {
   const platform = getPlatform(id)
-  const accent = branded ? (platform?.accent ?? '#0284c7') : 'currentColor'
+  const accent = branded ? (platform?.accent ?? 'var(--color-brand)') : 'currentColor'
 
   const common = {
     viewBox: '0 0 24 24',
@@ -66,14 +66,11 @@ export function PlatformMark({ id, className = 'h-6 w-6', branded = true, title 
       return (
         <svg {...common}>
           {title ? <title>{title}</title> : null}
-          <defs>
-            <linearGradient id="ig-glow" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stopColor="#f7b42c" />
-              <stop offset="0.45" stopColor={accent} />
-              <stop offset="1" stopColor="#5b51d8" />
-            </linearGradient>
-          </defs>
-          <rect x="2.5" y="2.5" width="19" height="19" rx="5.6" fill="url(#ig-glow)" />
+          {/* Flat brand fill on purpose: a per-instance gradient id would be
+              duplicated every time this mark is rendered twice on a page. */}
+          <rect x="2.5" y="2.5" width="19" height="19" rx="5.6" fill={accent} />
+          <circle cx="5.6" cy="18.4" r="1.1" fill="#f7b42c" />
+          <circle cx="18.4" cy="5.6" r="1.1" fill="#5b51d8" />
           <rect x="6.4" y="6.4" width="11.2" height="11.2" rx="4" fill="none" stroke="#fff" strokeWidth="1.7" />
           <circle cx="12" cy="12" r="2.7" fill="none" stroke="#fff" strokeWidth="1.7" />
           <circle cx="16.6" cy="7.4" r="1.15" fill="#fff" />
@@ -114,7 +111,7 @@ export function PlatformMark({ id, className = 'h-6 w-6', branded = true, title 
       return (
         <svg {...common}>
           {title ? <title>{title}</title> : null}
-          <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="#0b0b0d" stroke={accent} strokeWidth="0.8" />
+          <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="#0b0b0d" stroke={accent} strokeWidth="1.4" />
           <path
             d="M5.6 4.8h3.9l3.4 4.7 4-4.7h3.1l-5.9 6.7 6.3 8h-3.9l-3.7-4.8-4 4.8H5.7l6.2-7.2z"
             fill={accent}
@@ -126,7 +123,7 @@ export function PlatformMark({ id, className = 'h-6 w-6', branded = true, title 
       return (
         <svg {...common}>
           {title ? <title>{title}</title> : null}
-          <rect x="1.5" y="3.5" width="21" height="17" rx="4" fill="#101a24" stroke={accent} strokeWidth="0.8" />
+          <rect x="1.5" y="3.5" width="21" height="17" rx="4" fill="#101a24" stroke={accent} strokeWidth="1.4" />
           <path
             d="M5.6 9.4c1.4-1.3 2.7-2 3.5-1.3.8.8.7 2.1 1.3 4 .6 1.9 1 2.9 1.7 2.9.7 0 1.8-1.5 2.7-3.4.9-1.9-.2-3-2-2.4 1-3.3 4.3-4.8 6.5-3.8 2.2 1 2 3.9.2 7-1.9 3.2-4.3 5.9-6.7 6.9-2.4.9-3.7-1.5-4.6-4-.5-1.5-1-3-1.4-4-.5-1-1.1-.3-2 .2z"
             fill={accent}
@@ -172,13 +169,8 @@ export function PlatformMark({ id, className = 'h-6 w-6', branded = true, title 
       return (
         <svg {...common}>
           {title ? <title>{title}</title> : null}
-          <defs>
-            <linearGradient id="tb-glow" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stopColor={accent} />
-              <stop offset="1" stopColor={platform?.accentAlt ?? '#7cc4ff'} />
-            </linearGradient>
-          </defs>
-          <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#tb-glow)" />
+          <rect x="2" y="2" width="20" height="20" rx="6" fill={accent} />
+          <path d="M2 17.4 22 6.6v10.8a4.6 4.6 0 0 1-4.6 4.6H6.6A4.6 4.6 0 0 1 2 17.4Z" fill={platform?.accentAlt ?? '#7cc4ff'} />
           <path
             d="M12 6.6a4.3 4.3 0 0 0-4.15 3.14A3 3 0 0 0 8.5 15.8h7a2.85 2.85 0 0 0 .3-5.68A4.3 4.3 0 0 0 12 6.6z"
             fill="#ffffff"

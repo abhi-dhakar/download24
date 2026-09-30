@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowDownToLine } from 'lucide-react'
+import { ArrowDownToLine, MessageCircleQuestion } from 'lucide-react'
 
 import { FaqAccordion } from '@/components/FaqAccordion'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
+import { CtaPlate, NoteCard, PageHero } from '@/components/ui/PageBlocks'
 import { FAQ_ITEMS, breadcrumbSchema, faqPageSchema, serializeJsonLd } from '@/lib/seo'
 import { canonicalOrigin } from '@/lib/site'
 
@@ -35,6 +36,13 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true }
 }
 
+const SHORTCUTS = [
+  { label: 'Supported platforms', href: '/platforms', tone: 'bg-lime text-[#101010]' },
+  { label: 'Quality guide', href: '/#qualities', tone: 'bg-sun text-[#101010]' },
+  { label: 'How it works', href: '/how-it-works', tone: 'bg-aqua text-[#101010]' },
+  { label: 'Privacy policy', href: '/privacy', tone: 'bg-punch text-[#101010]' }
+]
+
 export default function FaqPage() {
   return (
     <>
@@ -59,47 +67,68 @@ export default function FaqPage() {
       />
       <Header />
       <main id="main" className="flex-1">
-        {/* ---------------------------------------------------------- hero */}
-        <section className="relative isolate overflow-hidden pt-12 pb-4 sm:pt-16">
-          <div aria-hidden="true" className="hero-aurora animate-float opacity-25" />
-          <div className="relative mx-auto w-full max-w-3xl px-4 text-center sm:px-6">
-            <p className="text-xs font-semibold tracking-widest text-accent uppercase">FAQ</p>
-            <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-              Questions people ask about <span className="text-gradient">download24</span>
-            </h1>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/60 sm:text-base">
-              {FAQ_ITEMS.length} honest answers — also published as{' '}
-              <span className="font-mono text-white/70">FAQPage</span> structured data so search
-              engines can surface them directly.
-            </p>
-          </div>
-        </section>
+        <PageHero
+          kicker="FAQ"
+          title={
+            <>
+              Questions people ask about <span className="nb-mark nb-mark-punch">download24</span>
+            </>
+          }
+          lead={
+            <>
+              {FAQ_ITEMS.length} honest answers — also published as <code>FAQPage</code> structured data
+              so search engines can surface them directly.
+            </>
+          }
+          tone="bg-punch text-[#101010]"
+        >
+          {SHORTCUTS.map((shortcut) => (
+            <Link
+              key={shortcut.href}
+              href={shortcut.href}
+              className={`nb-chip nb-chip-sm ${shortcut.tone} hover:underline hover:decoration-[2.5px] hover:underline-offset-4`}
+            >
+              {shortcut.label}
+            </Link>
+          ))}
+        </PageHero>
 
-        {/* ------------------------------------------------------ accordion */}
-        <section aria-label="Frequently asked questions" className="mx-auto w-full max-w-4xl px-4 pt-10 sm:px-6">
+        <section aria-label="Frequently asked questions" className="mx-auto w-full max-w-4xl px-4 pt-14 sm:px-6">
           <FaqAccordion />
         </section>
 
-        {/* ----------------------------------------------------------- CTA */}
-        <section aria-labelledby="faq-cta" className="mx-auto w-full max-w-4xl px-4 py-14 sm:px-6">
-          <div className="relative overflow-hidden rounded-[1.6rem] border border-line bg-gradient-to-br from-accent/[0.15] via-transparent to-cyan-glow/[0.10] p-6 text-center sm:p-10">
-            <div aria-hidden="true" className="hero-aurora animate-float opacity-30" />
-            <div className="relative">
-              <h2 id="faq-cta" className="font-display text-2xl font-bold text-white">
-                Still have a link to save?
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
-                The downloader is one click away — no account, no limits.
-              </p>
-              <Link
-                href="/"
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-6 py-3 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
-              >
-                <ArrowDownToLine className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
-                Open the downloader
+        <section aria-label="Still stuck" className="mx-auto w-full max-w-4xl px-4 pt-14 sm:px-6">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <NoteCard
+              tone="bg-aqua text-[#101010]"
+              tab="Still stuck?"
+              title="Try the link swap"
+              icon={<MessageCircleQuestion className="h-3.5 w-3.5" aria-hidden="true" />}
+            >
+              If an extraction fails, open the quality page and use <strong>“Try a different link”</strong>
+              . It re-runs the resolver without reloading the page — usually enough when a source is
+              briefly rate-limiting us.
+            </NoteCard>
+            <NoteCard tone="bg-sun text-[#101010]" tab="Privacy" title="Nothing is kept">
+              We do not log the link you paste. Extraction results live in memory for 15 minutes and the
+              file itself is streamed straight to your browser — see the{' '}
+              <Link href="/privacy" className="nb-link">
+                privacy policy
               </Link>
-            </div>
+              .
+            </NoteCard>
           </div>
+        </section>
+
+        <section aria-labelledby="faq-cta" className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
+          <CtaPlate
+            headingId="faq-cta"
+            heading="Still have a link to save?"
+            body="The downloader is one click away — no account, no limits."
+            cta="Open the downloader"
+            tone="bg-sun"
+            icon={<ArrowDownToLine className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden="true" />}
+          />
         </section>
       </main>
       <Footer />

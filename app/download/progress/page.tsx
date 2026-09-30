@@ -25,7 +25,7 @@ export default function DownloadProgressPage() {
   return (
     <>
       <Header />
-      <main id="main" className="flex-1 px-4 py-10 sm:py-14">
+      <main id="main" className="flex-1 bg-paper-2 px-4 py-10 sm:py-14">
         <Suspense fallback={<LoadingPanel />}>
           <DownloadFlow />
         </Suspense>

@@ -9,6 +9,7 @@ import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { PlatformBar } from '@/components/PlatformBar'
 import { PlatformMark } from '@/components/PlatformMark'
+import { CtaPlate } from '@/components/ui/PageBlocks'
 import {
   PLATFORM_PAGES,
   getPlatformPageBySlug,
@@ -88,6 +89,9 @@ function StructuredData({ id, data }: { id: string; data: unknown }) {
   )
 }
 
+/** Candy plate colour per step, matching the shared HowTo cards. */
+const STEP_TONE = ['bg-sun', 'bg-punch', 'bg-lime', 'bg-aqua']
+
 export default async function PlatformPage({ params }: PageProps) {
   const { slug } = await params
   const config = getPlatformPageBySlug(slug)
@@ -115,6 +119,13 @@ export default async function PlatformPage({ params }: PageProps) {
     }
   ]
 
+  /** Brand-hue variables consumed by the `.platform-*` helpers in globals.css. */
+  const brandVars = {
+    '--platform-primary': config.theme.primary,
+    '--platform-on-light': config.theme.primaryOnLight,
+    '--platform-glow': config.theme.glowRgb
+  } as CSSProperties
+
   return (
     <>
       <StructuredData id="ld-web-application" data={webApplicationSchema()} />
@@ -140,219 +151,190 @@ export default async function PlatformPage({ params }: PageProps) {
 
       <main id="main" className="flex-1">
         {/* ================================================================ */}
-        {/* PLATFORM THEMED HERO SECTION                                     */}
+        {/* PLATFORM HERO                                                    */}
         {/* ================================================================ */}
         <section
           id="downloader"
           aria-labelledby="downloader-heading"
-          className="relative isolate overflow-hidden pt-12 pb-12 sm:pt-20 sm:pb-16"
+          className="relative isolate overflow-hidden border-b-[3px] border-line bg-paper-2 pt-10 pb-14 sm:pt-14 sm:pb-16"
         >
-          {/* Custom Platform Ambient Glow */}
+          <div aria-hidden="true" className="nb-grid-lines pointer-events-none absolute inset-0 opacity-60" />
+          {/* The network's own colour, as a solid brutalist slab. */}
           <div
             aria-hidden="true"
-            className="platform-hero-glow pointer-events-none absolute inset-0 -top-24 h-[38rem] opacity-35 blur-3xl transition-all"
-            style={{
-              background: config.theme.heroGradient
-            }}
+            className="platform-hero-glow pointer-events-none absolute -top-24 -right-24 h-72 w-72 rotate-12 rounded-[2.5rem] border-[3px] border-line"
+            style={{ background: config.theme.heroGradient, backgroundColor: config.theme.primary }}
           />
-          <div aria-hidden="true" className="grid-lines opacity-30" />
 
-          <div className="relative mx-auto w-full max-w-4xl px-4 text-center sm:px-6">
-            {/* Platform Brand Pill */}
+          <div className="relative mx-auto w-full max-w-3xl px-4 text-center sm:px-6">
             <div
-              className="platform-pill inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold backdrop-blur-md shadow-sm transition-all"
-              style={{
-                borderColor: `rgba(${config.theme.glowRgb}, 0.35)`,
-                backgroundColor: `rgba(${config.theme.glowRgb}, 0.08)`
-              }}
+              className="platform-pill inline-flex items-center gap-2 rounded-pill border-[3px] border-line px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-[0.12em] uppercase shadow-hard-xs"
+              style={brandVars}
             >
               <span className="grid h-4 w-4 place-items-center">
                 <PlatformMark id={platform.id} className="h-4 w-4" />
               </span>
               <span>{config.title}</span>
-              <span className="text-white/30">•</span>
-              <span className="text-white/70">100% Free &amp; Fast</span>
+              <span aria-hidden="true">•</span>
+              <span>Free &amp; fast</span>
             </div>
 
-            {/* Dynamic H1 Headline */}
-            <h1
-              id="downloader-heading"
-              className="mt-6 font-display text-[clamp(2.1rem,4.5vw,3.6rem)] font-extrabold tracking-tight text-white leading-[1.15]"
-            >
+            <h1 id="downloader-heading" className="nb-h1 mt-6">
               {config.h1}{' '}
-              <span
-                className="platform-highlight"
-                style={
-                  {
-                    '--platform-primary': config.theme.primary,
-                    '--platform-on-light': config.theme.primaryOnLight,
-                    '--platform-glow': config.theme.glowRgb
-                  } as CSSProperties
-                }
-              >
+              <span className="platform-highlight" style={brandVars}>
                 {config.h1Highlight}
               </span>
             </h1>
 
-            {/* Platform Subtitle */}
-            <p className="mx-auto mt-4 max-w-xl text-balance text-sm leading-relaxed text-white/65 sm:text-base">
-              {config.subtitle}
-            </p>
+            <p className="nb-lead mx-auto mt-4 max-w-xl">{config.subtitle}</p>
 
-            {/* Downloader Input Box */}
-            <div className="mt-8">
+            <div className="mt-8 text-left">
               <Downloader />
             </div>
 
-            {/* Quick Feature Badges */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5 text-xs text-white/60">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
-                <CheckCircle2 className="h-3.5 w-3.5 text-ok" />
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              <span className="nb-chip nb-chip-sm nb-chip-soft">
+                <CheckCircle2 className="h-3.5 w-3.5 text-ok-ink" aria-hidden="true" />
                 Max: {MAX_RES_LABEL[platform.maxResolution]}
               </span>
               {platform.noWatermark && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-ok/30 bg-ok/10 px-3 py-1 text-ok">
-                  <Zap className="h-3.5 w-3.5 fill-current" />
-                  No Watermark
+                <span className="nb-chip nb-chip-sm nb-chip-lime">
+                  <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                  No watermark
                 </span>
               )}
               {platform.supportsMp3 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-accent">
-                  <Music className="h-3.5 w-3.5" />
-                  MP3 Audio
+                <span className="nb-chip nb-chip-sm nb-chip-punch">
+                  <Music className="h-3.5 w-3.5" aria-hidden="true" />
+                  MP3 audio
                 </span>
               )}
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
-                No Registration
-              </span>
+              <span className="nb-chip nb-chip-sm nb-chip-soft">No registration</span>
             </div>
           </div>
         </section>
 
         {/* ================================================================ */}
-        {/* PLATFORM HIGHLIGHT FEATURES                                      */}
+        {/* WHY THIS ENGINE                                                  */}
         {/* ================================================================ */}
-        <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
+        <section className="mx-auto w-full max-w-5xl px-4 py-14 sm:px-6">
           <div className="text-center">
-            <p
-              className="platform-tint-text text-xs font-semibold tracking-widest uppercase"
-              style={
-                {
-                  '--platform-primary': config.theme.primary,
-                  '--platform-on-light': config.theme.primaryOnLight
-                } as CSSProperties
-              }
-            >
-              Why use download24
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">
-              Engineered specifically for {config.shortTitle}
+            <p className="nb-kicker">Why use download24</p>
+            <h2 className="nb-h2 mt-3">
+              Engineered for{' '}
+              <span className="nb-mark" style={{ backgroundColor: config.theme.primary, color: '#101010' }}>
+                {config.shortTitle}
+              </span>
             </h2>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
             {config.features.map((feature, idx) => (
-              <div
+              <article
                 key={idx}
-                className="group relative overflow-hidden rounded-(--radius-card) border border-line bg-white/[0.02] p-6 transition-all duration-300 hover:border-line-strong hover:bg-white/[0.04]"
+                className="nb-card nb-press-card flex h-full flex-col overflow-hidden"
               >
-                <div
-                  className="platform-tint-text mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1"
-                  style={
-                    {
-                      backgroundColor: `rgba(${config.theme.glowRgb}, 0.15)`,
-                      borderColor: `rgba(${config.theme.glowRgb}, 0.3)`,
-                      '--platform-primary': config.theme.primary,
-                      '--platform-on-light': config.theme.primaryOnLight
-                    } as CSSProperties
-                  }
-                >
-                  <Sparkles className="h-5 w-5" />
+                <span
+                  aria-hidden="true"
+                  className="block h-2.5 w-full border-b-[3px] border-line"
+                  style={{ backgroundColor: config.theme.primary }}
+                />
+                <div className="flex flex-1 flex-col p-5">
+                  <span
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-btn border-[3px] border-line"
+                    style={{ backgroundColor: config.theme.primary }}
+                  >
+                    <Sparkles className="h-5 w-5 text-[#101010]" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-4 font-display text-sm uppercase">{feature.title}</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{feature.description}</p>
                 </div>
-                <h3 className="text-base font-bold text-white group-hover:text-white">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 text-xs leading-relaxed text-white/60">
-                  {feature.description}
-                </p>
-              </div>
+              </article>
             ))}
           </div>
         </section>
 
         {/* ================================================================ */}
-        {/* STEP-BY-STEP GUIDE                                               */}
+        {/* STEP-BY-STEP                                                     */}
         {/* ================================================================ */}
-        <section className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 border-t border-line/60">
-          <div className="text-center">
-            <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
-              How to download {config.shortTitle} videos in 4 easy steps
-            </h2>
-            <p className="mx-auto mt-2 max-w-lg text-sm text-white/55">
-              Works straight in your mobile or desktop web browser — no software or browser extensions needed.
-            </p>
-          </div>
+        <section className="border-y-[3px] border-line bg-paper-2 py-14">
+          <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+            <div className="text-center">
+              <p className="nb-kicker">Four steps</p>
+              <h2 className="nb-h2 mt-3">
+                How to download {config.shortTitle} videos
+              </h2>
+              <p className="nb-lead mx-auto mt-3 max-w-xl">
+                Works straight in your mobile or desktop browser — no software, no browser extensions.
+              </p>
+            </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {howToSteps.map((step, idx) => (
-              <div
-                key={idx}
-                className="relative rounded-2xl border border-line bg-white/[0.02] p-5"
-              >
-                <div
-                  className="platform-tint-text inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
-                  style={
-                    {
-                      backgroundColor: `rgba(${config.theme.glowRgb}, 0.2)`,
-                      '--platform-primary': config.theme.primary,
-                      '--platform-on-light': config.theme.primaryOnLight
-                    } as CSSProperties
-                  }
+            <ol className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {howToSteps.map((step, idx) => (
+                <li
+                  key={idx}
+                  className={`nb-card nb-press-card flex h-full flex-col p-5 ${
+                    idx % 2 === 0 ? 'nb-tilt-l' : 'nb-tilt-r'
+                  }`}
                 >
-                  0{idx + 1}
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-white">{step.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-white/55">{step.description}</p>
-              </div>
-            ))}
+                  <span
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-btn border-[3px] border-line font-display text-sm text-[#101010] ${
+                      STEP_TONE[idx % STEP_TONE.length]
+                    }`}
+                  >
+                    0{idx + 1}
+                  </span>
+                  <h3 className="mt-3.5 font-display text-sm uppercase">{step.title}</h3>
+                  <p className="mt-2 text-xs leading-relaxed text-ink-soft">{step.description}</p>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
         {/* ================================================================ */}
-        {/* PLATFORM FAQS                                                    */}
+        {/* FAQS                                                             */}
         {/* ================================================================ */}
-        <section className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 border-t border-line/60">
+        <section className="mx-auto w-full max-w-4xl px-4 py-14 sm:px-6">
           <div className="text-center">
-            <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
-              Frequently Asked Questions about {config.shortTitle} Downloads
+            <p className="nb-kicker">FAQ</p>
+            <h2 className="nb-h2 mt-3">
+              {config.shortTitle} downloads, answered
             </h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-white/55">
-              Everything you need to know about downloading {config.shortTitle} media safely and quickly.
+            <p className="nb-lead mx-auto mt-3 max-w-md">
+              Everything you need to know about saving {config.shortTitle} media safely and quickly.
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3">
+          <div className="mt-8 flex flex-col gap-3.5">
             {config.faqs.map((faq, index) => (
               <details
                 key={index}
-                className="group rounded-(--radius-card) border border-line bg-white/[0.02] px-4 transition-colors open:border-line-strong open:bg-white/[0.04] hover:border-line-strong"
+                name={`${config.slug}-faq`}
+                className="nb-card-flat group overflow-hidden open:shadow-hard"
                 {...(index === 0 ? { open: true } : {})}
               >
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 text-left text-sm font-semibold text-white">
-                  <span>{faq.question}</span>
+                <summary className="flex cursor-pointer list-none items-start gap-3 px-4 py-4 text-left sm:gap-4 sm:px-5">
                   <span
                     aria-hidden="true"
-                    className="faq-chevron mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/5 text-white/60 ring-1 ring-inset ring-line transition-transform duration-200"
+                    className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-btn border-[2.5px] border-line bg-sun font-mono text-[11px] font-bold text-[#101010] group-open:bg-punch"
                   >
-                    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="min-w-0 flex-1 text-[15px] leading-snug font-bold text-ink">
+                    {faq.question}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-btn border-[2.5px] border-line bg-surface text-ink transition-transform duration-200 group-open:bg-sun"
+                  >
+                    <svg viewBox="0 0 16 16" className="faq-chevron h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.6">
                       <path d="M3 8h10M8 3v10" strokeLinecap="round" />
                     </svg>
                   </span>
                 </summary>
-                <div className="faq-panel pb-4">
-                  <p className="max-w-3xl text-xs sm:text-sm leading-relaxed text-white/60">
-                    {faq.answer}
-                  </p>
+                <div className="faq-panel border-t-[3px] border-line bg-surface-2 px-4 pt-3.5 pb-4 sm:px-5">
+                  <p className="max-w-3xl text-sm leading-relaxed text-ink-soft sm:pl-12">{faq.answer}</p>
                 </div>
               </details>
             ))}
@@ -360,52 +342,66 @@ export default async function PlatformPage({ params }: PageProps) {
         </section>
 
         {/* ================================================================ */}
-        {/* OTHER PLATFORMS EXPLORER                                         */}
+        {/* OTHER PLATFORMS                                                  */}
         {/* ================================================================ */}
-        <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 border-t border-line/60">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="font-display text-xl font-bold text-white">
-                Download from other networks
-              </h2>
-              <p className="mt-1 text-xs text-white/55">
-                download24 also provides high-speed dedicated engines for all your favorite platforms.
-              </p>
+        <section className="border-t-[3px] border-line bg-paper-2 py-14">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="nb-kicker">Keep going</p>
+                <h2 className="nb-h3 mt-3">Download from other networks</h2>
+                <p className="mt-2 text-xs text-ink-soft">
+                  download24 provides dedicated engines for every platform it supports.
+                </p>
+              </div>
+              <Link href="/platforms" className="nb-btn nb-btn-sun self-start sm:self-auto">
+                All {PLATFORMS.length}+ platforms
+              </Link>
             </div>
-            <Link
-              href="/#downloader"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline self-start sm:self-auto"
-            >
-              View all 10+ platforms →
-            </Link>
-          </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {Object.values(PLATFORM_PAGES)
-              .filter((p) => p.slug !== config.slug)
-              .map((other) => {
-                const otherPlatform = getPlatform(other.platformId)
-                return (
-                  <Link
-                    key={other.slug}
-                    href={`/${other.slug}`}
-                    className="group flex items-center gap-3 rounded-xl border border-line bg-white/[0.02] p-3 transition-all hover:border-line-strong hover:bg-white/[0.05]"
-                  >
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-ink-900 ring-1 ring-line group-hover:ring-line-strong">
-                      {otherPlatform && (
-                        <PlatformMark id={otherPlatform.id} className="h-4 w-4" />
-                      )}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-white group-hover:text-accent">
-                        {other.shortTitle}
-                      </p>
-                      <p className="text-[10px] text-white/40">Downloader</p>
-                    </div>
-                  </Link>
-                )
-              })}
+            <ul className="mt-7 grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {Object.values(PLATFORM_PAGES)
+                .filter((other) => other.slug !== config.slug)
+                .map((other) => {
+                  const otherPlatform = getPlatform(other.platformId)
+                  return (
+                    <li key={other.slug}>
+                      <Link
+                        href={`/${other.slug}`}
+                        className="nb-press nb-press-xs flex h-full items-center gap-2.5 rounded-xl border-[2.5px] border-line bg-surface px-3 py-2.5"
+                      >
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border-[2.5px] border-line bg-surface-2">
+                          {otherPlatform && <PlatformMark id={otherPlatform.id} className="h-4 w-4" />}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-mono text-[11px] font-bold text-ink uppercase">
+                            {other.shortTitle}
+                          </span>
+                          <span className="block font-mono text-[10px] text-ink-mute">Downloader</span>
+                        </span>
+                      </Link>
+                    </li>
+                  )
+                })}
+            </ul>
           </div>
+        </section>
+
+        {/* ================================================================ */}
+        {/* CTA                                                              */}
+        {/* ================================================================ */}
+        <section className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
+          <CtaPlate
+            heading={`Save a ${config.shortTitle} video now`}
+            body="Paste the link, pick a quality, and the file lands in your downloads folder."
+            cta="Back to the box"
+            tone="bg-sun"
+            icon={<ArrowDownToLine className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden="true" />}
+          />
+          <p className="mt-5 flex items-center justify-center gap-1.5 font-mono text-[11px] font-bold tracking-wide text-ink-mute uppercase">
+            <Check className="h-3.5 w-3.5 text-ok-ink" aria-hidden="true" />
+            Free · No signup · Up to {MAX_RES_LABEL[platform.maxResolution]}
+          </p>
         </section>
       </main>
 

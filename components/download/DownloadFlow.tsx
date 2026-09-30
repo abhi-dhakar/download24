@@ -305,18 +305,15 @@ export function DownloadFlow() {
     return (
       <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-5 text-center">
         <DownloadStepper current={3} />
-        <h1 className="mt-4 font-display text-2xl font-bold text-white sm:text-3xl">
-          Nothing to download
+        <h1 className="nb-h2 mt-4">
+          Nothing to <span className="nb-mark nb-mark-punch">download</span>
         </h1>
-        <p className="text-sm leading-relaxed text-white/55">
+        <p className="nb-lead">
           This page shows the live download animation, but no file was selected. Start from the
           homepage: paste a link, pick a quality, and we&apos;ll meet you here.
         </p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        <Link href="/" className="nb-btn nb-btn-brand nb-btn-lg">
+          <ArrowLeft className="h-4.5 w-4.5" aria-hidden="true" />
           Start on the homepage
         </Link>
       </div>
@@ -339,20 +336,28 @@ export function DownloadFlow() {
       {/* ------------------------------------------------------------ card */}
       <section
         aria-labelledby="progress-heading"
-        className="glass-card mt-8 rounded-(--radius-card) p-5 shadow-lift sm:p-8"
+        className="nb-panel mt-8 p-5 sm:p-8"
       >
         <header className="text-center">
-          <p className="text-xs font-semibold tracking-widest text-accent uppercase">
+          <p className="nb-sticker mx-auto">
             {phase === 'done' ? 'Step 3 of 3 · Complete' : 'Step 3 of 3 · Downloading'}
           </p>
-          <h1 id="progress-heading" className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">
-            {phase === 'done' ? 'Download complete!' : phase === 'error' ? 'Download failed' : 'Downloading your file'}
+          <h1 id="progress-heading" className="nb-h2 mt-5">
+            {phase === 'done' ? (
+              <>
+                Download <span className="nb-mark nb-mark-lime">complete</span>!
+              </>
+            ) : phase === 'error' ? (
+              'Download failed'
+            ) : (
+              'Downloading your file'
+            )}
           </h1>
         </header>
 
         {/* ------------------------------------- what is being downloaded */}
-        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-line bg-white/[0.02] p-3 sm:flex-row sm:items-center sm:p-4">
-          <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-ink-800 ring-1 ring-inset ring-line sm:w-52">
+        <div className="nb-inset mt-6 flex flex-col gap-4 p-3 sm:flex-row sm:items-center sm:p-4">
+          <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-2xl border-[3px] border-line bg-surface sm:w-52">
             {snapshot?.thumbnail && !thumbFailed ? (
               // Width/height come from step 2 so the image cannot shift layout.
               <img
@@ -366,38 +371,36 @@ export function DownloadFlow() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="absolute inset-0 grid place-items-center text-white/25">
+              <span className="absolute inset-0 grid place-items-center text-ink-mute">
                 <PlatformMark id={snapshot?.platformId ?? 'generic'} className="h-10 w-10" />
               </span>
             )}
             {/* Light sweep across the thumbnail while the transfer is live. */}
             {phase === 'downloading' ? (
-              <span aria-hidden="true" className="sheen absolute inset-0" />
+              <span aria-hidden="true" className="nb-sheen absolute inset-0" />
             ) : null}
             {snapshot?.durationLabel ? (
-              <span className="absolute right-2 bottom-2 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-white">
+              <span className="absolute right-2 bottom-2 rounded-md border-2 border-line bg-ink px-1.5 py-0.5 font-mono text-[11px] font-bold tabular-nums text-paper">
                 {snapshot.durationLabel}
               </span>
             ) : null}
           </div>
 
           <div className="min-w-0 flex-1 text-left">
-            <p className="text-sm leading-snug font-semibold text-white sm:text-base">{title}</p>
+            <p className="text-sm leading-snug font-bold text-ink sm:text-base">{title}</p>
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
               {snapshot?.platformId ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 font-medium text-white/70 ring-1 ring-inset ring-line">
+                <span className="nb-chip nb-chip-sm nb-chip-soft">
                   <PlatformMark id={snapshot.platformId} className="h-3.5 w-3.5 shrink-0" title={snapshot.platformName} />
                   {snapshot.platformName ?? 'Source'}
                 </span>
               ) : null}
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 font-semibold text-accent ring-1 ring-inset ring-accent/25">
+              <span className="nb-chip nb-chip-sm nb-chip-sun">
                 {isAudio ? '♫' : '▶'} {label}
               </span>
-              <span className="inline-flex items-center rounded-full bg-white/5 px-2.5 py-1 font-medium text-white/60 uppercase ring-1 ring-inset ring-line">
-                {ext}
-              </span>
+              <span className="nb-chip nb-chip-sm nb-chip-soft">{ext}</span>
               {sizeLabel ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-white/60 ring-1 ring-inset ring-line">
+                <span className="nb-chip nb-chip-sm nb-chip-soft">
                   <Clock className="h-3 w-3" aria-hidden="true" />
                   {estimated ? '~' : ''}
                   {sizeLabel}
@@ -414,20 +417,20 @@ export function DownloadFlow() {
               <DownloadingScene />
             </div>
 
-            <p className="mt-2 flex items-center justify-center gap-1.5 text-sm font-semibold text-accent">
+            <p className="mt-3 flex items-center justify-center gap-1.5 font-display text-sm uppercase text-ink">
               {caption}
-              <span className="flex items-end gap-0.5" aria-hidden="true">
-                <span className="h-1 w-1 rounded-full bg-accent animate-pulse-soft" />
-                <span className="h-1 w-1 rounded-full bg-accent animate-pulse-soft [animation-delay:220ms]" />
-                <span className="h-1 w-1 rounded-full bg-accent animate-pulse-soft [animation-delay:440ms]" />
+              <span className="flex items-end gap-1" aria-hidden="true">
+                <span className="h-2 w-2 rounded-full border-2 border-line bg-sun animate-pulse-soft" />
+                <span className="h-2 w-2 rounded-full border-2 border-line bg-punch animate-pulse-soft [animation-delay:220ms]" />
+                <span className="h-2 w-2 rounded-full border-2 border-line bg-lime animate-pulse-soft [animation-delay:440ms]" />
               </span>
             </p>
 
             {/* Instructions: how long to expect, and what not to do. */}
-            <div className="mx-auto mt-5 max-w-lg rounded-2xl border border-line bg-white/[0.02] p-4">
+            <div className="nb-card-flat mx-auto mt-6 max-w-lg p-4">
               <p
-                className={`flex items-start gap-2.5 rounded-xl p-3 text-xs leading-relaxed ring-1 ring-inset ${
-                  isBigFile ? 'bg-warn/[0.08] text-warn ring-warn/25' : 'bg-accent/[0.08] text-accent ring-accent/20'
+                className={`flex items-start gap-2.5 rounded-xl border-[2.5px] border-line p-3 text-xs leading-relaxed ${
+                  isBigFile ? 'bg-warn text-[#101010]' : 'bg-sun text-[#101010]'
                 }`}
               >
                 <Hourglass className="mt-px h-4 w-4 shrink-0" aria-hidden="true" />
@@ -438,23 +441,23 @@ export function DownloadFlow() {
                 </span>
               </p>
 
-              <ul className="mt-3 flex flex-col gap-2 text-xs leading-relaxed text-white/55">
+              <ul className="mt-3.5 flex flex-col gap-2.5 text-xs leading-relaxed text-ink-soft">
                 <li className="flex gap-2.5">
-                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-accent/80" aria-hidden="true" />
+                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-brand-ink" aria-hidden="true" />
                   <span>
                     Watch your browser&apos;s own download shelf for the live status — the file
                     appears there as soon as the transfer starts.
                   </span>
                 </li>
                 <li className="flex gap-2.5">
-                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-accent/80" aria-hidden="true" />
+                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-brand-ink" aria-hidden="true" />
                   <span>
                     Don&apos;t refresh or close this tab while it runs — that stops the transfer and
                     you&apos;ll have to start again.
                   </span>
                 </li>
                 <li className="flex gap-2.5">
-                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-accent/80" aria-hidden="true" />
+                  <Info className="mt-px h-3.5 w-3.5 shrink-0 text-brand-ink" aria-hidden="true" />
                   <span>
                     Higher quality and MP3 output take longer because the file is prepared on our
                     server before it reaches you.
@@ -464,11 +467,7 @@ export function DownloadFlow() {
             </div>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-              <button
-                type="button"
-                onClick={cancel}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/8 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
-              >
+              <button type="button" onClick={cancel} className="nb-btn nb-btn-sm">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                 Cancel &amp; change quality
               </button>
@@ -483,41 +482,31 @@ export function DownloadFlow() {
               <SuccessScene />
             </div>
 
-            <p className="mt-1 text-base font-semibold text-ok">Your file has been saved</p>
+            <p className="mt-2 font-display text-base uppercase text-ok-ink">Your file has been saved</p>
 
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-3 py-1.5 font-semibold text-ok ring-1 ring-inset ring-ok/25">
-                <Check className="h-3.5 w-3.5 stroke-[3]" aria-hidden="true" />
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <span className="nb-chip nb-chip-lime">
+                <Check className="h-3.5 w-3.5 stroke-[3.5]" aria-hidden="true" />
                 Saved as {savedName ?? filename}
               </span>
             </div>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
-              >
+              <Link href="/" className="nb-btn nb-btn-brand">
                 <Download className="h-4 w-4" aria-hidden="true" />
                 Download another video
               </Link>
-              <Link
-                href={`/download?url=${encodeURIComponent(src)}`}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/8 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
-              >
+              <Link href={`/download?url=${encodeURIComponent(src)}`} className="nb-btn nb-btn-sun">
                 <Gauge className="h-4 w-4" aria-hidden="true" />
                 Back to quality options
               </Link>
-              <button
-                type="button"
-                onClick={() => void run()}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-              >
+              <button type="button" onClick={() => void run()} className="nb-btn">
                 <RotateCcw className="h-4 w-4" aria-hidden="true" />
                 Save again
               </button>
             </div>
 
-            <p className="mt-5 max-w-md text-center text-xs text-white/40">
+            <p className="mt-5 max-w-md text-center font-mono text-[11px] leading-relaxed tracking-wide text-ink-mute uppercase">
               The file is in your browser&apos;s Downloads. Didn&apos;t get it? Use “Save again”,
               or the direct link on the quality page.
             </p>
@@ -528,34 +517,24 @@ export function DownloadFlow() {
         {phase === 'error' && failure && (
           <div className="mt-8 animate-rise" role="alert">
             <div className="flex flex-col items-center gap-3 text-center">
-              <span className="grid h-14 w-14 place-items-center rounded-full bg-danger/10 ring-1 ring-inset ring-danger/30">
-                <AlertTriangle className="h-7 w-7 text-danger" aria-hidden="true" />
+              <span className="grid h-14 w-14 place-items-center rounded-btn border-[3px] border-line bg-danger">
+                <AlertTriangle className="h-7 w-7 text-white" aria-hidden="true" />
               </span>
-              <p className="text-sm font-semibold text-white">{failure.message}</p>
+              <p className="font-display text-sm uppercase">{failure.message}</p>
               {failure.hint && (
-                <p className="max-w-md text-xs leading-relaxed text-white/55">{failure.hint}</p>
+                <p className="max-w-md text-xs leading-relaxed text-ink-soft">{failure.hint}</p>
               )}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => void run()}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-soft via-accent to-accent-deep px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:-translate-y-px"
-              >
+              <button type="button" onClick={() => void run()} className="nb-btn nb-btn-brand">
                 <RotateCcw className="h-4 w-4" aria-hidden="true" />
                 Retry download
               </button>
-              <Link
-                href={`/download?url=${encodeURIComponent(src)}`}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/8 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-line-strong transition-colors hover:bg-white/12"
-              >
+              <Link href={`/download?url=${encodeURIComponent(src)}`} className="nb-btn nb-btn-sun">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                 Pick another quality
               </Link>
-              <a
-                href={`${apiHref}&mode=stream`}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-              >
+              <a href={`${apiHref}&mode=stream`} className="nb-btn">
                 <ExternalLink className="h-4 w-4" aria-hidden="true" />
                 Direct link
               </a>
@@ -565,7 +544,7 @@ export function DownloadFlow() {
       </section>
 
       {/* Quiet footer note mirroring step 2 */}
-      <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-white/40">
+      <p className="mt-4 flex items-center justify-center gap-1.5 text-center font-mono text-[11px] tracking-wide text-ink-mute uppercase">
         <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden="true" />
         Streams are proxied through Download24 and never stored on disk.
       </p>
